@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block titulo %}
+   Tela de Cadastro
+{% endblock %}
+
+{% block conteudo %}
+<script>
+    // Definir a função showProgramas() para controlar a exibição do campo de programas
+    function showProgramas() {
+        var roleSelect = document.getElementById("role");
+        var programasDiv = document.getElementById("programas");
+        var programaIdInput = document.getElementById('programa_id');
+
+        if (roleSelect.value === 'Coordenador') {
+            programasDiv.style.display = 'block';
+        } else {
+            programasDiv.style.display = 'none';
+            // Verificar se o elemento programa_id existe antes de definir o valor
+            if (programaIdInput) {
+                programaIdInput.value = ''; // Limpa o valor do campo programa_id se o usuário não for um coordenador
+            }
+        }
+    }
+
+    // Chamar a função showProgramas() quando a página for carregada
+    document.addEventListener("DOMContentLoaded", function() {
+        showProgramas(); // Chama a função para definir o estado inicial do campo de programas
+    });
+</script>
+
+<div style="margin: auto; width: 50%; text-align: center;">
+    <h2>Cadastro de Usuário</h2><br>
+    <form action="/login/register" method="post">
+        <label for="username">Nome de usuário:</label><br>
+        <input type="text" id="username" name="username" required style="width: 100%; margin-bottom: 10px;"><br>
+        <label for="email">Email:</label><br>
+        <input type="email" id="email" name="email" required style="width: 100%; margin-bottom: 10px;"><br>
+        <label for="password">Senha:</label><br>
+        <input type="password" id="password" name="password" required style="width: 100%; margin-bottom: 10px;"><br>
+        <label for="role">Função:</label><br>
+        <select id="role" name="role" style="width: 100%; margin-bottom: 10px;" onchange="showProgramas()">
+            <option value="Pro-reitor">Pró-reitor</option>
+            <option value="Secretaria">Secretaria</option>
+            <option value="Coordenador">Coordenador</option>                                
+        </select><br>
+
+        <div id="programas" style="display: none;">
+            <label for="programa">Programa:</label><br>
+            <select id="programa" name="programa_id" style="width:100%; margin-bottom: 10px;">
+                <option value="">Selecione um programa</option>
+                <option value="1">Administração</option>
+                <option value="2">Ciência e Engenharia de Materiais</option>
+                <option value="3">Desenvolvimento, Tecnologias e Sociedade</option>
+                <option value="4">Educação em Ciências</option>
+                <option value="5">Ciência e Tecnologia da Computação</option>
+                <option value="6">Engenharia de Energia</option>
+                <option value="7">Engenharia de Material</option>
+                <option value="8">Engenharia de Produção</option>
+                <option value="9">Engenharia de Produção</option>
+                <option value="11">Engenharia Hídrica</option>
+                <option value="12">Engenharia Mecânica</option>
+                <option value="13">Física</option>
+                <option value="14">Gestão e Regulação de Recursos Hídricos - PROFÁGUA</option>
+                <option value="15">Matemática</option>
+                <option value="16">Meio Ambiente e Recursos Hídricos</option>
+                <option value="17">Multicêntrico em Química de Minas Gerais</option>
+                <!-- Outras opções de programa -->
+            </select>
+        </div>
+
+        <button type="submit" style="background-color:darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
+        <button type="button" onclick="window.location.href='/'" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button><br>
+    </form>
+</div>
+{% endblock %}

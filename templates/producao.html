@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Produção Intelectual</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 15px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Produção Intelectual</h1>
+    <table>
+        <tr>
+            <th>Título</th>
+            <th>Autor</th>
+            <th>Categoria</th>
+            <th>Tipo de Produção</th>
+            <th>Subtipo</th>
+            <th>Área de Concentração</th>
+            <th>Linha de Pesquisa</th>
+            <th>Projeto de Pesquisa</th>
+            <th>Ano de Pulicação</th>
+        </tr>
+        {% for item in producao %}
+        <tr>
+            <td>{{ item.titulo }}</td>
+            <td>{{ item.autor }}</td>
+            <td>{{ item.categoria }}</td>
+            <td>{{ item.tipoproducao }}</td>
+            <td>{{ item.subtipo }}</td>
+            <td>{{ item.areaconcentracao }}</td>
+            <td>{{ item.linhapesquisa }}</td>
+            <td>{{ item.projetopesquisa }}</td>
+            <td>{{ item.anaopublicacao }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
+

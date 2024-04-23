@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block titulo %}
+  Planejamento - 2024:2028
+{% endblock %}
+
+{% block conteudo %}
+<div style="display: flex; flex-direction: column;">
+    <label for="objetivo_select"><strong>Selecione um Objetivo:</strong></label>
+    <select id="objetivo_select" style="width: 1200px;">
+        {% for objetivo in objetivos %}
+            <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
+        {% endfor %}
+    </select>
+   
+    <label for="meta_select"><strong>Metas:</strong></label>
+    <select id="meta_select" style="width: 1200px;">
+    </select>
+
+    <div id="acao_msg" style="display: none;">
+        <p>Deseja cadastrar uma ação para essa meta?</p>
+        <button id="cadastrar_acao_btn">Cadastrar</button>
+        <button id="cancelar_acao_btn">Cancelar</button>
+        <button id="visualizar_acao_btn" style="display: none;">Visualizar Quadro de Ações</button>
+    </div>
+
+    <div id="acao_form" style="display: none;">
+        <h3>Ação para a meta:</h3>
+        <p id="meta_nome"></p>
+        <input type="text" id="acao_input" placeholder="Digite a ação...">
+        <button id="salvar_acao_btn">Salvar</button>
+        <button id="cancelar_salvar_btn">Cancelar</button>
+    </div>
+
+    <div id="cadastro_meta_form" style="display: none;">
+        <h3>Cadastro de Meta</h3>
+        <input type="text" id="meta_nome_input" placeholder="Nome da Meta...">
+        <button id="salvar_meta_btn">Salvar</button>
+        <button id="cancelar_meta_btn">Cancelar</button>
+    </div>
+</div>
+
+<script>
+    document.getElementById("objetivo_select").addEventListener("change", function() {
+        var objetivo_id = this.value;
+        fetch("/metas_por_objetivo?objetivo_id=" + objetivo_id)
+            .then(response => response.json())
+            .then(data => {
+                var meta_select = document.getElementById("meta_select");
+                meta_select.innerHTML = '';
+                if (Object.keys(data).length === 0) {
+                    document.getElementById("acao_msg").style.display = "none";
+                    document.getElementById("cadastro_meta_form").style.display = "block";
+                } else {
+                    for (const [meta_id, meta_nome] of Object.entries(data)) {
+                        var option = document.createElement("option");
+                        option.value = meta_id;
+                        option.textContent = meta_nome;
+                        meta_select.appendChild(option);
+                    }
+                    document.getElementById("cadastro_meta_form").style.display = "none";
+                }
+            });
+    });
+
+    document.getElementById("meta_select").addEventListener("change", function() {
+        document.getElementById("acao_msg").style.display = "block";
+        document.getElementById("visualizar_acao_btn").style.display = "block";
+    });
+
+    document.getElementById("cadastrar_acao_btn").addEventListener("click", function() {
+        var meta_select = document.getElementById("meta_select");
+        var meta_option = meta_select.options[meta_select.selectedIndex];
+        var meta_nome = meta_option.textContent;
+
+        document.getElementById("meta_nome").textContent = "Meta selecionada: " + meta_nome;
+        document.getElementById("acao_form").style.display = "block";
+    });
+
+    document.getElementById("cancelar_acao_btn").addEventListener("click", function() {
+        document.getElementById("acao_form").style.display = "none";
+    });
+
+    document.getElementById("cancelar_salvar_btn").addEventListener("click", function() {
+        document.getElementById("acao_form").style.display = "none";
+    });
+
+    document.getElementById("salvar_acao_btn").addEventListener("click", function() {
+        var acao_input = document.getElementById("acao_input").value;
+        // Aqui você pode fazer algo com a ação, como salvá-la no banco de dados
+        alert("Ação cadastrada: " + acao_input);
+        document.getElementById("acao_form").style.display = "none";
+    });
+
+    // Funções para o cadastro de nova meta
+    document.getElementById("cadastrar_meta_btn").addEventListener("click", function() {
+        document.getElementById("cadastro_meta_form").style.display = "block";
+    });
+
+    document.getElementById("cancelar_meta_btn").addEventListener("click", function() {
+        document.getElementById("cadastro_meta_form").style.display = "none";
+    });
+
+    document.getElementById("salvar_meta_btn").addEventListener("click", function() {
+        var meta_nome_input = document.getElementById("meta_nome_input").value;
+        // Aqui você pode fazer algo com o nome da meta, como salvá-lo no banco de dados
+        alert("Meta cadastrada: " + meta_nome_input);
+        document.getElementById("cadastro_meta_form").style.display = "none";
+    });
+
+    // Botão "Visualizar Quadro de Ações"
+    document.getElementById("visualizar_acao_btn").addEventListener("click", function() {
+        window.location.href = "/kanban";
+    });
+</script>
+{% endblock conteudo %}

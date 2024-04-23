@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block titulo %}
+  Gráficos Multidimensionais
+{% endblock %}
+
+{% block conteudo %}
+<body>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <!-- Div onde o gráfico será renderizado -->
+    <div id="bar-chart"></div>
+
+    <script>
+        // Recupera o JSON dos dados dos gráficos passados do Flask
+        var dadosJSON = {{ dados_json | safe }};
+        try{
+            dadosJSON
+        }catch (error){
+            console.error("Erro ao analisar JSON",error);
+        
+        }
+        // Extrai nomes e mestradotempocerto dos dados
+        var nome = dadosJSON.map(item => item.nome);
+        var mestradotempocerto = dadosJSON.map(item => item.mestradotempocerto);
+
+        //imprime valor para ver 
+
+        console.log("nome: ", nome);
+        console.log("mestradotempocerto: ", mestradotempocerto);
+
+        // Cria o layout do gráfico
+        var layout = {
+            title: 'Mestrado Tempo Certo por Nome',
+            xaxis: { 
+                title: 'Nome',
+                tickangle: 30 // Isso gira os rótulos do eixo x em 45 graus
+            },
+            yaxis: { title: 'Mestrado Tempo Certo' },
+            width: 700,  // Largura do gráfico
+            height: 500  // Altura do gráfico
+        };
+
+        // Cria o gráfico usando Plotly
+        Plotly.newPlot('bar-chart', [{
+            x: nome,
+            y: mestradotempocerto,
+            type: 'bar'
+        }], layout);
+    </script>
+</body>
+{% endblock conteudo %}

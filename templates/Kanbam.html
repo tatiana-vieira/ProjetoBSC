@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block titulo %}
+  PDI - 2024:2028
+{% endblock %}
+
+
+{% block conteudo %}
+    <title>Kanban Board</title>
+    <style>
+        .column {
+            float: left;
+            width: 30%;
+            padding: 5px;
+            border: 1px solid black;
+            margin: 10px;
+        }
+        .card {
+            border: 1px solid black;
+            margin: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h2>Kanban Board</h2>
+
+    {% for column, tasks in tasks.items() %}
+        <div class="column">
+            <h3>{{ column }}</h3>
+            {% for task in tasks %}
+                <div class="card">
+                    {{ task }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+</body>
+{% endblock conteudo %}
