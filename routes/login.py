@@ -8,7 +8,7 @@ from flask_bcrypt import Bcrypt  # Importe o Bcrypt
 login_route = Blueprint('login', __name__)
 bcrypt = Bcrypt()  # Inicialize o Bcrypt
 
-
+###################################################3
 @login_route.route('/login/register', methods=['POST'])
 def register_page():
     if request.method == 'POST':
