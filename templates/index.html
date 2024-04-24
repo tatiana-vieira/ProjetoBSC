@@ -8,64 +8,31 @@
   <h2 style="text-align: center;"> PPGEXPLORER </h2>
   <hr>
   <style>
-    .content-wrapper {
-      text-align: center;
-    }
-
-    .content-wrapper img {
-      width: 100%;
-      height: auto;
-      max-width: 150px; /* Defina a largura máxima desejada para as imagens */
-    }
-
-    .content-wrapper .image-button-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%; /* Garante que a altura da div seja igual à altura da imagem */
-    }
-
-    .content-wrapper .image-button-wrapper button {
-      width: 100%;
-      max-width: 150px; /* Defina a largura máxima desejada para os botões */
-      text-align: center; /* Alinha o texto ao centro */
-    }
+    /* Estilos */
   </style>
   <div class="container">
     <div class="row">
-      <div class="col-md-3">
+      {% if user_role == "Pro-reitor" %}
+      <!-- Ocultar funcionalidades relacionadas ao Planejamento Estratégico para Pro-reitores -->
+      <div class="col-md-3" style="display: none;">
         <div class="content-wrapper">
           <div class="image-button-wrapper">
-            <img src="{{ url_for('static', filename='comparar.png') }}" alt="Imagem 1" class="img-fluid">
-            <button type="button" class="btn btn-primary btn-block">Visualização PDI</button>
+            <!-- Imagem e botão relacionados ao Planejamento Estratégico -->
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+      {% endif %}
+      {% if user_role == "Coordenador" %}
+      <!-- Ocultar funcionalidades relacionadas ao PDI para Coordenadores -->
+      <div class="col-md-3" style="display: none;">
         <div class="content-wrapper">
           <div class="image-button-wrapper">
-            <img src="{{ url_for('static', filename='multi.png') }}" alt="Imagem 2" class="img-fluid">
-            <button type="button" class="btn btn-primary btn-block">Planejamento Estratégico</button>
+            <!-- Imagem e botão relacionados ao PDI -->
           </div>
         </div>
       </div>
-      <div class="col-md-3">
-        <div class="content-wrapper">
-          <div class="image-button-wrapper">
-            <img src="{{ url_for('static', filename='PDI.png') }}" alt="Imagem 3" class="img-fluid">
-            <button type="button" class="btn btn-primary btn-block">Cadastros</button>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="content-wrapper">
-          <div class="image-button-wrapper">
-            <img src="{{ url_for('static', filename='ideia.png') }}" alt="Imagem 4" class="img-fluid">
-            <button type="button" class="btn btn-primary btn-block">Relatório</button>
-          </div>
-        </div>
-      </div>
+      {% endif %}
+      <!-- Exibir outras funcionalidades aqui -->
     </div>
   </div>
 {% endblock %}

@@ -4,7 +4,11 @@ home_route = Blueprint('home', __name__)
 
 @home_route.route('/')
 def page_home():
-    return render_template('index.html')
+    return render_template('login.html')
+
+@home_route.route('/home')
+def login():
+  return render_template('index.html')
 
 @home_route.route('/PDI')
 def page_pdi():
@@ -13,10 +17,6 @@ def page_pdi():
 @home_route.route('/visualizacao')
 def visualizacao():
      return render_template('bsc.html')
-
-@home_route.route('/login')
-def login():
-  return render_template('login.html')
 
 @home_route.route('/register')
 def register():

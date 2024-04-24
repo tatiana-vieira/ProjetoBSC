@@ -5,18 +5,13 @@
 {% endblock %}
 
 {% block conteudo %}
-<body>
     <h4 style="text-align: center; color: #003366;">Plano de Desenvolvimento Institucional</h4>
-
     <table border="2">
         <thead>
             <tr>
-                <th><h5 Style= "text-align: center; color: #003366;"> Objetivo </th>         
-            
-                <th><h5 Style= "text-align: center; color: #003366;">Meta</th>           
-           
-                <th><h5 Style= "text-align: center; color: #003366;">Indicador</th>
-            </tr>
+                <th><h5 style="text-align: center; color: #003366;">Objetivo</h5></th>
+                <th><h5 style="text-align: center; color: #003366;">Meta</h5></th>
+                <th><h5 style="text-align: center; color: #003366;">Indicador</h5></th>
         </thead>
         <tbody>
             {% for objetivo in objetivos %}
@@ -37,5 +32,4 @@
             {% endfor %}
         </tbody>
     </table>
-</body>
 {% endblock conteudo %}

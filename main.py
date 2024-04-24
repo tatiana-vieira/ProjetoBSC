@@ -11,6 +11,8 @@ from routes.planejamento import planejamento_route
 from routes.db import db
 from routes.PDICadastroForm import Objetivo,Meta,Indicador  # Altere o nome do arquivo conforme necessário
 from flask_bcrypt import Bcrypt
+from flask_wtf import FlaskForm
+
 
 
 app = Flask(__name__)
@@ -24,19 +26,36 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Inicialize o objeto db com o aplicativo Flask
 db.init_app(app)
 
+app.register_blueprint(login_route)
 app.register_blueprint(home_route)
 app.register_blueprint(multidimensional_route)
 app.register_blueprint(pdi_route)
 app.register_blueprint(producao_route)
 app.register_blueprint(indicador_route)
-app.register_blueprint(login_route)
 app.register_blueprint(planejamento_route)
 
 
+@app.route('/')
+def index():
+    return redirect('/login')
+
+@app.route('/login')
+def get_login():
+    try:
+       login =  db.session.query(Users).all()
+       users = [{'id':row.id,'username': row.username,'email': row.email,
+        'password': row.password,'role': row.role,'programa_id':row.programa_id } for row in login.execute()]
+    except Exception as e:
+        print(e)
+        db.session.rollback()
+        return "Erro ao buscar dados do Login"    
+    
+    return render_template('login.html',users=users)
+############################################################################################################
 @app.route('/home')
 def get_index():
     return render_template('index.html')
-    
+   
 ######################################################################################################################################
 @app.route('/multidimensional')
 def get_multidimensional_data():
@@ -117,7 +136,7 @@ def get_programas():
         db.session.rollback()
 
     return "Erro ao buscar dados de Programas"    
-    
+   
 ############################################################## PDI ##############################################
 app.route('/pdi')
 def get_indicador():
@@ -130,7 +149,7 @@ def get_indicador():
         db.session.rollback()
 
    return "Erro ao buscar dados do PDI"  
-
+##############################
 app.route('/objetivo')
 def get_objetivo():
    try:
@@ -142,7 +161,7 @@ def get_objetivo():
         db.session.rollback()
 
    return "Erro ao buscar dados de Objetivo"
-
+####################################
 app.route('/meta')
 def get_meta():
    try:
@@ -167,18 +186,6 @@ def get_indicador():
 
    return "Erro ao buscar dados do indicador"
 ################################################################################################################
-@app.route('/login')
-def get_login():
-    try:
-       login =  db.session.query(Users).all()
-       users = [{'id':row.id,'username': row.username,'email': row.email,
-        'password': row.password,'role': row.role,'programa_id':row.programa_id } for row in login.execute()]
-    except Exception as e:
-        print(e)
-        db.session.rollback()
-        return "Erro ao buscar dados do Login"    
-    
-    return render_template('login.html',users=users)
 ######################################################################################################################
 @app.route('/login/register')
 def get_register():
@@ -222,7 +229,7 @@ def processar_formulario_pdi():
     db.session.commit()
     
     return redirect(url_for('sucesso_cadastro'))
-
+######################################################################################
 @app.route('/cadastro_pdi', methods=['GET', 'POST'])
 def cadastro_pdi():
     if request.method == 'POST':

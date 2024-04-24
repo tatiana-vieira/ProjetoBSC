@@ -1,9 +1,9 @@
-from flask import Flask, render_template
+from flask import Flask, render_template,jsonify
 from .models import PDI, Objetivo, Meta, Indicador
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
 
-pdi_route = Flask(__name__)
+#pdi_route = Flask(__name__)
 pdi_route = Blueprint('pdi', __name__)
 
 @pdi_route.route('/pdi')
@@ -20,6 +20,8 @@ def exibir_pdi():
     indicadores = Indicador.query.filter(Indicador.meta_pdi_id.in_([meta.id for meta in metas])).all()
     
     return render_template('pdi.html', objetivos=objetivos, metas=metas, indicadores=indicadores)
+
+
 
 if __name__ == '__main__':
     pdi_route.run(debug=True)

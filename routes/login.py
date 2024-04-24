@@ -47,7 +47,7 @@ def register_page():
 
     # Renderizar o modelo HTML com programas para o formulário de cadastro
     return render_template('register.html', programas=programas)
-
+###########################################################################################################################################
 @login_route.route('/login', methods=['GET', 'POST'])
 def login_page():
     if request.method == 'POST':
@@ -62,7 +62,11 @@ def login_page():
             # Autenticar o usuário
             session['email'] = email
             flash('Login bem-sucedido!', 'success')
-            return redirect(url_for('get_index'))  # Redirecionar para a página inicial após o login
+            
+            # Passar o papel do usuário para o template HTML
+            user_role = user.role if user else None
+
+            return render_template('index.html', user_role=user_role)  # Passar o papel do usuário para o template index.html
         else:
             flash('Credenciais inválidas. Por favor, tente novamente.', 'danger')
 
