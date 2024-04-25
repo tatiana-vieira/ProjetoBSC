@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'basecord.html' %}
 
 {% block titulo %}
   Home
@@ -34,7 +34,7 @@
   </style>
   <div class="container">
     <div class="row">
-      <div class="col-md-3">
+        <div class="col-md-4">
         <div class="content-wrapper">
           <div class="image-button-wrapper">
             <img src="{{ url_for('static', filename='comparar.png') }}" alt="Imagem 1" class="img-fluid">
@@ -42,7 +42,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-4">
         <div class="content-wrapper">
           <div class="image-button-wrapper">
             <img src="{{ url_for('static', filename='multi.png') }}" alt="Imagem 2" class="img-fluid">
@@ -50,18 +50,10 @@
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-4">
         <div class="content-wrapper">
           <div class="image-button-wrapper">
-            <img src="{{ url_for('static', filename='PDI.png') }}" alt="Imagem 3" class="img-fluid">
-            <button type="button" class="btn btn-primary btn-block">Cadastros</button>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="content-wrapper">
-          <div class="image-button-wrapper">
-            <img src="{{ url_for('static', filename='ideia.png') }}" alt="Imagem 4" class="img-fluid">
+            <img src="{{ url_for('static', filename='ideia.png') }}" alt="Imagem 3" class="img-fluid">
             <button type="button" class="btn btn-primary btn-block">Relatório</button>
           </div>
         </div>

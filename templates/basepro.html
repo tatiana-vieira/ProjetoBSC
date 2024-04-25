@@ -31,26 +31,14 @@
             PDI
           </a>
           <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-            <li><a class="dropdown-item" href="/cadpdi">Cadastro do PDI</a></li>
-            <li><a class="dropdown-item" href="/objetivos">Cadastro de Objetivos</a></li>
-            <li><a class="dropdown-item" href="/metas">Cadastro de Metas</a></li>
-            <li><a class="dropdown-item" href="/indicador">Cadastro de Indicadores</a></li>
+            <li><a class="dropdown-item" href="/cadastro_pdi">Cadastro do PDI</a></li>
+            <li><a class="dropdown-item" href="/cadastro_objetivo">Cadastro de Objetivos</a></li>
+            <li><a class="dropdown-item" href="/cadastro_meta">Cadastro de Metas</a></li>
+            <li><a class="dropdown-item" href="/cadastro_indicador">Cadastro de Indicadores</a></li>
             <!-- Adicione outros itens de submenu aqui -->
         </ul>
         </li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Planejamento Estratégico
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-            <li><a class="dropdown-item" href="#">Cadastro de Objetivos</a></li>
-            <li><a class="dropdown-item" href="#">Cadastro de Metas</a></li>
-            <li><a class="dropdown-item" href="#">Cadastro de Indicadores</a></li>
-            <li><a class="dropdown-item" href="#">Cadastro de Ações</a></li>
-            <!-- Adicione outros itens de submenu aqui -->
-        </ul>
-        </li>
-        <li class="nav-item">
+       <li class="nav-item">
             <a class="nav-link" href="/PDI">PDI</a>
         </li>
         <li class="nav-item">
@@ -58,7 +46,12 @@
         </li>
       </ul>
     </div>
-  </nav>
+    <ul class="navbar-nav ms-auto">
+      <li class="nav-item">
+          <a class="nav-link" href="/logout">Sair</a>
+      </li>
+    </ul>
+ </nav>
 <br>
 <div class="container">
     <img src="{{ url_for('static', filename='PPG.png') }}" alt="Imagem 1" class="mx-auto d-block"><br>

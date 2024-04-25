@@ -61,13 +61,22 @@ def login_page():
         if user and bcrypt.check_password_hash(user.password_hash, password):
             # Autenticar o usuário
             session['email'] = email
-            flash('Login bem-sucedido!', 'success')
-            
-            # Passar o papel do usuário para o template HTML
-            user_role = user.role if user else None
 
-            return render_template('index.html', user_role=user_role)  # Passar o papel do usuário para o template index.html
+            if user.role == 'Coordenador':
+                # Redirecionar para a página do coordenador
+                flash('Login bem-sucedido como coordenador!', 'success')
+                return redirect(url_for('get_coordenador'))
+            elif user.role == 'Pro-reitor':
+                # Redirecionar para a página do pró-reitor
+                flash('Login bem-sucedido como pró-reitor!', 'success')
+                return redirect(url_for('get_proreitor'))
+            else:
+                # Redirecionar para a página inicial padrão
+                flash('Login bem-sucedido!', 'success')
+                return redirect(url_for('get_index'))
         else:
             flash('Credenciais inválidas. Por favor, tente novamente.', 'danger')
 
     return render_template('login.html')
+
+   

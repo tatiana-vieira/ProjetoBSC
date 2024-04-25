@@ -1,0 +1,62 @@
+{% extends 'basepro.html' %}
+
+{% block titulo %}
+  Home
+{% endblock %}
+
+{% block conteudo %}
+  <h2 style="text-align: center;"> PPGEXPLORER </h2>
+  <hr>
+  <style>
+    /* Adiciona estilos para centralizar as imagens */
+    .image-button-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 300px; /* Ajuste a altura conforme necessário */
+    }
+
+    .image-button-wrapper img {
+      width: 100%;
+      max-width: 150px; /* Defina a largura máxima desejada para as imagens */
+      height: auto;
+    }
+
+    .image-button-wrapper button {
+      width: 100%;
+      max-width: 150px; /* Defina a largura máxima desejada para os botões */
+      text-align: center; /* Alinha o texto ao centro */
+    }
+  </style>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4">
+        <div class="content-wrapper">
+          <div class="image-button-wrapper">
+            <img src="{{ url_for('static', filename='comparar.png') }}" alt="Imagem 1">
+            <button type="button" class="btn btn-primary btn-block">Visualização PDI</button>
+          </div>
+        </div>
+      </div>
+ 
+      <div class="col-md-4">
+        <div class="content-wrapper">
+          <div class="image-button-wrapper">
+            <img src="{{ url_for('static', filename='PDI.png') }}" alt="Imagem 2">
+            <button type="button" class="btn btn-primary btn-block">Cadastros</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="content-wrapper">
+          <div class="image-button-wrapper">
+            <img src="{{ url_for('static', filename='ideia.png') }}" alt="Imagem 3">
+            <button type="button" class="btn btn-primary btn-block">Relatório</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

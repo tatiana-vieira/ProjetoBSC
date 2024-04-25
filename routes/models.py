@@ -177,7 +177,6 @@ class Token(Base):
   def __repr__(self):
     return f"<Token(id={self.id}, user_id={self.user_id}, token='{self.token[:10]}...', expired_at={self.expired_at})>"
 
-
 ##############################################################################33
 class Programas(db.Model):
    __tablename__ = 'programas'

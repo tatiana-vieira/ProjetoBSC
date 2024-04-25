@@ -1,0 +1,72 @@
+WARNING:werkzeug: * Debugger is active!
+WARNING:werkzeug: * Debugger is active!
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 688-979-076
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 688-979-076
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 688-979-076
+INFO:werkzeug: * Detected change in 'C:\\Users\\thatt\\Documents\\Bsc\\main.py', reloading
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 688-979-076
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 688-979-076
+INFO:werkzeug: * Detected change in 'C:\\Users\\thatt\\Documents\\Bsc\\main.py', reloading
+INFO:werkzeug: * Restarting with stat
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 688-979-076
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 688-979-076
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:38:12] "[32mGET / HTTP/1.1[0m" 302 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:38:13] "GET /login HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:38:13] "[36mGET /static/PPG.png HTTP/1.1[0m" 304 -
+INFO:werkzeug: * Detected change in 'C:\\Users\\thatt\\Documents\\Bsc\\main.py', reloading
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 688-979-076
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 688-979-076
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:40] "[32mGET / HTTP/1.1[0m" 302 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:40] "GET /login HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:40] "[36mGET /static/PPG.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:49] "[32mPOST /login HTTP/1.1[0m" 302 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:49] "GET /proreitor HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:49] "[36mGET /static/PPG.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:49] "[36mGET /static/comparar.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:49] "[36mGET /static/PDI.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:49] "[36mGET /static/ideia.png HTTP/1.1[0m" 304 -
+INFO:root:Rota de logout acessada
+INFO:root:Chave de sessão removida
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:51] "GET /logout HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:51] "[36mGET /static/PPG.png HTTP/1.1[0m" 304 -
+INFO:root:Rota de logout acessada
+INFO:root:Chave de sessão removida
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:52] "GET /logout HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:52] "[36mGET /static/PPG.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:53] "[32mGET / HTTP/1.1[0m" 302 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:53] "GET /login HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [25/Apr/2024 14:41:53] "[36mGET /static/PPG.png HTTP/1.1[0m" 304 -
+INFO:werkzeug: * Detected change in 'C:\\Users\\thatt\\Documents\\Bsc\\main.py', reloading
+INFO:werkzeug: * Restarting with stat

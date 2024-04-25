@@ -1,7 +1,6 @@
 from flask import Flask,jsonify, request, render_template, redirect, url_for,session
 from sqlalchemy import select
 from routes.models import Ensino, Engajamento, Transfconhecimento, Pesquisar, Orientacao, PDI, Meta, Objetivo, Indicador, Producaointelectual, Users, Programas
-from routes.home import home_route
 from routes.multidimensional import multidimensional_route
 from routes.pdiprppg import pdi_route
 from routes.producao import producao_route
@@ -12,7 +11,9 @@ from routes.db import db
 from routes.PDICadastroForm import Objetivo,Meta,Indicador  # Altere o nome do arquivo conforme necessário
 from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
+import logging
 
+#logging.basicConfig(filename='app.log', level=logging.INFO)  # Isso criará um arquivo 'app.log' na mesma pasta do seu arquivo main.py
 
 
 app = Flask(__name__)
@@ -27,14 +28,13 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 app.register_blueprint(login_route)
-app.register_blueprint(home_route)
 app.register_blueprint(multidimensional_route)
 app.register_blueprint(pdi_route)
 app.register_blueprint(producao_route)
 app.register_blueprint(indicador_route)
 app.register_blueprint(planejamento_route)
 
-
+##########################################################################################33
 @app.route('/')
 def index():
     return redirect('/login')
@@ -52,6 +52,14 @@ def get_login():
     
     return render_template('login.html',users=users)
 ############################################################################################################
+@app.route('/coordenador')
+def get_coordenador():
+    return render_template('indexcord.html')
+
+@app.route('/proreitor')
+def get_proreitor():
+    return render_template('indexpro.html')
+
 @app.route('/home')
 def get_index():
     return render_template('index.html')
@@ -108,7 +116,7 @@ def get_multidimensional_data():
         db.session.rollback()
         return "Erro ao buscar dados multidimensionais"
 
-
+#####################################################################################################################################
 @app.route('/producao')
 def get_producao():
     try:
@@ -122,7 +130,7 @@ def get_producao():
         return "Erro ao buscar dados de Produção Intelectaul"    
     
     return render_template('producao.html',producao=resutado)
-
+##########################################################################################################################################
 
 @app.route('/programas')
 def get_programas():
@@ -174,18 +182,6 @@ def get_meta():
 
    return "Erro ao buscar dados de Meta"    
 
-app.route('/indicador')
-def get_indicador():
-   try:
-       indicador= db.session.query(Indicador).all()
-       resultados_indicador = [{'id':row.id,'meta_pdi_id': row.meta_pdi_id,'nome': row.nome} for row in indicador.execute()]
-       return jsonify(resultados_indicador)
-   except Exception as e:
-        print(e)
-        db.session.rollback()
-
-   return "Erro ao buscar dados do indicador"
-################################################################################################################
 ######################################################################################################################
 @app.route('/login/register')
 def get_register():
@@ -215,7 +211,7 @@ def processar_formulario_pdi():
         return 'Acesso não autorizado'
     
     user = Users.query.filter_by(email=session['email']).first()
-    if user.role != 'Pró-reitor':
+    if user.role != 'Pro-reitor':
         return 'Acesso não autorizado'
 
     # Processa os dados do formulário
@@ -249,7 +245,7 @@ def processar_formulario_objetivo():
         return 'Acesso não autorizado'
     
     user = Users.query.filter_by(email=session['email']).first()
-    if user.role != 'Pró-reitor':
+    if user.role != 'Pro-reitor':
         return 'Acesso não autorizado'
 
     pdi_id=request.args.get('pdi_id'),
@@ -262,6 +258,7 @@ def processar_formulario_objetivo():
     db.session.commit
     
     return redirect(url_for('sucesso_cadastro'))
+
 @app.route('/cadastro_objetivo', methods=['GET', 'POST'])
 def cadastro_objetivo():
     if request.method == 'POST':
@@ -277,7 +274,7 @@ def processar_formulario_meta():
         return 'Acesso não autorizado'
     
     user = Users.query.filter_by(email=session['email']).first()
-    if user.role != 'Pró-reitor':
+    if user.role != 'Pro-reitor':
         return 'Acesso não autorizado'
 
     objetivo_id=request.args.get('objetivo_id'),
@@ -304,7 +301,7 @@ def processar_formulario_indicador():
             return 'Acesso não autorizado'
         
     user = Users.query.filter_by(email=session['email']).first()
-    if user.role != 'Pró-reitor':
+    if user.role != 'Pro-reitor':
             return 'Acesso não autorizado'
     
     meta_id = request.args.get('meta_id'),
@@ -329,7 +326,7 @@ def processar_formulario_planejamento():
         return 'Acesso não autorizado'
     
     user = Users.query.filter_by(email=session['email']).first()
-    if user.role != 'Pró-reitor':
+    if user.role != 'Pro-reitor':
         return 'Acesso não autorizado'
 
     # Processa os dados do formulário
@@ -365,6 +362,26 @@ def kanban_board():
         'Done': ['Task 5', 'Task 6']
     }
     return render_template('planejamento.html', tasks=tasks)
+
+@app.route('/PDI')
+def page_pdi():
+    return render_template('pdi.html')
+
+@app.route('/visualizacao')
+def visualizacao():
+     return render_template('bsc.html')
+
+@app.route('/register')
+def register():
+  return render_template('register.html')
+
+@app.route('/logout')
+def logout():
+    logging.info('Rota de logout acessada')  # Registra quando a rota é acessada
+    session.pop('email', None)  # Remove a chave de e-mail da sessão
+    logging.info('Chave de sessão removida')  # Registra quando a chave de sessão é removida
+    return render_template('logout.html')
+
 
 
 if __name__ == '__main__':
