@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block titulo %}
+     Cadastro de Planejamento Estratégico
+{% endblock %}
+
+{% block conteudo %}
+<form action="{{ url_for('cadastro_planejamentope') }}" method="post">
+    <label for="pdi">Escolha um PDI:</label>
+    <select id="pdi" name="pdi">
+        <option value="">Selecione um PDI</option>
+        {% for pdi_item in pdi %}
+            <option value="{{ pdi_item.id }}">{{ pdi_item.nome }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="objetivo_pdi">Escolha um objetivo do PDI:</label>
+    <select id="objetivo_pdi" name="objetivo_pdi">
+        <option value="">Selecione um objetivo do PDI</option>
+        {% for objetivo in objetivos_pdi %}
+            <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
+        {% endfor %}
+    </select>
+
+    <p>OU</p>
+
+    <label for="objetivo_novo">Cadastre um novo objetivo:</label>
+    <input type="text" id="objetivo_novo" name="objetivo_novo">
+
+    <!-- Adicione outros campos para metas, indicadores e ações aqui -->
+
+    <input type="submit" value="Enviar">
+</form>
+{% endblock %}

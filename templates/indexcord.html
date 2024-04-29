@@ -44,12 +44,18 @@
       </div>
       <div class="col-md-4">
         <div class="content-wrapper">
-          <div class="image-button-wrapper">
-            <img src="{{ url_for('static', filename='multi.png') }}" alt="Imagem 2" class="img-fluid">
-            <button type="button" class="btn btn-primary btn-block">Planejamento Estratégico</button>
-          </div>
+            <div class="image-button-wrapper">
+                <img src="{{ url_for('static', filename='multi.png') }}" alt="Imagem 2" class="img-fluid">
+                <button type="button" class="btn btn-primary btn-block" onclick="redirecionarParaPlanejamentoEstrategico()">Planejamento Estratégico</button>
+            </div>
         </div>
-      </div>
+    </div>
+    
+    <script>
+        function redirecionarParaPlanejamentoEstrategico() {
+            window.location.href = "{{ url_for('cadastro_planejamentope') }}";
+        }
+    </script>
       <div class="col-md-4">
         <div class="content-wrapper">
           <div class="image-button-wrapper">

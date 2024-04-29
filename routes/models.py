@@ -211,3 +211,42 @@ class Indicador(db.Model):
     meta_pdi_id = db.Column(db.Numeric, nullable=False)
     nome = db.Column(db.String(2500), nullable=False)
  
+#####################################################################################3
+class ObjetivoPE(db.Model):
+    __tablename__ = 'objetivo_pe'  # Defina o nome da tabela corretamente
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(250), nullable=False)
+    planejamento_estrategico_id = db.Column(db.Integer, db.ForeignKey('planejamento_estrategico.id'))
+    planejamento_estrategico = db.relationship('PlanejamentoEstrategico', back_populates='objetivos')
+
+class MetaPE(db.Model):
+    __tablename__ = 'meta_pe'
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(250), nullable=False)
+    objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'))
+    porcentagem_execucao = db.Column(db.Float)
+
+class IndicadorPE(db.Model):
+    __tablename__ = 'indicador_pe'
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(250), nullable=False)
+    meta_pe_id = db.Column(db.Integer, db.ForeignKey('meta_pe.id'))
+
+class AcaoPE(db.Model):
+    __tablename__ = 'acao_pe'
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(250), nullable=False)
+    meta_pe_id = db.Column(db.Integer, db.ForeignKey('meta_pe.id'))
+
+class PlanejamentoEstrategico(db.Model):
+    __tablename__ = 'planejamento_estrategico'
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(250), nullable=False)
+    pdi_id = db.Column(db.Integer, db.ForeignKey('pdi.id'))
+    objetivos = db.relationship('ObjetivoPE', backref='planejamento_estrategico_ref', lazy=True)
+
+
+ObjetivoPE.planejamento_estrategico = db.relationship('PlanejamentoEstrategico', back_populates='objetivos')
+ObjetivoPE.metas = db.relationship('MetaPE', backref='objetivo', lazy=True)
+MetaPE.indicadores = db.relationship('IndicadorPE', backref='meta', lazy=True)
+MetaPE.acoes = db.relationship('AcaoPE', backref='meta', lazy=True)    
