@@ -257,8 +257,8 @@ class AcaoPE(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(250), nullable=False)
     meta_pe_id = db.Column(db.Integer, db.ForeignKey('meta_pe.id'))
-
-
+    data_inicio = db.Column(db.Date)
+    data_fim = db.Column(db.Date)
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)

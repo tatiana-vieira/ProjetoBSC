@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block titulo %}
-  Indicadores - Metas PE
+  Ação - Metas PE
 {% endblock %}
 
 {% block conteudo %}
@@ -16,10 +16,14 @@
           {% endfor %}
       </select><br>
       
-      <label for="nome">Nome do Indicador:</label><br>
+      <label for="nome">Nome da Ação:</label><br>
       <input type="text" id="nome" name="nome" required style="width: 80%; margin-bottom: 10px;"><br>
-           
-      
+      <label for="nome">Porcentagem da Execução:</label><br>
+      <input type="text" id="porcentagem_execucao" name="porcentagem_execucao" required style="width: 80%; margin-bottom: 10px;"><br>
+      <label for="nome">Data de Inicio:</label><br>
+      <input type="date" id="data_inicio" name="nome" required style="width: 80%; margin-bottom: 10px;"><br>
+      <label for="nome">Data Fim:</label><br>
+      <input type="date" id="data_fim" name="nome" required style="width: 80%; margin-bottom: 10px;"><br>
       <!-- Adicione outros campos para os indicadores, se necessário -->
 
       <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>

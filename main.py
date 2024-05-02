@@ -542,11 +542,16 @@ def associar_metaspe():
         return render_template('metaspe.html', objetivos_pe=objetivos_pe)
 
 ########################################################################################################
-@app.route('/associar_indicadorespe', methods=['POST'])
+@app.route('/associar_indicadorespe', methods=['GET', 'POST'])
 def associar_indicadorespe():
     if request.method == 'POST':
         meta_pe_id = request.form['meta_pe_id']
         nome_indicador = request.form['nome']
+
+        meta_pe =MetaPE.query.get(meta_pe_id)
+        if meta_pe is None:
+            flash('Meta não encontrada!', 'error')
+            return redirect(url_for('get_coordenador'))
         
         # Criar um novo indicador associado à meta
         novo_indicador = IndicadorPE(nome=nome_indicador, meta_pe_id=meta_pe_id)
@@ -554,7 +559,37 @@ def associar_indicadorespe():
         db.session.commit()
         
         return 'Indicador cadastrado com sucesso!'
+    
+    # Se o método for GET, renderize o template HTML
+    return render_template('indicadorpe.html')
 ##############################################################################################################
+########################################################################################################
+@app.route('/associar_associar_acaope', methods=['GET', 'POST'])
+def associar_associar_acaope():
+    if request.method == 'POST':
+        meta_pe_id = request.form['meta_pe_id']
+        nome_acao = request.form['nome']
+        porcentagem_execucao = request.form['porcentagem_execucao']   
+        data_inicio = request.form['data_inicio']
+        data_fim = request.form['data_fim']       
+
+
+        meta_pe =MetaPE.query.get(meta_pe_id)
+        if meta_pe is None:
+            flash('Meta não encontrada!', 'error')
+            return redirect(url_for('get_coordenador'))
+        
+        # Criar um novo indicador associado à meta
+        nova_acao = AcaoPE(nom_acao=nome_acao, meta_pe_id=meta_pe_id,porcentagem_execucao=porcentagem_execucao,data_inicio=data_inicio,data_fim=data_fim)
+        db.session.add(nova_acao)
+        db.session.commit()
+        
+        return 'Indicador cadastrado com sucesso!'
+    
+    # Se o método for GET, renderize o template HTML
+    return render_template('acaope.html')
+
+#############################################################################################################
 
 if __name__ == '__main__':
     app.run(debug=True)
