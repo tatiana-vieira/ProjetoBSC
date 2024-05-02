@@ -1,7 +1,7 @@
 from flask import Flask,jsonify, request, render_template, redirect, url_for,session,flash
 from sqlalchemy import select
-from routes.models import Ensino, Engajamento, Transfconhecimento, Pesquisar, Orientacao, PDI, Meta, Objetivo, Indicador, Producaointelectual, Users, Programas,BSC
-from routes.models import ObjetivoPE,MetaPE,IndicadorPE,AcaoPE,PlanejamentoEstrategico
+from routes.models import Ensino, Engajamento, Transfconhecimento, Pesquisar, Orientacao, PDI, Meta, Objetivo, Indicador, Producaointelectual, Users, Programa,BSC
+from routes.models import MetaPE,IndicadorPE,AcaoPE,ObjetivoPE,PlanejamentoEstrategico
 from routes.multidimensional import multidimensional_route
 from routes.pdiprppg import pdi_route
 from routes.producao import producao_route
@@ -9,16 +9,15 @@ from routes.indicador import indicador_route
 from routes.login import login_route
 from routes.planejamento import planejamento_route
 from routes.db import db
-from routes.PDICadastroForm import Objetivo,Meta,Indicador  # Altere o nome do arquivo conforme necessário
 from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
 from wtforms import SelectField, StringField, SubmitField
 import logging
 from wtforms.validators import DataRequired
-
-
-#logging.basicConfig(filename='app.log', level=logging.INFO)  # Isso criará um arquivo 'app.log' na mesma pasta do seu arquivo main.py
-
+from flask_login import login_required
+from flask_login import current_user
+from flask_login import UserMixin, LoginManager
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.secret_key = "super secret key"
@@ -28,8 +27,20 @@ bcrypt = Bcrypt(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost/DB_PRPPG'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Inicialize o objeto db com o aplicativo Flask
+
+# Inicialize o objeto db com o aplicativo 
 db.init_app(app)
+
+# Inicialize o objeto Bcrypt
+bcrypt.init_app(app)
+
+# Inicialize o objeto LoginManager
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Users.query.get(int(user_id))
 
 app.register_blueprint(login_route)
 app.register_blueprint(multidimensional_route)
@@ -37,7 +48,6 @@ app.register_blueprint(pdi_route)
 app.register_blueprint(producao_route)
 app.register_blueprint(indicador_route)
 app.register_blueprint(planejamento_route)
-
 ##########################################################################################33
 @app.route('/')
 def index():
@@ -139,7 +149,7 @@ def get_producao():
 @app.route('/programas')
 def get_programas():
     try:
-       programas =  db.session.query(Programas).all()
+       programas =  db.session.query(Programa).all()
        resultados = [{'id':row.id,'codigo': row.codigo,'nome': row.nome} for row in programas.execute()]
        return jsonify(resultados)
 
@@ -203,7 +213,7 @@ def get_register():
     return render_template('register.html',users=users)
 
 def register_page():
-    programa = db.session.query(Programas).all()
+    programa = db.session.query(Programa).all()
     programas =[{'id':row.id,'codigo': row.codigo,'nome': row.nome} for row in programa] 
     
     return render_template('register.html', programas=programas)
@@ -376,28 +386,6 @@ def processar_formulario_indicador():
     return redirect(url_for('sucesso_cadastro'))
 
 ###############################################################
-@app.route('/planejamento/', methods=['GET', 'POST'])
-def cadastro_planejamento():
-    if request.method == 'POST':
-        return processar_formulario_planejamento()
-    
-    # Se for método GET, exibe o formulário de cadastro
-    #return render_template('planejamento.html')
-
-@app.route('/sucesso_Planejamento')
-def sucesso_cad():
-    return 'Cadastro realizado com sucesso!'
-
-@app.route('/planejamento')
-def kanban_board():
-    # Exemplo de dados. Você pode substituir isso pelos seus próprios dados.
-    tasks = {
-        'To Do': ['Task 1', 'Task 2', 'Task 3'],
-        'In Progress': ['Task 4'],
-        'Done': ['Task 5', 'Task 6']
-    }
-    return render_template('planejamento.html', tasks=tasks)
-
 @app.route('/PDI')
 def page_pdi():
     return render_template('pdi.html')
@@ -426,36 +414,133 @@ class CadastroForm(FlaskForm):
     acao_descricao = StringField('Descrição da Ação', validators=[DataRequired()])
     valor_realizado = StringField('Valor Realizado')
     submit = SubmitField('Enviar')
-########################3
+################################################Planejamento estrategico######################################################################
 @app.route('/cadastro_planejamentope', methods=['GET', 'POST'])
 def cadastro_planejamentope():
+    if 'email' not in session:
+        flash('Você precisa estar logado para acessar esta página.', 'danger')
+        return redirect(url_for('login_page'))
+
+    nome = request.form['nome']
+    pdi_id = request.form['pdi_id']
+
+    # Verifique se o usuário está autenticado e se é um coordenador
+    if 'programa_id' not in session:
+        flash('Nenhum programa do usuário encontrado. Faça login novamente.', 'danger')
+        return redirect(url_for('login.login_page'))
+
+    programa_id = session['programa_id']  # Recupere o programa_id da sessão
+
+    novo_planejamento = PlanejamentoEstrategico(pdi_id=pdi_id, nome=nome, programa_id=programa_id)
+    print(novo_planejamento)
+
+    try:
+        # Adicione o novo planejamento ao banco de dados
+        db.session.add(novo_planejamento)
+        db.session.commit()
+        flash('Planejamento cadastrado com sucesso!', 'success')
+        return redirect(url_for('get_coordenador')) 
+    except Exception as e:
+        print("Ocorreu um erro ao cadastrar o planejamento:", e)
+        db.session.rollback()
+        flash('Erro ao cadastrar planejamento. Por favor, tente novamente.', 'danger')
+        return redirect(url_for('get_coordenador'))
+
+def processar_formulario_planejamentope(programa_do_usuario):
+    # Verifica se o usuário está logado e é um Coordenador
+    if not current_user.is_authenticated or current_user.role != 'Coordenador':
+        return 'Acesso não autorizado'
+    
+    # Extrai os dados do formulário
+    pdi_id = request.form['pdi_id']
+    nome = request.form['nome']
+    programa_id = request.form['programa_id']
+    
+    # Insere os dados no banco de dados, incluindo o programa do usuário
+    novo_planejamento = PlanejamentoEstrategico(pdi_id=pdi_id, nome=nome, programa=programa_do_usuario, programa_id=programa_id)
+    db.session.add(novo_planejamento)
+    db.session.commit()
+    
+    # Renderiza o template 'planejamento.html' com os dados da lista_pdispe
+    return redirect(url_for('sucesso_cadastro'))    
+######################################################################################
+@app.route('/rota_protegida')
+@login_required
+def rota_protegida():
+    # Esta rota só será acessível para usuários autenticados
+    return 'Esta rota é protegida!'
+##################################################################################################################################
+@app.route('/associar_objetivospe', methods=['POST'])
+def associar_objetivospe():
+    if 'email' not in session:
+        flash('Você precisa estar logado para acessar esta página.', 'danger')
+        return redirect(url_for('login_page'))
+    
     if request.method == 'POST':
-        return processar_formulario_metape()
+        nome = request.form['nome']
+        objetivo_pdi_id= request.form['objetivo_id']   
+        planejamento_estrategico_id = request.form['planejamento_id']
 
-    # Se for método GET, obtém a lista de PDI do banco de dados
-    lista_pdis = PDI.query.all()
+        # Verifica se o programa_id está na sessão
+        if 'programa_id' not in session:
+            flash('Nenhum programa do usuário encontrado. Faça login novamente.', 'danger')
+            return redirect(url_for('login.login_page'))
 
-    # Renderiza a página com a lista de PDI
-    return render_template('cadastroplanejamento.html', lista_pdis=lista_pdis)
+        # Cria uma nova meta e a adiciona ao banco de dados
+        novo_objetivo = ObjetivoPE(
+             nome=nome, objetivo_id=objetivo_pdi_id, planejamento_estrategico_id=planejamento_estrategico_id)
+        
+        db.session.add(novo_objetivo)
+        db.session.commit()
 
-@app.route('/objetivos_pdipe/<int:pdi_id>')
-def listar_objetivos_pdipe(pdi_id):
-    objetivos_data = [{'id': objetivo.id, 'nome': objetivo.nome} for objetivo in ObjetivoPE.query.filter_by(pdi_id=pdi_id).all()]
-    return jsonify(objetivos_data)
-
-def processar_formulario_metape():
-    if request.method == 'POST':
-        pdi_id = request.form.get('pdi_id')
-        objetivo_id = request.form.get('objetivo_id')
-        nome = request.form.get('nome')
-        # Lógica para processar os dados do formulário aqui
-
-        return redirect(url_for('sucesso_cadastro'))
+        flash('Objetivo cadastrado com sucesso!', 'success')
+        return redirect(url_for('get_coordenador'))
     else:
-        # Se a requisição não for POST, redirecione para a página de cadastro novamente
-        return redirect(url_for('cadastro_planejamentope'))
+        # Se o método não for POST, apenas renderiza o formulário HTML
+        planejamento_estrategico = PlanejamentoEstrategico.query.all()
+        objetivos_por_planejamento = []
 
-##########################################################################################################################
+        for pe in planejamento_estrategico:
+            objetivos = ObjetivoPE.query.filter_by(pdi_id=pe.pdi_id).all()
+            objetivos_por_planejamento.append((pe, objetivos))
+
+        # Renderiza o formulário HTML com os objetivos associados a cada planejamento estratégico
+        return render_template('objetivope.html', objetivos_por_planejamento=objetivos_por_planejamento)
+##################################################################################################################################
+###############################################################################################################################
+@app.route('/associar_metaspe', methods=['POST'])
+def associar_metaspe():
+    if request.method == 'POST':
+        # Aqui vai o código para lidar com o formulário submetido
+        nome = request.form['nome']
+        objetivope_id = request.form['objetivope_id']
+        porcentagem_execucao = request.form['porcentagem_execucao']
+        
+        # Verifica se o objetivo existe
+        objetivo_pe = ObjetivoPE.query.get(objetivope_id)
+        if objetivo_pe is None:
+            flash('Objetivo PE não encontrado!', 'error')
+            return redirect(url_for('get_coordenador'))
+        
+        # Cria uma nova meta PE e a associa ao objetivo PE
+        nova_meta = MetaPE(
+            nome=nome,
+            objetivope_id=objetivope_id,
+            porcentagem_execucao=porcentagem_execucao
+        )
+
+        db.session.add(nova_meta)
+        db.session.commit()
+
+        flash('Meta cadastrada com sucesso!', 'success')
+        return redirect(url_for('get_coordenador'))
+    else:
+        # Se o método não for POST, obtenha os dados necessários para o formulário
+        objetivos_pe = ObjetivoPE.query.all()
+        
+        # Renderiza o formulário HTML com os dados obtidos
+        return render_template('metaspe.html', objetivos_pe=objetivos_pe)
+
+########################################################################################################
 if __name__ == '__main__':
-    app.debug = True
-    app.run()
+    app.run(debug=True)

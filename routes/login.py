@@ -1,14 +1,21 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
-from .models import Users,Programas
+from .models import Users, Programa,PlanejamentoEstrategico
 from routes.db import db
 from werkzeug.security import generate_password_hash
 from flask_bcrypt import Bcrypt  # Importe o Bcrypt
-
+from flask_login import login_required
 
 login_route = Blueprint('login', __name__)
 bcrypt = Bcrypt()  # Inicialize o Bcrypt
 
-###################################################3
+
+@login_route.route('/dashboard')
+@login_required
+def dashboard():
+    # Esta rota só será acessível para usuários autenticados
+    return render_template('index.html')
+
+
 @login_route.route('/login/register', methods=['POST'])
 def register_page():
     if request.method == 'POST':
@@ -43,11 +50,12 @@ def register_page():
             flash('Erro ao cadastrar usuário. Por favor, tente novamente.', 'danger')
 
     # Buscar programas do banco de dados
-    programas = Programas.query.all()
+    programas = Programa.query.all()
 
     # Renderizar o modelo HTML com programas para o formulário de cadastro
     return render_template('register.html', programas=programas)
-###########################################################################################################################################
+
+
 @login_route.route('/login', methods=['GET', 'POST'])
 def login_page():
     if request.method == 'POST':
@@ -61,22 +69,20 @@ def login_page():
         if user and bcrypt.check_password_hash(user.password_hash, password):
             # Autenticar o usuário
             session['email'] = email
+            if user.role == 'Coordenador':
+                # Armazenar id_programa na sessão apenas para coordenadores
+                session['programa_id'] = user.programa_id
+            flash('Login bem-sucedido!', 'success')
 
             if user.role == 'Coordenador':
-                # Redirecionar para a página do coordenador
-                flash('Login bem-sucedido como coordenador!', 'success')
                 return redirect(url_for('get_coordenador'))
             elif user.role == 'Pro-reitor':
-                # Redirecionar para a página do pró-reitor
-                flash('Login bem-sucedido como pró-reitor!', 'success')
                 return redirect(url_for('get_proreitor'))
             else:
-                # Redirecionar para a página inicial padrão
-                flash('Login bem-sucedido!', 'success')
                 return redirect(url_for('get_index'))
         else:
             flash('Credenciais inválidas. Por favor, tente novamente.', 'danger')
 
     return render_template('login.html')
 
-   
+

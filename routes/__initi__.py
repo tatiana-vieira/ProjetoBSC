@@ -1,9 +1,12 @@
-# Importe os módulos necessários
-from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField
-from wtforms.validators import DataRequired
+import secrets
+from flask_mail import Mail
 
-class CadastroPDIForm(FlaskForm):
-    nome = StringField('Nome', validators=[DataRequired()])
-    datainicio = IntegerField('Data de Início', validators=[DataRequired()])
-    datafim = IntegerField('Data de Fim', validators=[DataRequired()])
+def generate_token(length):
+    return secrets.token_hex(length)
+
+mail = Mail()
+
+def init_extensions(app):
+    # Initialize other extensions (SQLAlchemy, Migrate, etc.)
+    # ...
+    mail.init_app(app)

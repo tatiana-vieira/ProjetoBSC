@@ -9,7 +9,10 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from passlib.hash import scrypt
 from bcrypt import gensalt
+from flask_login import UserMixin, LoginManager
 
+
+login_manager = LoginManager()
 
 # Crie a base declarativa
 Base = declarative_base()
@@ -178,11 +181,22 @@ class Token(Base):
     return f"<Token(id={self.id}, user_id={self.user_id}, token='{self.token[:10]}...', expired_at={self.expired_at})>"
 
 ##############################################################################33
-class Programas(db.Model):
-   __tablename__ = 'programas'
-   id = db.Column(db.Integer, primary_key=True)  
-   codigo = db.Column(db.String(50))
-   nome = db.Column(db.String(255))
+class Programa(db.Model):
+    __tablename__ = 'programas'
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), nullable=False)
+    codigo = db.Column(db.String(50), nullable=False)
+    planejamentos = relationship("PlanejamentoEstrategico", back_populates="programa")  # Relacionamento com PlanejamentoEstrategico
+
+class PlanejamentoEstrategico(db.Model):
+    __tablename__ = 'planejamento_estrategico'
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(250), nullable=False)
+    pdi_id = db.Column(db.Integer, db.ForeignKey('pdi.id'))
+    id_programa = db.Column(db.Integer, db.ForeignKey('programas.id'))  # Corrigindo o nome da tabela referenciada
+
+    programa = relationship("Programa", back_populates="planejamentos")  # Definindo o relacionamento inverso
+
 ################################################## PDI###################################################################################3
 class PDI(db.Model):
     __tablename__ = 'pdi'
@@ -190,13 +204,6 @@ class PDI(db.Model):
     nome = db.Column(db.String(2500), nullable=False)  
     datainicio = db.Column(db.Integer, nullable=False) 
     datafim = db.Column(db.Integer, nullable=False) 
-
-class Objetivo(db.Model):
-    __tablename__ = 'objetivo_pdi'
-    id = db.Column(db.Integer, primary_key=True)  # Aqui está a correção
-    pdi_id = db.Column(db.Integer, nullable=False)
-    nome = db.Column(db.String(2500), nullable=False) 
-    bsc = db.Column(db.String(100), nullable=False)  
 
 class Meta(db.Model):
     __tablename__ = 'meta_pdi'
@@ -212,12 +219,23 @@ class Indicador(db.Model):
     nome = db.Column(db.String(2500), nullable=False)
  
 #####################################################################################3
+class Objetivo(db.Model):
+    __tablename__ = 'objetivo_pdi'
+    id = db.Column(db.Integer, primary_key=True)
+    pdi_id = db.Column(db.Integer, nullable=False)
+    nome = db.Column(db.String(2500), nullable=False) 
+    bsc = db.Column(db.String(100), nullable=False)
+    objetivos_pe = relationship("ObjetivoPE", primaryjoin="Objetivo.id == ObjetivoPE.objetivo_pdi_id", back_populates="objetivo")
+
 class ObjetivoPE(db.Model):
-    __tablename__ = 'objetivo_pe'  # Defina o nome da tabela corretamente
+    __tablename__ = 'objetivo_pe'
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(250), nullable=False)
     planejamento_estrategico_id = db.Column(db.Integer, db.ForeignKey('planejamento_estrategico.id'))
-    planejamento_estrategico = db.relationship('PlanejamentoEstrategico', back_populates='objetivos')
+    objetivo_pdi_id = db.Column(db.Integer, db.ForeignKey('objetivo_pdi.id'))  # Corrigido para referenciar a tabela objetivo_pdi
+
+    planejamento_estrategico = db.relationship('PlanejamentoEstrategico', backref='objetivos_pe')
+    objetivo = db.relationship("Objetivo", back_populates="objetivos_pe")
 
 class MetaPE(db.Model):
     __tablename__ = 'meta_pe'
@@ -225,6 +243,8 @@ class MetaPE(db.Model):
     nome = db.Column(db.String(250), nullable=False)
     objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'))
     porcentagem_execucao = db.Column(db.Float)
+
+    objetivo_pe = db.relationship('ObjetivoPE',backref="meta_pe")
 
 class IndicadorPE(db.Model):
     __tablename__ = 'indicador_pe'
@@ -238,15 +258,12 @@ class AcaoPE(db.Model):
     nome = db.Column(db.String(250), nullable=False)
     meta_pe_id = db.Column(db.Integer, db.ForeignKey('meta_pe.id'))
 
-class PlanejamentoEstrategico(db.Model):
-    __tablename__ = 'planejamento_estrategico'
+
+
+class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(250), nullable=False)
-    pdi_id = db.Column(db.Integer, db.ForeignKey('pdi.id'))
-    objetivos = db.relationship('ObjetivoPE', backref='planejamento_estrategico_ref', lazy=True)
+    # Defina outros campos de usuário aqui...
 
-
-ObjetivoPE.planejamento_estrategico = db.relationship('PlanejamentoEstrategico', back_populates='objetivos')
-ObjetivoPE.metas = db.relationship('MetaPE', backref='objetivo', lazy=True)
-MetaPE.indicadores = db.relationship('IndicadorPE', backref='meta', lazy=True)
-MetaPE.acoes = db.relationship('AcaoPE', backref='meta', lazy=True)    
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
