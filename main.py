@@ -513,11 +513,11 @@ def associar_metaspe():
     if request.method == 'POST':
         # Aqui vai o código para lidar com o formulário submetido
         nome = request.form['nome']
-        objetivope_id = request.form['objetivope_id']
+        objetivo_pe_id = request.form['objetivo_pe_id']
         porcentagem_execucao = request.form['porcentagem_execucao']
         
         # Verifica se o objetivo existe
-        objetivo_pe = ObjetivoPE.query.get(objetivope_id)
+        objetivo_pe = ObjetivoPE.query.get(objetivo_pe_id)
         if objetivo_pe is None:
             flash('Objetivo PE não encontrado!', 'error')
             return redirect(url_for('get_coordenador'))
@@ -525,7 +525,7 @@ def associar_metaspe():
         # Cria uma nova meta PE e a associa ao objetivo PE
         nova_meta = MetaPE(
             nome=nome,
-            objetivope_id=objetivope_id,
+            objetivo_pe_id=objetivo_pe_id,
             porcentagem_execucao=porcentagem_execucao
         )
 
@@ -542,5 +542,19 @@ def associar_metaspe():
         return render_template('metaspe.html', objetivos_pe=objetivos_pe)
 
 ########################################################################################################
+@app.route('/associar_indicadorespe', methods=['POST'])
+def associar_indicadorespe():
+    if request.method == 'POST':
+        meta_pe_id = request.form['meta_pe_id']
+        nome_indicador = request.form['nome']
+        
+        # Criar um novo indicador associado à meta
+        novo_indicador = IndicadorPE(nome=nome_indicador, meta_pe_id=meta_pe_id)
+        db.session.add(novo_indicador)
+        db.session.commit()
+        
+        return 'Indicador cadastrado com sucesso!'
+##############################################################################################################
+
 if __name__ == '__main__':
     app.run(debug=True)

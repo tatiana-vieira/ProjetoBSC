@@ -126,3 +126,5 @@ def associar_metaspe():
         
         # Renderiza o formulário HTML com os dados obtidos
         return render_template('metaspe.html', planejamentos_estrategicos=planejamentos_estrategicos, objetivos_pe=objetivos_pe)
+    
+#####################################################################################################################################3
