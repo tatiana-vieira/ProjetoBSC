@@ -224,3 +224,49 @@ def associar_acaope():
         else:
             flash('Programa não encontrado!', 'error')
             return redirect(url_for('get_coordenador'))
+        
+########################################## Alterar ação #####################################################
+@planejamento_route.route('/alterar_acaope/<int:acao_id>', methods=['GET', 'POST'])
+def alterar_acaope(acao_id):
+    # Busca a ação a ser alterada pelo ID
+    acao = AcaoPE.query.get_or_404(acao_id)
+    
+    if request.method == 'POST':
+        # Atualiza os campos da ação com os dados do formulário, se fornecidos
+        if 'data_termino' in request.form:
+            acao.data_termino = request.form['data_termino']
+        if 'responsavel' in request.form:
+            acao.responsavel = request.form['responsavel']
+        if 'status' in request.form:
+            acao.status = request.form['status']
+        if 'observacao' in request.form:
+            acao.observacao = request.form['observacao']
+        
+        # Salva as alterações no banco de dados
+        db.session.commit()
+
+        flash('Ação alterada com sucesso!', 'success')
+        return redirect(url_for('login.get_coordenador'))
+    else:
+        # Retorna o formulário de alteração preenchido com os dados da ação
+        return render_template('alterar_acaope.html', acao=acao)
+    
+################################################# Pro -reitor ###################################
+@planejamento_route.route('/visualizar_programaspe')
+def visualizar_programaspe():
+    programas = Programa.query.all()
+    return render_template('visualizar_programas.html', programas=programas)
+
+@planejamento_route.route('/visualizar_dados_programa', methods=['POST'])
+def visualizar_dados_programa():
+    programa_id = request.form['programa']
+    programa = Programa.query.get(programa_id)
+    
+    # Lógica para obter os dados do programa selecionado
+    planejamentope = PlanejamentoEstrategico.query.all()
+    objetivospe = ObjetivoPE.query.filter(ObjetivoPE.objetivo_pdi_id.in_([pdi.id for pdi in planejamentope])).all()
+    metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
+    indicadores = IndicadorPE.query.filter(IndicadorPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()
+    
+    # Passar os dados para o template
+    return render_template('dados_programa.html', programa=programa, planejamentos=planejamentope, objetivos=objetivospe, metas=metaspe, indicadores=indicadores)
