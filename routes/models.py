@@ -166,6 +166,19 @@ class Users(db.Model):
     def check_password(self, password):
         # Verifique se a senha fornecida corresponde à senha armazenada usando Flask-Bcrypt
         return bcrypt.check_password_hash(self.password_hash, password)
+    
+    # Adicione esses métodos para Flask-Login
+    def is_active(self):
+        return True
+    
+    def is_authenticated(self):
+        return True
+    
+    def is_anonymous(self):
+        return False
+    
+    def get_id(self):
+        return str(self.id)
 ########################################################################
 class Token(Base):
   __tablename__ = 'token'
@@ -257,8 +270,14 @@ class AcaoPE(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(250), nullable=False)
     meta_pe_id = db.Column(db.Integer, db.ForeignKey('meta_pe.id'))
+    porcentagem_execucao=db.Column(db.Float)
     data_inicio = db.Column(db.Date)
-    data_fim = db.Column(db.Date)
+    data_termino = db.Column(db.Date)
+    responsavel=db.Column(db.String(350))
+    status = db.Column(db.String(350))
+    observacao = db.Column(db.String(3500))
+
+    meta_pe = db.relationship('MetaPE',backref="acao_pe")
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request,redirect,url_for
 from flask_sqlalchemy import SQLAlchemy
 from .models import PDI,Objetivo,Meta
 import json

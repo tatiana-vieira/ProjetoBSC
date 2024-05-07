@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'basecord.html' %}
 
 {% block titulo %}
     Cadastro do Planejamento Estratégico - PRPPG
@@ -34,7 +34,7 @@
         // Exibe um aviso de confirmação antes de redirecionar
         if (confirm('Tem certeza que deseja cancelar?')) {
             // Redireciona o usuário para a página inicial
-            window.location.href = '/Coordenador';
+            window.location.href = '/cancelar';
         }
     }
 </script>

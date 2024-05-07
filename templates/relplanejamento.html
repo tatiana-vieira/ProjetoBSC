@@ -1,0 +1,61 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+  Planejamento Estratégico - 2024:2028
+{% endblock %}
+
+{% block conteudo %}
+<body>
+    <h4 style="text-align: center; color: #003366;">Planejamento Estratégico</h4>
+
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #dddddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            color: #003366;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+    </style>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Objetivo</th>         
+                <th>Meta</th>           
+                <th>Indicador</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for objetivo in objetivos %}
+                {% for meta in metas if meta.objetivo_pe_id == objetivo.id %}
+                    {% for indicador in indicadores if indicador.meta_pe_id == meta.id %}
+                        <tr>
+                            <td>{{ objetivo.nome }}</td>
+                            <td>{{ meta.nome }}</td>
+                            <td>{{ indicador.nome }}</td>
+                        </tr>
+                    {% endfor %}
+                    {% if loop.last %}
+                        {% for _ in range(2 - loop.length) %}
+                            <tr><td colspan="3"></td></tr>
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+{% endblock conteudo %}

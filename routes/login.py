@@ -1,88 +1,90 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session
-from .models import Users, Programa,PlanejamentoEstrategico
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session, current_app
+from .models import Users, Programa  # Certifique-se de importar seus modelos corretamente
 from routes.db import db
-from werkzeug.security import generate_password_hash
-from flask_bcrypt import Bcrypt  # Importe o Bcrypt
-from flask_login import login_required
+from flask_bcrypt import Bcrypt
+from flask_login import login_user, login_required, LoginManager, current_user
 
 login_route = Blueprint('login', __name__)
 bcrypt = Bcrypt()  # Inicialize o Bcrypt
 
+login_manager = LoginManager()
 
-@login_route.route('/dashboard')
-@login_required
-def dashboard():
-    # Esta rota só será acessível para usuários autenticados
-    return render_template('index.html')
-
-
-@login_route.route('/login/register', methods=['POST'])
-def register_page():
-    if request.method == 'POST':
-        # Extrair dados do formulário
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
-        role = request.form['role']
-        programa_id = request.form['programa_id']
-
-        # Criar um novo objeto de usuário
-        new_user = Users(username=username, email=email, role=role, programa_id=programa_id)
-
-        # Gerar o hash da senha usando Bcrypt
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-
-        # Definir password_hash
-        new_user.password_hash = hashed_password
-
-        if role != 'Coordenador':
-            new_user.programa_id = 0  # Definir programa_id como 0 para não coordenadores
-
-        try:
-            # Adicionar o novo usuário ao banco de dados
-            db.session.add(new_user)
-            db.session.commit()
-            flash('Usuário cadastrado com sucesso!', 'success')
-            return redirect('/login')  # Redirecionar para a página de login após o cadastro
-        except Exception as e:
-            print(e)
-            db.session.rollback()
-            flash('Erro ao cadastrar usuário. Por favor, tente novamente.', 'danger')
-
-    # Buscar programas do banco de dados
-    programas = Programa.query.all()
-
-    # Renderizar o modelo HTML com programas para o formulário de cadastro
-    return render_template('register.html', programas=programas)
-
-
+@login_manager.user_loader
+def load_user(user_id):
+    return Users.query.get(int(user_id))
+######################################################################################################################3
+@login_route.route('/get_coordenador')
+def get_coordenador():
+    # Acessando o contexto do aplicativo Flask
+    permanent_session_lifetime_ms = current_app.config.get('PERMANENT_SESSION_LIFETIME_MS')
+    
+    # Seu código para recuperar os dados do coordenador
+    return render_template('indexcord.html', permanent_session_lifetime_ms=permanent_session_lifetime_ms)
+######################################################################################################################
+@login_route.route('/get_proreitor')
+def get_proreitor():
+    # Acessando o contexto do aplicativo Flask
+    permanent_session_lifetime_ms = current_app.config.get('PERMANENT_SESSION_LIFETIME_MS')
+    
+    # Seu código para recuperar os dados do pro-reitor
+    return render_template('indexpro.html', permanent_session_lifetime_ms=permanent_session_lifetime_ms)
+######################################################################################################################
 @login_route.route('/login', methods=['GET', 'POST'])
 def login_page():
     if request.method == 'POST':
-        # Extrair dados do formulário
         email = request.form['email']
         password = request.form['password']
 
-        # Buscar o usuário pelo e-mail fornecido
         user = Users.query.filter_by(email=email).first()
 
         if user and bcrypt.check_password_hash(user.password_hash, password):
-            # Autenticar o usuário
-            session['email'] = email
-            if user.role == 'Coordenador':
-                # Armazenar id_programa na sessão apenas para coordenadores
-                session['programa_id'] = user.programa_id
-            flash('Login bem-sucedido!', 'success')
+            login_user(user)  # Registrar o usuário
+            session['email'] = email  
+            session['user_id'] = user.id  
 
             if user.role == 'Coordenador':
-                return redirect(url_for('get_coordenador'))
+                session['role'] = 'Coordenador'  # Definindo a função do usuário na sessão
+            
+            flash('Login bem-sucedido!', 'success')
+            if user.role == 'Coordenador':
+                return redirect(url_for('login.get_coordenador'))
             elif user.role == 'Pro-reitor':
-                return redirect(url_for('get_proreitor'))
+                return redirect(url_for('login.get_proreitor'))
             else:
-                return redirect(url_for('get_index'))
+                return redirect(url_for('login.dashboard'))
         else:
             flash('Credenciais inválidas. Por favor, tente novamente.', 'danger')
 
     return render_template('login.html')
-
-
+######################################################################################################################
+@login_route.route('/logout')
+def logout():
+    session.clear()
+    flash('Você saiu do sistema.', 'info')
+    return redirect(url_for('login.login_page'))  
+######################################################################################################################
+@login_route.route('/cancelar', methods=['POST'])
+def cancelar():
+    if request.method == 'POST':
+        return redirect(request.referrer)
+    else:
+        if session.get('role') == 'Coordenador':
+            return redirect(url_for('login.get_coordenador'))  
+        elif session.get('role') == 'Pro-reitor':
+            return redirect(url_for('login.get_proreitor'))  
+        else:
+            return redirect(url_for('login.login_page'))
+######################################################################################################################
+@login_route.route('/get_role')
+@login_required
+def get_role():
+    role = current_user.role  # Obtém o papel do usuário atual
+    if role == 'Coordenador' or role == 'Pro-reitor':
+        # Acessando o contexto do aplicativo Flask
+        permanent_session_lifetime_ms = current_app.config.get('PERMANENT_SESSION_LIFETIME_MS')
+        # Retorna o template correspondente ao papel do usuário
+        return render_template(f'index{role.lower()}.html', permanent_session_lifetime_ms=permanent_session_lifetime_ms)
+    else:
+        flash('Acesso não autorizado.', 'danger')
+        return redirect(url_for('login.login_page'))
+######################################################################################################################

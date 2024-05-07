@@ -1,22 +1,23 @@
 from flask import Flask
 from flask_login import LoginManager
-from .config import login_manager
+from .config import SECRET_KEY, MAIL_SERVER, MAIL_PORT, MAIL_USE_TLS, MAIL_USERNAME, MAIL_PASSWORD
 
 app = Flask(__name__)
 
+# Configurações do Flask
+app.config['SECRET_KEY'] = SECRET_KEY
+
+# Configurações de e-mail
+app.config['MAIL_SERVER'] = MAIL_SERVER
+app.config['MAIL_PORT'] = MAIL_PORT
+app.config['MAIL_USE_TLS'] = MAIL_USE_TLS
+app.config['MAIL_USERNAME'] = MAIL_USERNAME
+app.config['MAIL_PASSWORD'] = MAIL_PASSWORD
+
 # Inicialize o gerenciador de login
+login_manager = LoginManager()
 login_manager.init_app(app)
 
-login_manager = LoginManager()
+# Configurações do LoginManager
 login_manager.session_protection = 'strong'  # Pode ser 'basic', 'strong', 'None'
 login_manager.login_view = 'auth.login'  # Endpoint da rota de login
-
-
-SECRET_KEY = 'my_secret_key_123'
-
-# config.py
-MAIL_SERVER = 'smtp.your_mail_server.com'
-MAIL_PORT = 587  # Adjust port if needed
-MAIL_USE_TLS = True  # Enable encryption
-MAIL_USERNAME = 'your_email@example.com'
-MAIL_PASSWORD = 'your_email_password'

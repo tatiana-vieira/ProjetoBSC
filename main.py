@@ -1,4 +1,4 @@
-from flask import Flask,jsonify, request, render_template, redirect, url_for,session,flash
+from flask import Flask,jsonify, request, render_template, redirect, url_for,session,flash,current_app
 from sqlalchemy import select
 from routes.models import Ensino, Engajamento, Transfconhecimento, Pesquisar, Orientacao, PDI, Meta, Objetivo, Indicador, Producaointelectual, Users, Programa,BSC
 from routes.models import MetaPE,IndicadorPE,AcaoPE,ObjetivoPE,PlanejamentoEstrategico
@@ -8,6 +8,8 @@ from routes.producao import producao_route
 from routes.indicador import indicador_route
 from routes.login import login_route
 from routes.planejamento import planejamento_route
+from routes.relatorioplanejamento import relplanejamento_route
+from routes.relatorioacao import relatorioacao_route
 from routes.db import db
 from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
@@ -19,6 +21,7 @@ from flask_login import current_user
 from flask_login import UserMixin, LoginManager
 from flask_sqlalchemy import SQLAlchemy
 
+
 app = Flask(__name__)
 app.secret_key = "super secret key"
 bcrypt = Bcrypt(app)
@@ -27,12 +30,11 @@ bcrypt = Bcrypt(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost/DB_PRPPG'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-
-# Inicialize o objeto db com o aplicativo 
+# Inicialize o objeto db com o aplicativo
 db.init_app(app)
 
 # Inicialize o objeto Bcrypt
-bcrypt.init_app(app)
+bcrypt = Bcrypt(app)
 
 # Inicialize o objeto LoginManager
 login_manager = LoginManager()
@@ -42,41 +44,40 @@ login_manager.init_app(app)
 def load_user(user_id):
     return Users.query.get(int(user_id))
 
+# Defina o tempo de vida da sessão permanente em segundos
+app.permanent_session_lifetime = 3600  # Por exemplo, 1 hora
+
+@app.context_processor
+def add_session_config():
+    """Add current_app.permanent_session_lifetime converted to milliseconds
+    to context. The config variable PERMANENT_SESSION_LIFETIME is not
+    used because it could be either a timedelta object or an integer
+    representing seconds.
+    """
+    permanent_session_lifetime = current_app.permanent_session_lifetime
+    if isinstance(permanent_session_lifetime, int):
+        permanent_session_lifetime_ms = permanent_session_lifetime * 1000
+    else:
+        permanent_session_lifetime_ms = permanent_session_lifetime.seconds * 1000
+
+    return {
+        'PERMANENT_SESSION_LIFETIME_MS': permanent_session_lifetime_ms,
+    }
+
 app.register_blueprint(login_route)
 app.register_blueprint(multidimensional_route)
 app.register_blueprint(pdi_route)
 app.register_blueprint(producao_route)
 app.register_blueprint(indicador_route)
 app.register_blueprint(planejamento_route)
-##########################################################################################33
+app.register_blueprint(relplanejamento_route)
+app.register_blueprint(relatorioacao_route)
+
+
+#########################################################################################33
 @app.route('/')
 def index():
     return redirect('/login')
-
-@app.route('/login')
-def get_login():
-    try:
-       login =  db.session.query(Users).all()
-       users = [{'id':row.id,'username': row.username,'email': row.email,
-        'password': row.password,'role': row.role,'programa_id':row.programa_id } for row in login.execute()]
-    except Exception as e:
-        print(e)
-        db.session.rollback()
-        return "Erro ao buscar dados do Login"    
-    
-    return render_template('login.html',users=users)
-############################################################################################################
-@app.route('/coordenador')
-def get_coordenador():
-    return render_template('indexcord.html')
-
-@app.route('/proreitor')
-def get_proreitor():
-    return render_template('indexpro.html')
-
-@app.route('/home')
-def get_index():
-    return render_template('index.html')
    
 ######################################################################################################################################
 @app.route('/multidimensional')
@@ -195,29 +196,118 @@ def get_meta():
         db.session.rollback()
 
    return "Erro ao buscar dados de Meta"    
-
-######################################################################################################################
-@app.route('/login/register')
-def get_register():
-    try:
-       
-       login =  db.session.query(Users).all()
-       users = [{'id':row.id,'username': row.username,'email': row.email,
-       'password': row.password,'role': row.role,'programa_id':row.programa_id } for row in login]    
-       
-    except Exception as e:
+#############################################################################################################
+app.route('/indicador')
+def get_indicador():
+   try:
+       indicador = db.session.query(Indicador).all()
+       resultados_indicador = [{'id':row.id,'nome': row.nome,' meta_id': row. meta_pe_id} for row in indicador.execute()]
+       return jsonify(resultados_indicador)
+   except Exception as e:
         print(e)
         db.session.rollback()
-        return "Erro ao buscar dados do usuário"      
-    
-    return render_template('register.html',users=users)
 
+   return "Erro ao buscar dados do Indicador"
+
+#############################################################################################################
+
+app.route('/metape')
+def get_metape():
+   try:
+       metape = db.session.query(MetaPE).all()
+       resultados_meta = [{'id':row.id,'objetivo_pe_id': row.objetivo_pe_id,'nome': row.nome,'porcentagem_execucao':row.porcentagem_execucao} for row in metape.execute()]
+       return jsonify(resultados_meta)
+   except Exception as e:
+        print(e)
+        db.session.rollback()
+
+   return "Erro ao buscar dados de Meta" 
+
+##################################################################################################
+app.route('/objetivope')
+def get_objetivope():
+   try:
+       objetivope = db.session.query(ObjetivoPE).all()
+       resultados_objetivo = [{'id':row.id,'planejamento_estrategico_id': row.planejamento_estrategico_id,'nome': row.nome,'objetivo_pdi_id':row.objetivo_pdi_id} for row in objetivope.execute()]
+       return jsonify(resultados_objetivo) 
+   except Exception as e:
+        print(e)
+        db.session.rollback()
+
+   return "Erro ao buscar dados de Objetivo"
+
+
+##################################################################################################
+app.route('/indicadorpe')
+def get_indicadorpe():
+   try:
+       indicador_pe = db.session.query(IndicadorPE).all()
+       resultados_indicador_pe = [{'id':row.id,'nome': row.nome,' meta_pe_id': row. meta_pe_id} for row in indicador_pe.execute()]
+       return jsonify(resultados_indicador_pe)
+   except Exception as e:
+        print(e)
+        db.session.rollback()
+
+   return "Erro ao buscar dados do Indicador"
+##########################################################################################
+app.route('/planejamentorel')
+def get_planejamentorelpe():
+   try:
+       planejamento_estrategico = db.session.query(PlanejamentoEstrategico).all()
+       resultados_planejamento = [{'id':row.id,'nome': row.nome,' pdi_id': row. pdi_id,'id_programa':row.id_programa} for row in  planejamento_estrategico.execute()]
+       return jsonify(resultados_planejamento)
+   except Exception as e:
+        print(e)
+        db.session.rollback()
+
+   return "Erro ao buscar dados do Planejamento"
+
+##################################################################################################
+app.route('/acaope')
+def get_acaope():
+   try:
+       acao_pe = db.session.query(AcaoPE).all()
+       resultados_acao_pe = [{'id':row.id,'nome': row.nome,'meta_pe_id': row. meta_pe_id,'porcentagem_execucao':row.porcentagem_execucao,'data_inicio':row.data_inicio} for row in acao_pe.execute()]
+       return jsonify( resultados_acao_pe)
+   except Exception as e:
+        print(e)
+        db.session.rollback()
+
+   return "Erro ao buscar dados de Ação"
+##############################################################################################
+
+
+######################################################################################################################
+@app.route('/login/register', methods=['GET', 'POST'])
 def register_page():
-    programa = db.session.query(Programa).all()
-    programas =[{'id':row.id,'codigo': row.codigo,'nome': row.nome} for row in programa] 
-    
-    return render_template('register.html', programas=programas)
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+        role = request.form['role']
+        programa_id = request.form['programa_id']
 
+        new_user = Users(username=username, email=email, role=role, programa_id=programa_id)
+
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+        new_user.password_hash = hashed_password
+
+        if role != 'Coordenador':
+            new_user.programa_id = 0  
+
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            flash('Usuário cadastrado com sucesso!', 'success')
+            return redirect('/login')
+        except Exception as e:
+            print(e)
+            db.session.rollback()
+            flash('Erro ao cadastrar usuário. Por favor, tente novamente.', 'danger')
+
+    programas = Programa.query.all()
+    return render_template('register.html', programas=programas)
 #############Cadastro de PDI ##################################
 def processar_formulario_pdi():
     # Verifica se o usuário está logado e é um Pró-reitor
@@ -283,6 +373,7 @@ def processar_formulario_objetivo():
     db.session.commit()
     
     return redirect(url_for('sucesso_cadastro'))
+    
 ##############################################################################################################################
 ###########################################################################################################################
 @app.route('/cadastro_meta', methods=['GET', 'POST'])
@@ -386,10 +477,6 @@ def processar_formulario_indicador():
     return redirect(url_for('sucesso_cadastro'))
 
 ###############################################################
-@app.route('/PDI')
-def page_pdi():
-    return render_template('pdi.html')
-
 @app.route('/visualizacao')
 def visualizacao():
      return render_template('bsc.html')
@@ -456,35 +543,55 @@ def processar_formulario_planejamentope(programa_do_usuario):
     nome = request.form['nome']
     programa_id = request.form['programa_id']
     
+    # Verifica se o programa_id do usuário corresponde ao programa_id fornecido no formulário
+    if programa_id != programa_do_usuario.id:
+        return 'Acesso não autorizado'
+    
     # Insere os dados no banco de dados, incluindo o programa do usuário
     novo_planejamento = PlanejamentoEstrategico(pdi_id=pdi_id, nome=nome, programa=programa_do_usuario, programa_id=programa_id)
     db.session.add(novo_planejamento)
     db.session.commit()
     
     # Renderiza o template 'planejamento.html' com os dados da lista_pdispe
-    return redirect(url_for('sucesso_cadastro'))    
+    return redirect(url_for('sucesso_cadastro'))
 ######################################################################################
 @app.route('/rota_protegida')
 @login_required
 def rota_protegida():
+    # Armazena a URL atual na sessão
+    session['previous_url'] = request.url
     # Esta rota só será acessível para usuários autenticados
     return 'Esta rota é protegida!'
 ##################################################################################################################################
-@app.route('/associar_objetivospe', methods=['POST'])
+@app.route('/associar_objetivospe', methods=['POST', 'GET'])
 def associar_objetivospe():
     if 'email' not in session:
         flash('Você precisa estar logado para acessar esta página.', 'danger')
         return redirect(url_for('login_page'))
+
+    # Verifica se o usuário é um coordenador e se o programa_id corresponde ao programa do usuário logado
+    if not current_user.is_authenticated or current_user.role != 'Coordenador':
+        return 'Acesso não autorizado'
     
+    # Verifica se o programa_id do coordenador está na sessão
+    if 'programa_id' not in session:
+        flash('Você precisa estar associado a um programa para acessar esta página.', 'danger')
+        return redirect(url_for('get_coordenador'))
+
+    # Recupera o programa_id do coordenador da sessão
+    programa_id = session['programa_id']
+
     if request.method == 'POST':
         nome = request.form['nome']
-        objetivo_pdi_id= request.form['objetivo_id']   
+        objetivo_pdi_id = request.form['objetivo_id']   
         planejamento_estrategico_id = request.form['planejamento_id']
 
-        # Verifica se o programa_id está na sessão
-        if 'programa_id' not in session:
-            flash('Nenhum programa do usuário encontrado. Faça login novamente.', 'danger')
-            return redirect(url_for('login.login_page'))
+        # Verifica se o programa_id corresponde ao programa do coordenador logado
+        if planejamento_estrategico_id != programa_id:
+            return 'Acesso não autorizado'
+
+        # Recupera os objetivos associados ao programa do coordenador logado
+        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=programa_id).all()
 
         # Cria uma nova meta e a adiciona ao banco de dados
         novo_objetivo = ObjetivoPE(
@@ -496,16 +603,10 @@ def associar_objetivospe():
         flash('Objetivo cadastrado com sucesso!', 'success')
         return redirect(url_for('get_coordenador'))
     else:
-        # Se o método não for POST, apenas renderiza o formulário HTML
-        planejamento_estrategico = PlanejamentoEstrategico.query.all()
-        objetivos_por_planejamento = []
+        # Se o método não for POST, apenas renderiza o formulário HTML com os objetivos associados ao programa do coordenador logado
+        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=programa_id).all()
 
-        for pe in planejamento_estrategico:
-            objetivos = ObjetivoPE.query.filter_by(pdi_id=pe.pdi_id).all()
-            objetivos_por_planejamento.append((pe, objetivos))
-
-        # Renderiza o formulário HTML com os objetivos associados a cada planejamento estratégico
-        return render_template('objetivope.html', objetivos_por_planejamento=objetivos_por_planejamento)
+        return render_template('objetivope.html', objetivos=objetivos)
 ##################################################################################################################################
 ###############################################################################################################################
 @app.route('/associar_metaspe', methods=['POST'])
@@ -564,14 +665,14 @@ def associar_indicadorespe():
     return render_template('indicadorpe.html')
 ##############################################################################################################
 ########################################################################################################
-@app.route('/associar_associar_acaope', methods=['GET', 'POST'])
-def associar_associar_acaope():
+@app.route('/associar_acaope', methods=['GET', 'POST'])
+def associar_acaope():
     if request.method == 'POST':
         meta_pe_id = request.form['meta_pe_id']
-        nome_acao = request.form['nome']
+        nome = request.form['nome']
         porcentagem_execucao = request.form['porcentagem_execucao']   
         data_inicio = request.form['data_inicio']
-        data_fim = request.form['data_fim']       
+        data_termino = request.form['data_termino']       
 
 
         meta_pe =MetaPE.query.get(meta_pe_id)
@@ -580,16 +681,31 @@ def associar_associar_acaope():
             return redirect(url_for('get_coordenador'))
         
         # Criar um novo indicador associado à meta
-        nova_acao = AcaoPE(nom_acao=nome_acao, meta_pe_id=meta_pe_id,porcentagem_execucao=porcentagem_execucao,data_inicio=data_inicio,data_fim=data_fim)
+        nova_acao = AcaoPE(nome=nome, meta_pe_id=meta_pe_id,porcentagem_execucao=porcentagem_execucao,data_inicio=data_inicio,data_termino=data_termino)
         db.session.add(nova_acao)
         db.session.commit()
         
-        return 'Indicador cadastrado com sucesso!'
+        return 'Ação cadastrada com sucesso!'
     
     # Se o método for GET, renderize o template HTML
     return render_template('acaope.html')
 
-#############################################################################################################
+#######################################################################################################################################3
+@app.route('/cancelar', methods=['GET', 'POST'])
+def cancelar():
+    
+    # Limpar a sessão
+    session.clear()
 
+    # Redirecionar para a página principal correspondente à função do usuário
+    if session.get('role') == 'Coordenador':
+        return redirect(url_for('get_coordenador'))
+    elif session.get('role') == 'Pro-reitor':
+        return redirect(url_for('get_proreitor'))
+    else:
+        # Caso o usuário não esteja logado, redirecione para a página inicial
+        return redirect(url_for('index'))
+
+################################################################################################################################
 if __name__ == '__main__':
     app.run(debug=True)
