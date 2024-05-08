@@ -274,8 +274,6 @@ def get_acaope():
         db.session.rollback()
 
    return "Erro ao buscar dados de Ação"
-##############################################################################################
-
 
 ######################################################################################################################
 @app.route('/login/register', methods=['GET', 'POST'])
@@ -691,21 +689,6 @@ def associar_acaope():
     return render_template('acaope.html')
 
 #######################################################################################################################################3
-@app.route('/cancelar', methods=['GET', 'POST'])
-def cancelar():
-    
-    # Limpar a sessão
-    session.clear()
-
-    # Redirecionar para a página principal correspondente à função do usuário
-    if session.get('role') == 'Coordenador':
-        return redirect(url_for('get_coordenador'))
-    elif session.get('role') == 'Pro-reitor':
-        return redirect(url_for('get_proreitor'))
-    else:
-        # Caso o usuário não esteja logado, redirecione para a página inicial
-        return redirect(url_for('index'))
-
 ################################################################################################################################
 if __name__ == '__main__':
     app.run(debug=True)

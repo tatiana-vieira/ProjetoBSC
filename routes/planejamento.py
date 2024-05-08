@@ -9,7 +9,7 @@ from functools import wraps
 planejamento_route = Blueprint('planejamento', __name__)
 login_manager = LoginManager(planejamento_route)
 
-# Implemente o decorador coordenador_required
+
 # Implemente o decorador coordenador_required
 def coordenador_required(f):
     @wraps(f)
@@ -51,7 +51,7 @@ def cadastro_planejamentope():
             return redirect(url_for('login.login_page'))
 
         return render_template('planejamento.html', pdis=pdis, programa_do_usuario=programa_do_usuario)
-    
+     
 @planejamento_route.route('/sucesso_cadastro')
 def sucesso_cadastro():
     return 'Indicador cadastrado com sucesso!'
@@ -76,7 +76,7 @@ def associar_objetivospe():
         db.session.commit()
 
         flash('Objetivo cadastrado com sucesso!', 'success')
-        return redirect(url_for('get_coordenador'))
+        return redirect(url_for('login.get_coordenador'))
     else:
         # Se o método não for POST, obtemos os dados necessários apenas do programa do Coordenador logado
         programa_id = current_user.programa_id
@@ -113,7 +113,7 @@ def associar_metaspe():
         objetivo_pe = ObjetivoPE.query.get(objetivo_pe_id)
         if objetivo_pe is None:
             flash('Objetivo PE não encontrado!', 'error')
-            return redirect(url_for('get_coordenador'))
+            return redirect(url_for('login.get_coordenador'))  # Usando 'login.get_coordenador' aqui
         
         # Cria uma nova meta PE e a associa ao objetivo PE
         nova_meta = MetaPE(
@@ -126,7 +126,7 @@ def associar_metaspe():
         db.session.commit()
 
         flash('Meta cadastrada com sucesso!', 'success')
-        return redirect(url_for('get_coordenador'))
+        return redirect(url_for('login.get_coordenador'))  # Usando 'login.get_coordenador' aqui
     else:
         # Se o método não for POST, obtenha os dados necessários para o formulário
         # Obtenha o programa do Coordenador logado
@@ -143,7 +143,6 @@ def associar_metaspe():
         
         # Renderiza o formulário HTML com os dados obtidos
         return render_template('metaspe.html', planejamentos_estrategicos=planejamentos_estrategicos, objetivos_pe=objetivos_pe)
-    
 #####################################################################################################################################3
 @planejamento_route.route('/associar_indicadorespe', methods=['GET', 'POST'])
 def associar_indicadorespe():
@@ -155,7 +154,7 @@ def associar_indicadorespe():
         meta_pe = MetaPE.query.filter_by(id=meta_pe_id).join(ObjetivoPE).join(PlanejamentoEstrategico).join(Programa).filter(Programa.id == current_user.programa_id).first()
         if meta_pe is None:
             flash('Meta não encontrada ou não associada ao seu programa!', 'error')
-            return redirect(url_for('get_coordenador'))
+            return redirect(url_for('login.get_coordenador'))
         
         # Criar um novo indicador associado à meta
         novo_indicador = IndicadorPE(nome=nome_indicador, meta_pe_id=meta_pe_id)
@@ -163,7 +162,7 @@ def associar_indicadorespe():
         db.session.commit()
 
         flash('Indicador cadastrado com sucesso!', 'success')
-        return redirect(url_for('get_coordenador'))
+        return redirect(url_for('login.get_coordenador'))
     
     else:
        # Se o método não for POST, obtenha os dados necessários para o formulário

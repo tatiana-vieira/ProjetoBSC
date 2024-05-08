@@ -63,27 +63,26 @@ def logout():
     flash('Você saiu do sistema.', 'info')
     return redirect(url_for('login.login_page'))  
 ######################################################################################################################
-@login_route.route('/cancelar', methods=['POST'])
+@login_route.route('/cancelar', methods=['GET', 'POST'])
 def cancelar():
     if request.method == 'POST':
         return redirect(request.referrer)
+    
+    # Se a requisição não for POST, então redirecionar com base no papel do usuário na sessão
+    role = session.get('role')
+    if role == 'Coordenador':
+        return redirect(url_for('login.get_coordenador'))
+    elif role == 'Pro-reitor':
+        return redirect(url_for('login.get_proreitor'))
     else:
-        if session.get('role') == 'Coordenador':
-            return redirect(url_for('login.get_coordenador'))  
-        elif session.get('role') == 'Pro-reitor':
-            return redirect(url_for('login.get_proreitor'))  
-        else:
-            return redirect(url_for('login.login_page'))
+        return redirect(url_for('index'))  # Redireciona para a página inicial
 ######################################################################################################################
 @login_route.route('/get_role')
 @login_required
 def get_role():
-    role = current_user.role  # Obtém o papel do usuário atual
+    role = current_user.role  
     if role == 'Coordenador' or role == 'Pro-reitor':
-        # Acessando o contexto do aplicativo Flask
-        permanent_session_lifetime_ms = current_app.config.get('PERMANENT_SESSION_LIFETIME_MS')
-        # Retorna o template correspondente ao papel do usuário
-        return render_template(f'index{role.lower()}.html', permanent_session_lifetime_ms=permanent_session_lifetime_ms)
+        return render_template(f'index{role.lower()}.html')
     else:
         flash('Acesso não autorizado.', 'danger')
         return redirect(url_for('login.login_page'))

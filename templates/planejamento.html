@@ -19,9 +19,7 @@
         <input type="text" id="nome" name="nome" required style="width: 100%; margin-bottom: 10px;"><br>
         <label for="nome">Nome do Programa:</label><br>
         <select id="programa" name="programa_id" required style="width: 100%; margin-bottom: 10px;">
-            {% for programa_do_usuario in programas %}
-               <option value="{{ programa_do_usuario.id }}">{{ programa_do_usuario.nome }}</option>
-            {% endfor %}          
+            <option value="{{ programa_do_usuario.id }}">{{ programa_do_usuario.nome }}</option>         
         </select>
         <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
         <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button><br>            
@@ -33,8 +31,8 @@
     function cancelar() {
         // Exibe um aviso de confirmação antes de redirecionar
         if (confirm('Tem certeza que deseja cancelar?')) {
-            // Redireciona o usuário para a página inicial
-            window.location.href = '/cancelar';
+            // Redireciona o usuário para a página principal definida no Flask
+            window.location.href = '{{ url_for("index") }}'; // Altere "index" para a função correta, se necessário
         }
     }
 </script>
