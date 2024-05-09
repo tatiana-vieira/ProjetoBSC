@@ -258,12 +258,25 @@ class MetaPE(db.Model):
     porcentagem_execucao = db.Column(db.Float)
 
     objetivo_pe = db.relationship('ObjetivoPE',backref="meta_pe")
+    
 
 class IndicadorPE(db.Model):
     __tablename__ = 'indicador_pe'
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(250), nullable=False)
     meta_pe_id = db.Column(db.Integer, db.ForeignKey('meta_pe.id'))
+    descricao = db.column(db.String(550))
+
+    meta_pe = db.relationship('MetaPE',backref="indicador_pe")
+
+    
+class Valorindicador(db.Model):
+    __tablename__ = 'valorindicador'
+    id = db.Column(db.Integer, primary_key=True)
+    valor = db.Column(db.Numeric(10, 2))
+    ano= db.Column(db.Integer,nullable=False)
+    semestre = db.Column(db.Integer,nullable=False)
+    indicadorpe_id = db.Column(db.Integer, db.ForeignKey('indicador_pe.id'))  # Correção aqui
 
 class AcaoPE(db.Model):
     __tablename__ = 'acao_pe'

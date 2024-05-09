@@ -7,6 +7,7 @@ from routes.pdiprppg import pdi_route
 from routes.producao import producao_route
 from routes.indicador import indicador_route
 from routes.login import login_route
+from routes.relatorioindicador import relatorioindicador_route
 from routes.planejamento import planejamento_route
 from routes.relatorioplanejamento import relplanejamento_route
 from routes.relatorioacao import relatorioacao_route
@@ -72,6 +73,7 @@ app.register_blueprint(indicador_route)
 app.register_blueprint(planejamento_route)
 app.register_blueprint(relplanejamento_route)
 app.register_blueprint(relatorioacao_route)
+app.register_blueprint(relatorioindicador_route)
 
 
 #########################################################################################33
@@ -646,6 +648,7 @@ def associar_indicadorespe():
     if request.method == 'POST':
         meta_pe_id = request.form['meta_pe_id']
         nome_indicador = request.form['nome']
+        descricao = request.form['descricao ']
 
         meta_pe =MetaPE.query.get(meta_pe_id)
         if meta_pe is None:
@@ -653,7 +656,7 @@ def associar_indicadorespe():
             return redirect(url_for('get_coordenador'))
         
         # Criar um novo indicador associado à meta
-        novo_indicador = IndicadorPE(nome=nome_indicador, meta_pe_id=meta_pe_id)
+        novo_indicador = IndicadorPE(nome=nome_indicador, meta_pe_id=meta_pe_id,descricao=descricao)
         db.session.add(novo_indicador)
         db.session.commit()
         
