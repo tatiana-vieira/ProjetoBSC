@@ -1,0 +1,24 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+  Planejamento Estratégico -Alterar Valor do Indicador
+{% endblock %}
+{% block conteudo %}
+<body>
+  <h1 style="text-align: center;">Alterar Ação</h1>
+  <form action="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}" method="POST" style="text-align: center;">
+     {% for valorindicador in valores_indicadores %}
+     <label for="semestre">Semestre:</label><br>
+     <input type="text" id="semestre{{ loop.index }}" name="semestre{{ loop.index }}" value="{{ valorindicador.semestre }}" required style="width: 80%; margin-bottom: 10px;"><br>
+      
+     <label for="ano">Ano:</label><br>
+     <input type="text" id="ano{{ loop.index }}" name="ano{{ loop.index }}" value="{{ valorindicador.ano }}" required style="width: 80%; margin-bottom: 10px;"><br>
+      
+     <label for="valor">Valor:</label><br>
+     <input type="text" id="valor{{ loop.index }}" name="valor{{ loop.index }}" value="{{ valorindicador.valor }}" required style="width: 80%; margin-bottom: 10px;"><br>
+     {% endfor %}
+      
+     <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar</button>
+  </form>
+</body>
+{% endblock conteudo %}

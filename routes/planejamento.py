@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
-from .models import Users, Programa, PlanejamentoEstrategico, PDI,ObjetivoPE,Objetivo,MetaPE,AcaoPE,IndicadorPE,Valorindicador # Certifique-se de importar seus modelos corretamente
+from .models import Users, Programa, PlanejamentoEstrategico, PDI,ObjetivoPE,Objetivo,MetaPE,AcaoPE,IndicadorPlan,Valorindicador # Certifique-se de importar seus modelos corretamente
 from routes.db import db
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, login_required, LoginManager, current_user
@@ -144,72 +144,7 @@ def associar_metaspe():
         # Renderiza o formulário HTML com os dados obtidos
         return render_template('metaspe.html', planejamentos_estrategicos=planejamentos_estrategicos, objetivos_pe=objetivos_pe)
 #####################################################################################################################################3
-@planejamento_route.route('/associar_indicadorespe', methods=['GET', 'POST'])
-def associar_indicadorespe():
-    if request.method == 'POST':
-        meta_pe_id = request.form['meta_pe_id']
-        nome_indicador = request.form['nome']
-        descricao = request.form['descricao']
-
-        # Verifica se a meta PE existe e se está associada a um objetivo do programa do Coordenador
-        meta_pe = MetaPE.query.get(meta_pe_id)
-        if meta_pe is None:
-            flash('Meta não encontrada!', 'error')
-            return redirect(url_for('get_coordenador'))
-
-        # Verifica se o indicador já existe na tabela IndicadorPE
-        indicador_existente = IndicadorPE.query.filter_by(nome=nome_indicador, meta_pe_id=meta_pe_id).first()
-
-        # Se o indicador já existir, obtenha o ID
-        if indicador_existente:
-            indicador_id = indicador_existente.id
-        else:
-            # Se o indicador não existir, adicione-o à tabela IndicadorPE
-            novo_indicador = IndicadorPE(nome=nome_indicador, meta_pe_id=meta_pe_id, descricao=descricao)
-            db.session.add(novo_indicador)
-            db.session.commit()
-            # Obtenha o ID do indicador recém-adicionado
-            indicador_id = novo_indicador.id
-
-        # Salvar os valores do indicador na tabela Valorindicador
-        ano = request.form.getlist('ano[]')
-        semestre = request.form.getlist('semestre[]')
-        valor = request.form.getlist('valor[]')
-
-        for ano, semestre, valor in zip(ano, semestre, valor):
-            novo_valor = Valorindicador(indicadorpe_id=indicador_id, ano=ano, semestre=semestre, valor=valor)
-            db.session.add(novo_valor)
-
-        db.session.commit()
-
-        flash('Indicador cadastrado com sucesso!', 'success')
-        return redirect(url_for('login.get_coordenador'))
-    else:
-        # Se o método não for POST, obtenha os dados necessários para o formulário
-        # Obtenha o programa do Coordenador logado
-        programa_id = current_user.programa_id
-        
-        # Se o programa existir, obtenha os planejamentos estratégicos associados a ele
-        if programa_id:
-            planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-            
-            # Inicialize uma lista para armazenar as metas associadas a objetivos associados a esses planejamentos estratégicos
-            metas_pe_associadas = []
-            
-            # Para cada planejamento estratégico, obtenha os objetivos associados
-            for planejamento in planejamentos:
-                objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
-                
-                # Para cada objetivo, obtenha as metas associadas
-                for objetivo in objetivos:
-                    metas_pe = MetaPE.query.filter_by(objetivo_pe_id=objetivo.id).all()
-                    metas_pe_associadas.extend(metas_pe)
-
-            return render_template('indicadorpe.html', metas_pe=metas_pe_associadas)
-        else:
-            flash('Programa não encontrado!', 'error')
-            return redirect(url_for('get_coordenador'))
-#####################################################################################################################
+####################################################################################################################
 #######################################################################################################################
 @planejamento_route.route('/associar_acaope', methods=['GET', 'POST'])
 def associar_acaope():
@@ -289,7 +224,7 @@ def alterar_acaope(acao_id):
     else:
         # Retorna o formulário de alteração preenchido com os dados da ação
         return render_template('alterar_acaope.html', acao=acao)
-    
+################################################################################################
 ################################################# Pro -reitor ###################################
 @planejamento_route.route('/visualizar_programaspe')
 def visualizar_programaspe():
@@ -305,7 +240,101 @@ def visualizar_dados_programa():
     planejamentope = PlanejamentoEstrategico.query.all()
     objetivospe = ObjetivoPE.query.filter(ObjetivoPE.objetivo_pdi_id.in_([pdi.id for pdi in planejamentope])).all()
     metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
-    indicadores = IndicadorPE.query.filter(IndicadorPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()
+    indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metaspe])).all()
     
     # Passar os dados para o template
     return render_template('dados_programa.html', programa=programa, planejamentos=planejamentope, objetivos=objetivospe, metas=metaspe, indicadores=indicadores)
+#############################################################################################33
+@planejamento_route.route('/associar_indicadorespe', methods=['GET', 'POST'])
+def associar_indicadorespe():
+    # Se o programa existir, obtenha os planejamentos estratégicos associados a ele
+    programa_id = current_user.programa_id
+    if programa_id:
+        planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+
+        # Inicialize uma lista para armazenar as metas associadas a objetivos associados a esses planejamentos estratégicos
+        metas_pe_associadas = []
+
+        # Para cada planejamento estratégico, obtenha os objetivos associados
+        for planejamento in planejamentos:
+            objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+
+            # Para cada objetivo, obtenha as metas associadas
+            for objetivo in objetivos:
+                metas_pe = MetaPE.query.filter_by(objetivo_pe_id=objetivo.id).all()
+                metas_pe_associadas.extend(metas_pe)
+
+        # Se a requisição for POST, processar o formulário
+        if request.method == 'POST':
+            # Obtenha os dados do formulário
+            meta_pe_id = request.form['meta_pe_id']
+            nome_indicador = request.form['nome']
+            descricao = request.form['descricao']  # Adicionado para obter a descrição do indicador 
+
+            # Verifica se a meta PE existe e se está associada a um objetivo do programa do Coordenador
+            meta_pe = MetaPE.query.get(meta_pe_id)
+            if meta_pe is None:
+                flash('Meta não encontrada!', 'error')
+                return redirect(url_for('get_coordenador'))
+
+            # Verifica se o indicador já existe na tabela IndicadorPE
+            indicador_existente = IndicadorPlan.query.filter_by(nome=nome_indicador, meta_pe_id=meta_pe_id).first()
+
+            # Se o indicador já existir, obtenha o ID
+            if indicador_existente:
+                indicador_id = indicador_existente.id
+            else:
+                # Se o indicador não existir, adicione-o à tabela IndicadorPE
+                novo_indicador = IndicadorPlan(nome=nome_indicador, meta_pe_id=meta_pe_id, descricao=descricao)  # Adicionado descricao
+                db.session.add(novo_indicador)
+                db.session.commit()
+                # Obtenha o ID do indicador recém-adicionado
+                indicador_id = novo_indicador.id
+
+            # Salvar os valores do indicador na tabela Valorindicador
+            ano = request.form.getlist('ano[]')
+            semestre = request.form.getlist('semestre[]')
+            valor = request.form.getlist('valor[]')
+
+            for ano, semestre, valor in zip(ano, semestre, valor):
+                novo_valor = Valorindicador(indicadorpe_id=indicador_id, ano=ano, semestre=semestre, valor=valor)
+                db.session.add(novo_valor)
+
+            db.session.commit()
+
+            flash('Indicador cadastrado com sucesso!', 'success')
+            return redirect(url_for('login.get_coordenador'))
+        
+        # Se a requisição for GET, renderize o template com as metas
+        return render_template('indicadorpe.html', metas_pe=metas_pe_associadas)
+    
+    else:
+        flash('Programa não encontrado!', 'error')
+        return redirect(url_for('get_coordenador'))
+#########################################################################################################3
+@planejamento_route.route('/alterar_indicadorpe/<int:indicador_id>', methods=['GET', 'POST'])
+def alterar_indicadorpe(indicador_id):
+    # Busca o indicador a ser alterado pelo ID
+    indicador = IndicadorPlan.query.get_or_404(indicador_id)
+    
+    if request.method == 'POST':
+        # Filtra os valores indicadores pelo ID do indicador
+        valores_indicadores = Valorindicador.query.filter_by(indicadorpe_id=indicador_id).all()
+        
+        # Atualiza os valores indicadores com os dados do formulário, se fornecidos
+        for valorindicador in valores_indicadores:
+            valorindicador.semestre = request.form.get('semestre' + str(valorindicador.id))
+            valorindicador.ano = request.form.get('ano' + str(valorindicador.id))
+            valorindicador.valor = request.form.get('valor' + str(valorindicador.id))
+        
+        # Salva as alterações no banco de dados
+        db.session.commit()
+
+        flash('Indicador alterado com sucesso!', 'success')
+        return redirect(url_for('login.get_coordenador'))
+    else:
+        # Filtra os valores indicadores pelo ID do indicador
+        valores_indicadores = Valorindicador.query.filter_by(indicadorpe_id=indicador_id).all()
+        
+        # Retorna o formulário de alteração preenchido com os dados do indicador e valores indicadores
+        return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)

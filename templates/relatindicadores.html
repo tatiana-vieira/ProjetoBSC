@@ -1,16 +1,16 @@
 {% extends 'basecord.html' %}
 
 {% block titulo %}
-  Planejamento Estratégico - 2024:2028 (Ações)
+  Planejamento Estratégico - 2024:2028 (Indicadores)
 {% endblock %}
 
 {% block conteudo %}
 <body>
-    <h4 style="text-align: center; color: #003366;">Planejamento Estratégico (Ações)</h4>
+    <h4 style="text-align: center; color: #003366;">Planejamento Estratégico (Indicadores)</h4>
 
     <style>
         table {
-            width: 95%;
+            width: 90%;
             border-collapse: collapse;
         }
         th, td {
@@ -30,44 +30,39 @@
         }
     </style>
 
-    <table>
-        <thead>
-            <tr>
-                      
-                <th>Meta</th>           
-                <th>Porcentagem de Execução</th>
-                <th>Descrição</th>
-                <th>Valor</th>
-                <th>Semestre</th>
-                <th>Valor</th>
-                <th>Ano</th>
-                <th>Alterar</th> <!-- Nova coluna para o botão "Alterar" -->
-            </tr>
-        </thead>
-        <tbody>
-            {% for objetivo in objetivos %}
-                {% for meta in metas if meta.objetivo_pe_id == objetivo.id %}
-                    {% for indicador in acaope if indicador.meta_pe_id == meta.id %}
-                        <tr>
-                            <td>{{ meta.nome }}</td>
-                            <td>{{ meta.porcentagem_execucao }}</td>
-                            <td>{{indicador.nome}}</td>
-                            <td>{{indicador.descricao}}</td>
-                            <td>{{valorindicador.valor }}</td>
-                            <td>{{valorindicador.semestre }}</td>                           
-                            <td>{{valorindicador.ano }}</td>
-                            <td><a href="{{ url_for('planejamento.alterar_acaope', acao_id=acao.id) }}"><button style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Alterar</button></a></td>
-                     {% endfor %}
-                    {% if loop.last %}
-                        {% for _ in range(2 - loop.length) %}
-                            <tr><td colspan="7"></td></tr> <!-- Adapte para o número total de colunas -->
-                        {% endfor %}
-                    {% endif %}
+<table>
+    <thead>
+        <tr>
+            <th>Meta</th>           
+            <th>Porcentagem de Execução</th>
+            <th>Indicador</th>
+            <th>Descrição</th>
+            <th>Ano</th>
+            <th>Semestre</th>
+            <th>Valor</th>
+            <th>Alterar</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for meta in metas %}
+            {% for indicador in indicadores_por_meta[meta.id] %}
+                {% for valorindicador in valores_indicadores[indicador.id] %}
+                    <tr>
+                        <td>{{ meta.nome if meta.nome else '' }}</td>
+                        <td>{{ meta.porcentagem_execucao if meta.porcentagem_execucao else '' }}</td>
+                        <td>{{ indicador.nome if indicador.nome else '' }}</td>
+                        <td>{{ indicador.descricao | default('') }}</td>
+                        <td>{{ valorindicador.ano if valorindicador.ano else '' }}</td>
+                        <td>{{ valorindicador.semestre if valorindicador.semestre else '' }}</td>
+                        <td>{{ valorindicador.valor if valorindicador.valor else '' }}</td>
+                        <td><a href="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}"><button style="background-color: green; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">Alterar</button></a></td>
+                    </tr>
                 {% endfor %}
             {% endfor %}
-        </tbody>
-    </table>
-
+        {% endfor %}
+    </tbody>
+</table>
+            
     <script>
         function alterarAcao(id) {
             // Adicione aqui o código para manipular a ação de alteração com base no ID passado

@@ -1,7 +1,7 @@
 from flask import Flask,jsonify, request, render_template, redirect, url_for,session,flash,current_app
 from sqlalchemy import select
 from routes.models import Ensino, Engajamento, Transfconhecimento, Pesquisar, Orientacao, PDI, Meta, Objetivo, Indicador, Producaointelectual, Users, Programa,BSC
-from routes.models import MetaPE,IndicadorPE,AcaoPE,ObjetivoPE,PlanejamentoEstrategico
+from routes.models import MetaPE,IndicadorPlan,AcaoPE,ObjetivoPE,PlanejamentoEstrategico
 from routes.multidimensional import multidimensional_route
 from routes.pdiprppg import pdi_route
 from routes.producao import producao_route
@@ -243,7 +243,7 @@ def get_objetivope():
 app.route('/indicadorpe')
 def get_indicadorpe():
    try:
-       indicador_pe = db.session.query(IndicadorPE).all()
+       indicador_pe = db.session.query(IndicadorPlan).all()
        resultados_indicador_pe = [{'id':row.id,'nome': row.nome,' meta_pe_id': row. meta_pe_id} for row in indicador_pe.execute()]
        return jsonify(resultados_indicador_pe)
    except Exception as e:
@@ -656,7 +656,7 @@ def associar_indicadorespe():
             return redirect(url_for('get_coordenador'))
         
         # Criar um novo indicador associado à meta
-        novo_indicador = IndicadorPE(nome=nome_indicador, meta_pe_id=meta_pe_id,descricao=descricao)
+        novo_indicador = IndicadorPlan(nome=nome_indicador, meta_pe_id=meta_pe_id,descricao=descricao)
         db.session.add(novo_indicador)
         db.session.commit()
         

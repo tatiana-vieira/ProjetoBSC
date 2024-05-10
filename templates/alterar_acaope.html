@@ -9,16 +9,16 @@
     <h1 style="text-align: center;">Alterar Ação</h1>
     <form action="{{ url_for('planejamento.alterar_acaope', acao_id=acao.id) }}" method="POST" style="text-align: center;">
        <label for="data_termino">Data de Término:</label><br>
-       <input type="date" id="data_termino" name="data_termino" value="{{ acao.data_termino }}" required style="width: 80%; margin-bottom: 10px;"><br>
+       <input type="date" id="data_termino" name="data_termino" value="{{ acao.data_termino }}" required style="width: 50%; margin-bottom: 10px;"><br>
         
         <label for="responsavel">Responsável:</label><br>
-        <input type="text" id="responsavel" name="responsavel" value="{{ acao.responsavel }}" required style="width: 80%; margin-bottom: 10px;"><br>
+        <input type="text" id="responsavel" name="responsavel" value="{{ acao.responsavel }}" required style="width: 50%; margin-bottom: 10px;"><br>
         
         <label for="status">Status:</label><br>
-        <input type="text" id="status" name="status" value="{{ acao.status }}" required style="width: 80%; margin-bottom: 10px;"><br>
+        <input type="text" id="status" name="status" value="{{ acao.status }}" required style="width: 50%; margin-bottom: 10px;"><br>
         
         <label for="observacao">Observação:</label><br>
-        <textarea id="observacao" name="observacao" rows="4" cols="50">{{ acao.observacao }}</textarea><br><br>
+        <textarea id="observacao" name="observacao" rows="4" cols="80">{{ acao.observacao }}</textarea><br><br>
         
         <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar</button>
     </form>
