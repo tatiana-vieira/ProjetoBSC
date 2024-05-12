@@ -11,6 +11,7 @@ from routes.relatorioindicador import relatorioindicador_route
 from routes.planejamento import planejamento_route
 from routes.relatorioplanejamento import relplanejamento_route
 from routes.relatorioacao import relatorioacao_route
+from routes.relatoriometas import relatoriometas_route
 from routes.db import db
 from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
@@ -74,6 +75,7 @@ app.register_blueprint(planejamento_route)
 app.register_blueprint(relplanejamento_route)
 app.register_blueprint(relatorioacao_route)
 app.register_blueprint(relatorioindicador_route)
+app.register_blueprint(relatoriometas_route)
 
 
 #########################################################################################33
@@ -691,7 +693,8 @@ def associar_acaope():
     # Se o método for GET, renderize o template HTML
     return render_template('acaope.html')
 
-#######################################################################################################################################3
+#######################################################################################################################################
+
 ################################################################################################################################
 if __name__ == '__main__':
     app.run(debug=True)

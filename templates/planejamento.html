@@ -27,13 +27,12 @@
     </div>
 </div>
 
-<script>
-    function cancelar() {
-        // Exibe um aviso de confirmação antes de redirecionar
-        if (confirm('Tem certeza que deseja cancelar?')) {
-            // Redireciona o usuário para a página principal definida no Flask
-            window.location.href = '{{ url_for("index") }}'; // Altere "index" para a função correta, se necessário
+
+    <script>
+        function cancelar() {
+            // Redireciona para a página do coordenador após o login
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
         }
-    }
-</script>
+    </script> 
+
 {% endblock %}

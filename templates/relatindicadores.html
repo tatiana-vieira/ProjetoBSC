@@ -68,10 +68,19 @@
             // Adicione aqui o código para manipular a ação de alteração com base no ID passado
             alert("Alterar Indicador com ID: " + id);
         }
-    </script>
+        </script>
     <div style="text-align: center;">
+        <form action="{{ url_for('associar_indicadorespe') }}" method="GET" style="display: inline;">
         <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
-        <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button>
+        </form>
+        <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; display: inline;">Cancelar</button>
+
+        <script>
+            function cancelar() {
+                // Redireciona para a página do coordenador após o login
+                window.location.href = "{{ url_for('login.get_coordenador') }}";
+            }
+        </script> 
     </div>
 </body>
 {% endblock conteudo %}

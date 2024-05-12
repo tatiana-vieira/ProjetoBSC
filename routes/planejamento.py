@@ -338,3 +338,30 @@ def alterar_indicadorpe(indicador_id):
         
         # Retorna o formulário de alteração preenchido com os dados do indicador e valores indicadores
         return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
+##############################################################################################################################
+@planejamento_route.route('/alterar_metape/<int:metape_id>', methods=['GET', 'POST'])
+def alterar_metape(metape_id):
+    # Busca a meta PE a ser alterada pelo ID
+    meta_pe = MetaPE.query.get_or_404(metape_id)
+    mensagem = None  # Inicializa a mensagem como None
+
+    if request.method == 'POST':
+        # Atualiza os campos da meta PE com os dados do formulário, se fornecidos
+        if 'nome' in request.form:
+            meta_pe.nome = request.form['nome']
+        if 'porcentagem_execucao' in request.form:
+            meta_pe.porcentagem_execucao = request.form['porcentagem_execucao']
+        
+        # Salva as alterações no banco de dados
+        db.session.commit()
+
+        flash('Meta alterada com sucesso!', 'success')
+        return redirect(url_for('sucesso'))  # Redireciona para a página de sucesso
+
+    # Passa a variável 'meta' para o template
+    return render_template('alterarmetas.html', meta=meta_pe, mensagem=mensagem)
+#############################################################################
+@planejamento_route.route('/sucesso', methods=['GET'])
+def sucesso():
+    mensagem = "Meta alterada com sucesso!"
+    return render_template('sucesso.html', mensagem=mensagem)

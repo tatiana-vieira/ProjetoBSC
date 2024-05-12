@@ -34,14 +34,11 @@
     </form>
 </div>
 <script>
-    function cancelar() {
-        // Exibe um aviso de confirmação antes de redirecionar
-        if (confirm('Tem certeza que deseja cancelar?')) {
-            // Redireciona o usuário para a página inicial
-            window.location.href = '/cancelar';
-        }
-    }
-</script>
+  function cancelar() {
+      // Redireciona para a página do coordenador após o login
+      window.location.href = "{{ url_for('login.get_coordenador') }}";
+  }
+</script> 
   <!-- Exibir objetivos relacionados ao PDI selecionado -->
 
 {% endblock %}

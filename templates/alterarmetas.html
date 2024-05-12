@@ -1,0 +1,35 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+  Alterar Metas
+{% endblock %}
+
+{% block conteudo %}
+<body>
+    <h4 style="text-align: center; color: #003366;">Alterar Metas</h4>
+
+    {% if mensagem %}
+        <div style="text-align: center; color: green; margin-bottom: 10px;">{{ mensagem }}</div>
+    {% endif %}
+
+    <form action="{{ url_for('relatoriometas.salvar_alteracao_meta', meta_id=meta.id) }}" method="POST">
+        <label for="nome">Nome da Meta:</label><br>
+        <input type="text" id="nome" name="nome" value="{{ meta.nome }}" required style="width: 80%; margin-bottom: 10px;"><br>
+        
+        <label for="porcentagem_execucao">Porcentagem de Execução:</label><br>
+        <input type="text" id="porcentagem_execucao" name="porcentagem_execucao" value="{{ meta.porcentagem_execucao }}" required style="width: 80%; margin-bottom: 10px;"><br>
+        
+        <button type="submit" style="background-color: green; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">Salvar Alterações</button>
+    </form>
+
+    <script>
+        function cancelar() {
+            // Adicione aqui o código para cancelar a operação de alteração
+            alert("Operação de alteração cancelada.");
+        }
+    </script>
+    <div style="text-align: center;">
+        <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px;">Cancelar</button>
+    </div>
+</body>
+{% endblock conteudo %}

@@ -1,0 +1,32 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+  Planejamento Estratégico (Indicadores)
+{% endblock %}
+
+{% block conteudo %}
+<body>
+    <h1>Relatório de Indicadores</h1>
+
+    <!-- Exibir indicadores por meta -->
+    <h2>Indicadores por Meta</h2>
+    <ul>
+        {% for meta_id, indicadores in indicadores_por_meta.items() %}
+            <li>Meta ID: {{ meta_id }}</li>
+            <ul>
+                {% for indicador in indicadores %}
+                    <li>{{ indicador.nome }}</li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </ul>
+
+    <!-- Exibir valores dos indicadores -->
+    <h2>Valores dos Indicadores</h2>
+    <!-- Adicionar os gráficos gerados -->
+    {% for graph_base64 in graphs %}
+        <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Valores dos Indicadores">
+    {% endfor %}
+
+</body>
+{% endblock conteudo %}
