@@ -101,66 +101,7 @@ def associar_objetivospe():
 
 ###################################################################################################################################
 ###################################################################################################################################
-@planejamento_route.route('/associar_metaspe', methods=['GET', 'POST'])
-@login_required
-def associar_metaspe():
-    if request.method == 'POST':
-        # Process form submission
-        if 'programa_id' not in session:
-            flash('Nenhum programa do usuário encontrado. Faça login novamente.', 'danger')
-            return redirect(url_for('login.login_page'))
 
-        # Extract form data
-        nome = request.form['nome']
-        objetivo_pe_id = request.form['objetivo_pe_id']
-        porcentagem_execucao = request.form['porcentagem_execucao']
-
-        try:
-            # Create new meta
-            nova_meta = MetaPE(objetivo_pe_id=objetivo_pe_id, nome=nome, porcentagem_execucao=porcentagem_execucao)
-            db.session.add(nova_meta)
-            db.session.commit()
-            flash('Meta cadastrada com sucesso!', 'success')
-            return redirect(url_for('get_coordenador'))  # Redirect after successful creation
-        except Exception as e:
-            print("Ocorreu um erro ao cadastrar a meta:", e)
-            db.session.rollback()
-            flash('Erro ao cadastrar a meta. Por favor, tente novamente.', 'danger')
-            return redirect(url_for('get_coordenador'))  # Redirect after error
-
-    else:
-        # Handle GET request
-        if 'email' not in session:
-            flash('Você precisa estar logado para acessar esta página.', 'danger')
-            return redirect(url_for('login_page'))
-
-        programa_id = session.get('programa_id')
-
-        # Retrieve Planejamentos Estratégicos
-        planejamentos_estrategicos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-
-        # Retrieve objectives (if a Planejamento Estratégico is selected)
-        objetivo_options = []
-        if request.args.get('planejamento_id'):
-            try:
-                planejamento_id = int(request.args.get('planejamento_id'))
-                objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
-                objetivo_options = [{'id': objetivo.id, 'nome': objetivo.nome} for objetivo in objetivos]
-            except Exception as e:
-                print("Erro ao recuperar objetivos:", e)
-                # Handle potential error (e.g., invalid ID)
-
-        # Pass data to the template
-        return render_template('metaspe.html',
-                              planejamentos_estrategicos=planejamentos_estrategicos,
-                              objetivo_options=objetivo_options)
-    
-@planejamento_route.route('/get_objetivosplano/<int:planejamento_id>')
-def get_objetivos(planejamento_id):
-    objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
-    print(objetivos)
-    options = [{'id': objetivo.id, 'nome': objetivo.nome} for objetivo in objetivos]
-    return jsonify(options)
 #####################################################################################################################################3
 #######################################################################################################################
 @planejamento_route.route('/associar_acaope', methods=['GET', 'POST'])
@@ -355,6 +296,77 @@ def alterar_indicadorpe(indicador_id):
         
         # Retorna o formulário de alteração preenchido com os dados do indicador e valores indicadores
         return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
+    
+
+##############################################################################################################################
+@planejamento_route.route('/associar_metaspe', methods=['GET', 'POST'])
+@login_required
+def associar_metaspe():
+    if request.method == 'POST':
+        # Process form submission
+        if 'programa_id' not in session:
+            flash('Nenhum programa do usuário encontrado. Faça login novamente.', 'danger')
+            return redirect(url_for('login.login_page'))
+
+        # Extract form data
+        nome = request.form['nome']
+        objetivo_pe_id = request.form['objetivo_pe_id']
+        porcentagem_execucao = request.form['porcentagem_execucao']
+
+        try:
+            # Create new meta
+            nova_meta = MetaPE(objetivo_pe_id=objetivo_pe_id, nome=nome, porcentagem_execucao=porcentagem_execucao)
+            db.session.add(nova_meta)
+            db.session.commit()
+            flash('Meta cadastrada com sucesso!', 'success')
+            return redirect(url_for('login.get_coordenador'))  # Redireciona após a criação bem-sucedida
+        except Exception as e:
+            print("Ocorreu um erro ao cadastrar a meta:", e)
+            db.session.rollback()
+            flash('Erro ao cadastrar a meta. Por favor, tente novamente.', 'danger')
+            redirect(url_for('login.get_coordenador'))  # Redireciona após a criação bem-sucedida
+
+    else:
+        # Handle GET request
+        if 'email' not in session:
+            flash('Você precisa estar logado para acessar esta página.', 'danger')
+            return redirect(url_for('login_page'))
+
+        programa_id = session.get('programa_id')
+
+        # Retrieve Planejamentos Estratégicos
+        planejamentos_estrategicos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+
+        # Retrieve objectives (if a Planejamento Estratégico is selected)
+        objetivo_options = []
+        if request.args.get('planejamento_id'):
+            try:
+                planejamento_id = int(request.args.get('planejamento_id'))
+                objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
+                objetivo_options = [{'id': objetivo.id, 'nome': objetivo.nome} for objetivo in objetivos]
+            except Exception as e:
+                print("Erro ao recuperar objetivos:", e)
+                # Handle potential error (e.g., invalid ID)
+
+        # Pass data to the template
+        return render_template('metaspe.html',
+                              planejamentos_estrategicos=planejamentos_estrategicos,
+                              objetivo_options=objetivo_options)
+    
+#@planejamento_route.route('/get_coordenador')
+#@login_required
+#def get_coordenador():
+  
+ #   return render_template('indexcord.html')
+
+    
+@planejamento_route.route('/get_objetivosplano/<int:planejamento_id>')
+def get_objetivos(planejamento_id):
+    objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
+    print(objetivos)
+    options = [{'id': objetivo.id, 'nome': objetivo.nome} for objetivo in objetivos]
+    return jsonify(options)
+    
 ##############################################################################################################################
 @planejamento_route.route('/alterar_metape/<int:metape_id>', methods=['GET', 'POST'])
 def alterar_metape(metape_id):
@@ -378,7 +390,13 @@ def alterar_metape(metape_id):
     # Passa a variável 'meta' para o template
     return render_template('alterarmetas.html', meta=meta_pe, mensagem=mensagem)
 #############################################################################
+
+
+
+#################################################################################
 @planejamento_route.route('/sucesso', methods=['GET'])
 def sucesso():
     mensagem = "Meta alterada com sucesso!"
     return render_template('sucesso.html', mensagem=mensagem)
+
+##################################################################################
