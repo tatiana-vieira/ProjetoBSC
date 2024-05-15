@@ -11,7 +11,7 @@ login_manager = LoginManager()
 
 @login_manager.user_loader
 def load_user(user_id):
-    return Users.query.get(int(user_id))
+   return db.session.query(Users).get(int(user_id))
 ######################################################################################################################3
 @login_route.route('/get_coordenador')
 def get_coordenador():
@@ -44,8 +44,14 @@ def login_page():
 
             if user.role == 'Coordenador':
                 session['role'] = 'Coordenador'  # Definindo a função do usuário na sessão
-            
+            else:
+                session['role'] = 'Outro'  # Defina a função do usuário de outra forma, se necessário
+
             flash('Login bem-sucedido!', 'success')
+
+            # Aqui você pode definir o programa_id na sessão usando o valor real do usuário
+            session['programa_id'] = user.programa_id
+
             if user.role == 'Coordenador':
                 return redirect(url_for('login.get_coordenador'))
             elif user.role == 'Pro-reitor':

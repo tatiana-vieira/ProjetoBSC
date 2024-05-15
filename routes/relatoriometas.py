@@ -2,6 +2,9 @@ from flask import render_template, request, redirect, url_for, jsonify
 from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, db
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
+import base64
+from io import BytesIO
+import matplotlib.pyplot as plt
 
 relatoriometas_route = Blueprint('relatoriometas', __name__)
 
@@ -36,3 +39,30 @@ def salvar_alteracao_meta(meta_id):
 @relatoriometas_route.route('/sucesso')
 def sucesso():
     return render_template('sucesso.html')
+
+@relatoriometas_route.route('/graficometas')
+def exibir_graficometas():
+    planejamentope = PlanejamentoEstrategico.query.all()
+    objetivospe = ObjetivoPE.query.filter(ObjetivoPE.objetivo_pdi_id.in_([pdi.id for pdi in planejamentope])).all()
+    metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
+    planejamento_metas = get_planejamento_metas()
+
+    # Gerar o gráfico
+    plt.figure(figsize=(10, 6))
+    for meta in metaspe:
+        plt.bar(meta.nome, meta.porcentagem_execucao)
+    plt.title('Porcentagem de Execução das Metas')
+    plt.xlabel('Meta')
+    plt.ylabel('Porcentagem de Execução (%)')
+    plt.xticks(rotation=90)  # Rotacionar os nomes das metas para melhor visualização
+
+    # Salvar o gráfico em memória
+    img = BytesIO()
+    plt.savefig(img, format='png')
+    img.seek(0)
+
+    # Codificar o gráfico em base64 para incorporação no HTML
+    graph_base64 = base64.b64encode(img.getvalue()).decode()
+    plt.close()
+
+    return render_template('graficometas.html', objetivos=objetivospe, metas=metaspe, planejamento_metas=planejamento_metas, graph_base64=graph_base64)

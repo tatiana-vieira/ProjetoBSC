@@ -9,7 +9,6 @@ from routes.indicador import indicador_route
 from routes.login import login_route
 from routes.relatorioindicador import relatorioindicador_route
 from routes.planejamento import planejamento_route
-from routes.relatorioplanejamento import relatorioplanejamento_route
 from routes.relatorioacao import relatorioacao_route
 from routes.relatoriometas import relatoriometas_route
 from routes.db import db
@@ -72,10 +71,10 @@ app.register_blueprint(pdi_route)
 app.register_blueprint(producao_route)
 app.register_blueprint(indicador_route)
 app.register_blueprint(planejamento_route)
-app.register_blueprint(relatorioplanejamento_route)
 app.register_blueprint(relatorioacao_route)
 app.register_blueprint(relatorioindicador_route)
 app.register_blueprint(relatoriometas_route)
+
 
 #########################################################################################33
 @app.route('/')
@@ -609,6 +608,40 @@ def associar_objetivospe():
 
         return render_template('objetivope.html', objetivos=objetivos)
 ##################################################################################################################################
+###############################################################################################################################
+@app.route('/associar_metaspe', methods=['POST'])
+def associar_metaspe():
+    if request.method == 'POST':
+        # Aqui vai o código para lidar com o formulário submetido
+        nome = request.form['nome']
+        objetivo_pe_id = request.form['objetivo_pe_id']
+        porcentagem_execucao = request.form['porcentagem_execucao']
+        
+        # Verifica se o objetivo existe
+        objetivo_pe = ObjetivoPE.query.get(objetivo_pe_id)
+        if objetivo_pe is None:
+            flash('Objetivo PE não encontrado!', 'error')
+            return redirect(url_for('get_coordenador'))
+        
+        # Cria uma nova meta PE e a associa ao objetivo PE
+        nova_meta = MetaPE(
+            nome=nome,
+            objetivo_pe_id=objetivo_pe_id,
+            porcentagem_execucao=porcentagem_execucao
+        )
+
+        db.session.add(nova_meta)
+        db.session.commit()
+
+        flash('Meta cadastrada com sucesso!', 'success')
+        return redirect(url_for('get_coordenador'))
+    else:
+        # Se o método não for POST, obtenha os dados necessários para o formulário
+        objetivos_pe = ObjetivoPE.query.all()
+        
+        # Renderiza o formulário HTML com os dados obtidos
+        return render_template('metaspe.html', objetivos_pe=objetivos_pe)
+
 ########################################################################################################
 @app.route('/associar_indicadorespe', methods=['GET', 'POST'])
 def associar_indicadorespe():
@@ -657,6 +690,8 @@ def associar_acaope():
     
     # Se o método for GET, renderize o template HTML
     return render_template('acaope.html')
+
+#######################################################################################################################################
 
 ################################################################################################################################
 if __name__ == '__main__':

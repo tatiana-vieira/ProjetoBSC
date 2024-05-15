@@ -30,42 +30,67 @@
         }
     </style>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Objetivo</th>         
-                <th>Meta</th>           
-                <th>Indicador</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for objetivo in objetivos %}
-                {% for meta in metas if meta.objetivo_pe_id == objetivo.id %}
-                    {% for indicador in indicadores if indicador.meta_pe_id == meta.id %}
-                        <tr>
-                            <td>{{ objetivo.nome }}</td>
-                            <td>{{ meta.nome }}</td>
-                            <td>{{ indicador.nome }}</td>
-                        </tr>
-                    {% endfor %}
-                    {% if loop.last %}
-                        {% for _ in range(2 - loop.length) %}
-                            <tr><td colspan="3"></td></tr>
+        <table>
+            <thead>
+                <tr>
+                    <th>Objetivo</th>         
+                    <th>Meta</th>           
+                    <th>Indicador</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="3">
+                        <select id="planejamento_estrategico" name="planejamento_estrategico" required style="width: 100%; margin-bottom: 10px;">
+                            {% for planejamento in planejamentos %}
+                                <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                {% if planejamento_estrategico_id %}
+                    {% for objetivo in objetivos %}
+                        {% for meta in metas if meta.objetivo_pe.planejamento_estrategico_id == planejamento_estrategico_id %}
+                            {% for indicador in indicadores if indicador.meta_pe.objetivo_pe.planejamento_estrategico_id == planejamento_estrategico_id %}
+                                <tr>
+                                    <td>{{ objetivo.nome }}</td>
+                                    <td>{{ meta.nome }}</td>
+                                    <td>{{ indicador.nome }}</td>
+                                </tr>
+                            {% endfor %}
+                            {% if loop.last %}
+                                {% for _ in range(2 - loop.length) %}
+                                    <tr><td colspan="3"></td></tr>
+                                {% endfor %}
+                            {% endif %}
                         {% endfor %}
-                    {% endif %}
-                {% endfor %}
-            {% endfor %}
-        </tbody>
-    </table>
+                    {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
     <div style="text-align: center;">
         <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; display: inline;">Cancelar</button>
-
-        <script>
-            function cancelar() {
-                // Redireciona para a página do coordenador após o login
-                window.location.href = "{{ url_for('login.get_coordenador') }}";
-            }
-        </script> 
     </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#planejamento_estrategico').change(function() {
+                var pdi_id = $(this).val();
+                $.ajax({
+                    url: '/relplano/' + pdi_id,
+                    type: 'GET',
+                    success: function(response) {
+                        $('#resultado').html(response);
+                    }
+                });
+            });
+        });
+
+        function cancelar() {
+            // Redireciona para a página do coordenador após o login
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
+        }
+    </script> 
 </body>
 {% endblock conteudo %}

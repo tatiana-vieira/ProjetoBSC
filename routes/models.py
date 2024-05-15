@@ -209,7 +209,6 @@ class PlanejamentoEstrategico(db.Model):
     id_programa = db.Column(db.Integer, db.ForeignKey('programas.id'))  # Corrigindo o nome da tabela referenciada
 
     programa = relationship("Programa", back_populates="planejamentos")  # Definindo o relacionamento inverso
-
 ################################################## PDI###################################################################################3
 class PDI(db.Model):
     __tablename__ = 'pdi'
@@ -245,7 +244,11 @@ class ObjetivoPE(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(250), nullable=False)
     planejamento_estrategico_id = db.Column(db.Integer, db.ForeignKey('planejamento_estrategico.id'))
-    objetivo_pdi_id = db.Column(db.Integer, db.ForeignKey('objetivo_pdi.id'))  # Corrigido para referenciar a tabela objetivo_pdi
+    objetivo_pdi_id = db.Column(db.Integer, db.ForeignKey('objetivo_pdi.id'))
+    
+    # Corrigido para referenciar a tabela objetivo_pdi
+    metas = db.relationship("MetaPE", back_populates="objetivo_pe", lazy=True)
+    meta_pe = db.relationship("MetaPE", back_populates="objetivo_pe", lazy=True, overlaps="metas")
 
     planejamento_estrategico = db.relationship('PlanejamentoEstrategico', backref='objetivos_pe')
     objetivo = db.relationship("Objetivo", back_populates="objetivos_pe")
@@ -257,8 +260,7 @@ class MetaPE(db.Model):
     objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'))
     porcentagem_execucao = db.Column(db.Float)
 
-    objetivo_pe = db.relationship('ObjetivoPE',backref="meta_pe")
-
+    objetivo_pe = db.relationship('ObjetivoPE', back_populates="meta_pe")
 
 class IndicadorPlan(db.Model):
     __tablename__ = 'indicador_pe'
