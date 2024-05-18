@@ -10,23 +10,26 @@
             <h2>Informações do PDI</h2><br>
             <form method="POST">
                 <label for="nome">Nome do PDI:</label><br>
-                <input type="text" id="nome" name="nome" required style="width: 100%; margin-bottom: 10px;"><br>
-                <label for="datainicio">Data de Início(ano):</label><br>
-                <input type="int" id="datainicio" name="datainicio" required style="width: 100%; margin-bottom: 10px;"><br>
+                <input type="text" id="nome" name="nome" value="{{ pdi.nome if pdi else '' }}" required style="width: 100%; margin-bottom: 10px;"><br>
+                <label for="datainicio">Data de Início (ano):</label><br>
+                <input type="int" id="datainicio" name="datainicio" value="{{ pdi.datainicio if pdi else '' }}" required style="width: 100%; margin-bottom: 10px;"><br>
                 <label for="datafim">Data de Fim (ano):</label><br>
-                <input type="int" id="datafim" name="datafim" required style="width: 100%; margin-bottom: 10px;"><br>
-                <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
-                <button type="button" onclick="window.location.href='/proreitor'" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button><br>            </form>
+                <input type="int" id="datafim" name="datafim" value="{{ pdi.datafim if pdi else '' }}" required style="width: 100%; margin-bottom: 10px;"><br>
+                <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">{{ 'Atualizar' if pdi else 'Cadastrar' }}</button>
+                <button type="button" onclick="alterar()" style="background-color: #085132; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Alterar</button>
+                <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button><br>
+
+            </form>
         </div>
     </div>
     <script>
-        // Adiciona um evento de clique ao botão de cancelamento
-        document.getElementById('cancel-button').addEventListener('click', function() {
-            // Exibe um aviso de confirmação antes de redirecionar
-            if (confirm('Tem certeza que deseja cancelar?')) {
-                // Redireciona o usuário para a página inicial
-                window.location.href = '/proreitor';
+        function alterar() {
+            window.location.href = "{{ url_for('lista_pdis') }}";
+        }
+    </script> 
+    <script>
+            function cancelar() {
+                window.location.href = "{{ url_for('login.get_proreitor') }}";
             }
-        });
     </script>
 {% endblock %}

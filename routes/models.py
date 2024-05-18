@@ -219,10 +219,11 @@ class PDI(db.Model):
 
 class Meta(db.Model):
     __tablename__ = 'meta_pdi'
-    id = db.Column(db.Numeric(4,2), primary_key=True)  # Aqui está a correção
-    objetivo_id = db.Column(db.Integer)
-    nome = db.Column(db.String(2500)) 
-    porcentagem_execucao = db.Column(db.Numeric(4,2))    
+    id = db.Column(db.Numeric(4, 2), primary_key=True)
+    objetivo_id = db.Column(db.Integer, db.ForeignKey('objetivo_pdi.id'), nullable=False)
+    nome = db.Column(db.String(2500), nullable=False)
+    porcentagem_execucao = db.Column(db.Numeric(4, 2), nullable=False)
+    objetivo = db.relationship('Objetivo', back_populates='metas') 
    
 class Indicador(db.Model):
     __tablename__ = 'indicador'
@@ -234,10 +235,14 @@ class Indicador(db.Model):
 class Objetivo(db.Model):
     __tablename__ = 'objetivo_pdi'
     id = db.Column(db.Integer, primary_key=True)
-    pdi_id = db.Column(db.Integer, nullable=False)
-    nome = db.Column(db.String(2500), nullable=False) 
+    pdi_id = db.Column(db.Integer, db.ForeignKey('pdi.id'), nullable=False)
+    nome = db.Column(db.String(2500), nullable=False)
     bsc = db.Column(db.String(100), nullable=False)
-    objetivos_pe = relationship("ObjetivoPE", primaryjoin="Objetivo.id == ObjetivoPE.objetivo_pdi_id", back_populates="objetivo")
+    pdi = db.relationship('PDI', back_populates='objetivos')
+    metas = db.relationship('Meta', back_populates='objetivo')
+    objetivos_pe = db.relationship('ObjetivoPE', primaryjoin='Objetivo.id == ObjetivoPE.objetivo_pdi_id', back_populates='objetivo')
+
+PDI.objetivos = db.relationship('Objetivo', back_populates='pdi')
 
 class ObjetivoPE(db.Model):
     __tablename__ = 'objetivo_pe'

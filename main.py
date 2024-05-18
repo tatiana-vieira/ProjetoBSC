@@ -12,6 +12,7 @@ from routes.planejamento import planejamento_route
 from routes.relatorioplanejamento import relatorioplanejamento_route
 from routes.relatorioacao import relatorioacao_route
 from routes.relatoriometas import relatoriometas_route
+from routes.altpdi import altpdi_route
 from routes.db import db
 from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
@@ -22,7 +23,7 @@ from flask_login import login_required
 from flask_login import current_user
 from flask_login import UserMixin, LoginManager
 from flask_sqlalchemy import SQLAlchemy
-
+from sqlalchemy.orm import joinedload
 
 app = Flask(__name__)
 app.secret_key = "super secret key"
@@ -310,7 +311,7 @@ def register_page():
     programas = Programa.query.all()
     return render_template('register.html', programas=programas)
 #############Cadastro de PDI ##################################
-def processar_formulario_pdi():
+def processar_formulario_pdi(pdi_id=None):
     # Verifica se o usuário está logado e é um Pró-reitor
     if 'email' not in session:
         return 'Acesso não autorizado'
@@ -323,10 +324,18 @@ def processar_formulario_pdi():
     nome = request.form['nome']
     datainicio = request.form['datainicio']
     datafim = request.form['datafim']
+
+    if pdi_id:
+        # Atualiza um PDI existente
+        pdi = PDI.query.get(pdi_id)
+        pdi.nome = nome
+        pdi.datainicio = datainicio
+        pdi.datafim = datafim
+    else:
+        # Insere os dados no banco de dados
+        pdi = PDI(nome=nome, datainicio=datainicio, datafim=datafim)
+        db.session.add(pdi)
     
-    # Insere os dados no banco de dados
-    novo_pdi = PDI(nome=nome, datainicio=datainicio, datafim=datafim)
-    db.session.add(novo_pdi)
     db.session.commit()
     
     return redirect(url_for('sucesso_cadastro'))
@@ -336,27 +345,51 @@ def cadastro_pdi():
     if request.method == 'POST':
         return processar_formulario_pdi()
     
-    # Se for método GET, exibe o formulário de cadastro
     return render_template('cadastropdi.html')
+
+@app.route('/editar_pdi/<int:pdi_id>', methods=['GET', 'POST'])
+def editar_pdi(pdi_id):
+    if request.method == 'POST':
+        return processar_formulario_pdi(pdi_id)
+    
+    pdi = PDI.query.get(pdi_id)
+    return render_template('cadastropdi.html', pdi=pdi)
+
+@app.route('/lista_pdis')
+def lista_pdis():
+    pdis = PDI.query.all()
+    return render_template('editarpdi.html', pdis=pdis)
 
 @app.route('/sucesso_cadastro')
 def sucesso_cadastro():
     return 'Cadastro realizado com sucesso!'
 
+
 ######################Cadastro Objetivo ######################################
+@app.route('/lista_objetivos')
+def lista_objetivos():
+    objetivos = Objetivo.query.options(joinedload(Objetivo.pdi)).all()
+    return render_template('lista_objetivos.html', objetivos=objetivos)
+
 @app.route('/cadastro_objetivo', methods=['GET', 'POST'])
 def cadastro_objetivo():
     if request.method == 'POST':
         return processar_formulario_objetivo()
     
-    # Se for método GET, obtém a lista de PDI do banco de dados
     lista_pdis = PDI.query.all()
-    
-    # Exibe o formulário de cadastro com a lista de PDI
-    return render_template('cadastro_objetivo.html', lista_pdis=lista_pdis)
+    return render_template('cadastro_objetivo.html', lista_pdis=lista_pdis, objetivo=None)
 
-def processar_formulario_objetivo():
-    # Verifica se o usuário está logado e é um Pró-reitor
+@app.route('/editar_objetivo/<int:objetivo_id>', methods=['GET', 'POST'])
+def editar_objetivo(objetivo_id):
+    objetivo = Objetivo.query.get_or_404(objetivo_id)
+    
+    if request.method == 'POST':
+        return processar_formulario_objetivo(objetivo_id)
+    
+    lista_pdis = PDI.query.all()
+    return render_template('cadastro_objetivo.html', objetivo=objetivo, lista_pdis=lista_pdis)
+
+def processar_formulario_objetivo(objetivo_id=None):
     if 'email' not in session:
         return 'Acesso não autorizado'
     
@@ -366,15 +399,21 @@ def processar_formulario_objetivo():
 
     pdi_id = request.form['pdi_id']
     nome = request.form['nome']
-    bsc = request.form['bsc']       
-     
-    # Insere os dados no banco de dados
-    novo_objetivo = Objetivo(pdi_id=pdi_id, nome=nome, bsc=bsc)
-    db.session.add(novo_objetivo)
+    bsc = request.form['bsc']
+
+    if objetivo_id:
+        objetivo = Objetivo.query.get(objetivo_id)
+        objetivo.pdi_id = pdi_id
+        objetivo.nome = nome
+        objetivo.bsc = bsc
+    else:
+        novo_objetivo = Objetivo(pdi_id=pdi_id, nome=nome, bsc=bsc)
+        db.session.add(novo_objetivo)
+    
     db.session.commit()
     
     return redirect(url_for('sucesso_cadastro'))
-    
+
 ##############################################################################################################################
 ###########################################################################################################################
 @app.route('/cadastro_meta', methods=['GET', 'POST'])
@@ -390,9 +429,6 @@ def cadastro_meta():
     else:
         # Se nenhum PDI foi selecionado, exibe uma lista vazia de objetivos
         objetivos = []
-
-    # Verifica se a lista de objetivos está sendo passada corretamente para o template
-    print("Lista de Objetivos:", objetivos)
 
     # Renderiza a página com a lista de PDI e os objetivos relacionados
     return render_template('cadastro_meta.html', lista_pdis=lista_pdis, objetivos=objetivos)
@@ -438,6 +474,66 @@ def objetivos_relacionados_pdi(pdi_id):
     objetivos_data = [{'id': objetivo.id, 'nome': objetivo.nome} for objetivo in objetivos]
     return jsonify(objetivos_data)
 
+@app.route('/alterar_meta', methods=['GET', 'POST'])
+def alterar_meta():
+    objetivo_id = request.args.get('objetivo_id')
+    if not objetivo_id:
+        return redirect(url_for('selecionar_pdi_para_alteracao'))
+
+    if request.method == 'POST':
+        return processar_formulario_alterar_meta(objetivo_id)
+
+    # Obtém a meta a ser alterada do banco de dados
+    meta = Meta.query.filter_by(objetivo_id=objetivo_id).first()
+    if not meta:
+        return 'Meta não encontrada', 404
+
+    # Obtém a lista de PDI e objetivos relacionados
+    lista_pdis = PDI.query.all()
+    objetivos = buscar_objetivos_relacionados_pdi(meta.objetivo.pdi_id)
+
+    return render_template('alterar_meta.html', meta=meta, lista_pdis=lista_pdis, objetivos=objetivos)
+  
+def processar_formulario_alterar_meta(meta_id):
+    # Verifica se o usuário está logado e é um Pró-reitor
+    if 'email' not in session:
+        return 'Acesso não autorizado'
+
+    user = Users.query.filter_by(email=session['email']).first()
+    if user.role != 'Pro-reitor':
+        return 'Acesso não autorizado'
+
+    meta = Meta.query.get(meta_id)
+    if not meta:
+        return 'Meta não encontrada', 404
+
+    objetivo_id = request.form['objetivo_id']
+    nome = request.form['nome']
+    porcentagem_execucao = request.form['porcentagem_execucao']
+
+    # Atualiza os dados no banco de dados
+    meta.objetivo_id = objetivo_id
+    meta.nome = nome
+    meta.porcentagem_execucao = porcentagem_execucao
+    db.session.commit()
+
+    return redirect(url_for('sucesso_cadastro'))
+
+@app.route('/selecionar_pdi_para_alteracao', methods=['GET'])
+def selecionar_pdi_para_alteracao():
+    # Obtém a lista de PDI do banco de dados
+    lista_pdis = PDI.query.all()
+    return render_template('selecionarpdimeta.html', lista_pdis=lista_pdis)
+
+@app.route('/escolher_objetivo_para_alteracao', methods=['GET'])
+def escolher_objetivo_para_alteracao():
+    pdi_id = request.args.get('pdi_id')
+    if not pdi_id:
+        return redirect(url_for('selecionar_pdi_para_alteracao'))
+
+    # Busca os objetivos relacionados ao PDI
+    objetivos = buscar_objetivos_relacionados_pdi(int(pdi_id))
+    return render_template('escolher_objetivo_para_alteracao.html', pdi_id=pdi_id, objetivos=objetivos)
 ################################################################################################################################
 ######################################################################
 @app.route('/cadastro_indicador', methods=['GET', 'POST'])
@@ -669,8 +765,20 @@ def relatorio_planejamento():
 def associar_metaspe():
 
     # Aqui você pode adicionar qualquer lógica necessária para renderizar a página de planejamento estratégico
-      return render_template('relplanejamento.html')
+      return render_template('relatoriometas.html')
 #################################################################################################################################
-##################################################################################################################################
+
+@app.route('/altpdi')
+def exibir_altpdi():
+    pdi_data = PDI.query.all()
+    objetivos = Objetivo.query.filter(Objetivo.pdi_id.in_([pdi.id for pdi in pdi_data])).all()
+    metas = Meta.query.filter(Meta.objetivo_id.in_([objetivo.id for objetivo in objetivos])).all()
+    indicadores = Indicador.query.filter(Indicador.meta_pdi_id.in_([meta.id for meta in metas])).all()
+    
+    return render_template('altpdi.html', objetivos=objetivos, metas=metas, indicadores=indicadores)
+
+
+##################################################################################33
+#######################################################
 if __name__ == '__main__':
     app.run(debug=True)

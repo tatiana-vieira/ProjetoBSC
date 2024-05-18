@@ -35,7 +35,7 @@
         <div class="content-wrapper">
           <div class="image-button-wrapper">
             <img src="{{ url_for('static', filename='comparar.png') }}" alt="Imagem 1">
-            <button type="button" class="btn btn-primary btn-block">Visualização PDI</button>
+            <button type="button" class="btn btn-primary btn-block"onclick="visualizarpdi()">PDI</button>
           </div>
         </div>
       </div>
@@ -57,6 +57,12 @@
           </div>
         </div>
       </div>
+      <script>
+        function visualizarpdi() {
+          window.location.href = "{{ url_for('exibir_altpdi') }}";
+       }
+      </script>
+
     </div>
   </div>
 {% endblock %}

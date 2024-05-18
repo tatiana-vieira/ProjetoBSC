@@ -71,8 +71,14 @@
             {% endfor %}
         </tbody>
     </table><br><br>
-    <div style="text-align: center;">
-        <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
+    <div style="text-align: center; margin-top: 20px;">
+        <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
     </div>
+
+    <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_proreitor') }}";
+        }
+    </script> 
 </body>
 {% endblock conteudo %}

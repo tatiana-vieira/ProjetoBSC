@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block titulo %}
+    Selecionar PDI para Alteração - PRPPG
+{% endblock %}
+
+{% block conteudo %}
+    <div style="margin: auto; width: 50%; text-align: center;">
+        <div class="form-block"><br>
+            <h2>Selecionar PDI para Alteração</h2><br>
+            <form id="SelecionarForm" method="GET" action="{{ url_for('escolher_objetivo_para_alteracao') }}">
+                <label for="pdi_id">PDI:</label>
+                <select id="pdi_id" name="pdi_id" required style="width: 100%; margin-bottom: 10px;">
+                    <option value="">Selecione um PDI</option>
+                    {% for pdi in lista_pdis %}
+                        <option value="{{ pdi.id }}">{{ pdi.nome }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Continuar</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

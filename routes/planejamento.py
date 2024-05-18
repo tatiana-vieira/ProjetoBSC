@@ -195,7 +195,7 @@ def visualizar_dados_programa():
     programa = Programa.query.get(programa_id)
     
     # Lógica para obter os dados do programa selecionado
-    planejamentope = PlanejamentoEstrategico.query.all()
+    planejamentope = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
     objetivospe = ObjetivoPE.query.filter(ObjetivoPE.objetivo_pdi_id.in_([pdi.id for pdi in planejamentope])).all()
     metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
     indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metaspe])).all()

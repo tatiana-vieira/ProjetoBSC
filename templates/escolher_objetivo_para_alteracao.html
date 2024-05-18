@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block titulo %}
+    Escolher Objetivo para Alteração - PRPPG
+{% endblock %}
+
+{% block conteudo %}
+    <div style="margin: auto; width: 50%; text-align: center;">
+        <div class="form-block"><br>
+            <h2>Escolher Objetivo para Alteração</h2><br>
+            <form id="EscolherObjetivoForm" method="GET" action="{{ url_for('alterar_meta') }}">
+                <input type="hidden" name="pdi_id" value="{{ pdi_id }}">
+                <label for="objetivo_id">Objetivo:</label>
+                <select id="objetivo_id" name="objetivo_id" required style="width: 100%; margin-bottom: 10px;">
+                    <option value="">Selecione um objetivo</option>
+                    {% for objetivo in objetivos %}
+                        <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Continuar</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

@@ -1,32 +1,42 @@
 {% extends 'basecord.html' %}
 
 {% block titulo %}
-  Planejamento Estratégico (Indicadores)
+  Planejamento Estratégico (Gráficos dos Indicadores)
 {% endblock %}
 
 {% block conteudo %}
 <body>
-    <h1>Relatório de Indicadores</h1>
+    <h4 style="text-align: center; color: #003366;">Planejamento Estratégico (Gráficos dos Indicadores)</h4>
 
-    <!-- Exibir indicadores por meta -->
-    <h2>Indicadores por Meta</h2>
-    <ul>
-        {% for meta_id, indicadores in indicadores_por_meta.items() %}
-            <li>Meta ID: {{ meta_id }}</li>
-            <ul>
-                {% for indicador in indicadores %}
-                    <li>{{ indicador.nome }}</li>
+    <div style="text-align: center;">
+        <h4 style="color: #003366;">Selecione um Planejamento Estratégico:</h4>
+        <form method="GET" action="{{ url_for('relatorioindicador.exibir_graficoindicador') }}">
+            <select id="planejamento_estrategico" name="planejamento_selecionado" required style="width: 300px; margin-bottom: 20px;">
+                <option value="">-- Selecione --</option>
+                {% for planejamento in planejamentos %}
+                    <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento_selecionado.id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
                 {% endfor %}
-            </ul>
+            </select>
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </form>
+    </div>
+
+    <div id="graficos-indicadores" style="text-align: center; margin-top: 20px;">
+        <h2>Gráficos dos Indicadores</h2>
+        {% for graph_base64, titulo in graphs %}
+            <h3>{{ titulo }}</h3>
+            <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Valores dos Indicadores">
         {% endfor %}
-    </ul>
+    </div>
 
-    <!-- Exibir valores dos indicadores -->
-    <h2>Valores dos Indicadores</h2>
-    <!-- Adicionar os gráficos gerados -->
-    {% for graph_base64 in graphs %}
-        <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Valores dos Indicadores">
-    {% endfor %}
+    <div style="text-align: center; margin-top: 20px;">
+        <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
+    </div>
 
+    <script>
+        function cancelar() {
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
+        }
+    </script>
 </body>
-{% endblock conteudo %}
+{% endblock %}
