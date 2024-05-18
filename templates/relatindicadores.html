@@ -8,10 +8,24 @@
 <body>
     <h4 style="text-align: center; color: #003366;">Planejamento Estratégico (Indicadores)</h4>
 
+    <div style="text-align: center;">
+        <h4 style="color: #003366;">Selecione um Planejamento Estratégico:</h4>
+        <form method="GET" action="{{ url_for('relatorioindicador.exibir_relatorioindicador') }}">
+            <select id="planejamento_estrategico" name="planejamento_selecionado" required style="width: 300px; margin-bottom: 20px;">
+                <option value="">-- Selecione --</option>
+                {% for planejamento in planejamentos %}
+                    <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento_selecionado.id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </form>
+    </div>
+
     <style>
         table {
             width: 90%;
             border-collapse: collapse;
+            margin: 0 auto;
         }
         th, td {
             padding: 10px;
@@ -30,57 +44,52 @@
         }
     </style>
 
-<table>
-    <thead>
-        <tr>
-            <th>Meta</th>           
-            <th>Porcentagem de Execução</th>
-            <th>Indicador</th>
-            <th>Descrição</th>
-            <th>Ano</th>
-            <th>Semestre</th>
-            <th>Valor</th>
-            <th>Alterar</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for meta in metas %}
-            {% for indicador in indicadores_por_meta[meta.id] %}
-                {% for valorindicador in valores_indicadores[indicador.id] %}
-                    <tr>
-                        <td>{{ meta.nome if meta.nome else '' }}</td>
-                        <td>{{ meta.porcentagem_execucao if meta.porcentagem_execucao else '' }}</td>
-                        <td>{{ indicador.nome if indicador.nome else '' }}</td>
-                        <td>{{ indicador.descricao | default('') }}</td>
-                        <td>{{ valorindicador.ano if valorindicador.ano else '' }}</td>
-                        <td>{{ valorindicador.semestre if valorindicador.semestre else '' }}</td>
-                        <td>{{ valorindicador.valor if valorindicador.valor else '' }}</td>
-                        <td><a href="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}"><button style="background-color: green; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">Alterar</button></a></td>
-                    </tr>
+    <div id="tabela-indicadores" style="display: {% if planejamento_selecionado %}block{% else %}none{% endif %}; margin-top: 20px;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Meta</th>           
+                    <th>Porcentagem de Execução</th>
+                    <th>Indicador</th>
+                    <th>Descrição</th>
+                    <th>Ano</th>
+                    <th>Semestre</th>
+                    <th>Valor</th>
+                    <th>Alterar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for meta in metas %}
+                    {% for indicador in indicadores_por_meta[meta.id] %}
+                        {% for valorindicador in valores_indicadores[indicador.id] %}
+                            <tr>
+                                <td>{{ meta.nome if meta.nome else '' }}</td>
+                                <td>{{ meta.porcentagem_execucao if meta.porcentagem_execucao else '' }}</td>
+                                <td>{{ indicador.nome if indicador.nome else '' }}</td>
+                                <td>{{ indicador.descricao | default('') }}</td>
+                                <td>{{ valorindicador.ano if valorindicador.ano else '' }}</td>
+                                <td>{{ valorindicador.semestre if valorindicador.semestre else '' }}</td>
+                                <td>{{ valorindicador.valor if valorindicador.valor else '' }}</td>
+                                <td><a href="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}"><button style="background-color: green; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">Alterar</button></a></td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
                 {% endfor %}
-            {% endfor %}
-        {% endfor %}
-    </tbody>
-</table>
-            
-    <script>
-        function alterarAcao(id) {
-            // Adicione aqui o código para manipular a ação de alteração com base no ID passado
-            alert("Alterar Indicador com ID: " + id);
-        }
-        </script>
+            </tbody>
+        </table>
+    </div>
+    
     <div style="text-align: center;">
         <form action="{{ url_for('associar_indicadorespe') }}" method="GET" style="display: inline;">
-        <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
+            <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
         </form>
         <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; display: inline;">Cancelar</button>
-
-        <script>
-            function cancelar() {
-                // Redireciona para a página do coordenador após o login
-                window.location.href = "{{ url_for('login.get_coordenador') }}";
-            }
-        </script> 
     </div>
+
+    <script>
+        function cancelar() {
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
+        }
+    </script>
 </body>
-{% endblock conteudo %}
+{% endblock %}

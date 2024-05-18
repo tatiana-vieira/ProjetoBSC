@@ -8,10 +8,24 @@
 <body>
     <h4 style="text-align: center; color: #003366;">Planejamento Estratégico (Ações)</h4>
 
+    <div style="text-align: center;">
+        <h4 style="color: #003366;">Selecione um Planejamento Estratégico:</h4>
+        <form method="GET" action="{{ url_for('relatorioacao.exibir_relatorioacao') }}">
+            <select id="planejamento_estrategico" name="planejamento_selecionado" required style="width: 300px; margin-bottom: 20px;">
+                <option value="">-- Selecione --</option>
+                {% for planejamento in planejamentos %}
+                    <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento_selecionado.id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </form>
+    </div>
+
     <style>
         table {
             width: 95%;
             border-collapse: collapse;
+            margin: 0 auto;
         }
         th, td {
             padding: 10px;
@@ -30,65 +44,56 @@
         }
     </style>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Objetivo</th>         
-                <th>Meta</th>           
-                <th>Porcentagem de Execução</th>
-                <th>Ação</th>
-                <th>Data de Início</th>
-                <th>Data de Término</th>
-                <th>Responsável</th>
-                <th>Status</th>
-                <th>Observação</th>
-                <th>Alterar</th> <!-- Nova coluna para o botão "Alterar" -->
-            </tr>
-        </thead>
-        <tbody>
-            {% for objetivo in objetivos %}
-                {% for meta in metas if meta.objetivo_pe_id == objetivo.id %}
-                    {% for acao in acaope if acao.meta_pe_id == meta.id %}
-                        <tr>
-                            <td>{{ objetivo.nome }}</td>
-                            <td>{{ meta.nome }}</td>
-                            <td>{{ meta.porcentagem_execucao }}</td>
-                            <td>{{ acao.nome }}</td>
-                            <td>{{ acao.data_inicio }}</td>
-                            <td>{{ acao.data_termino }}</td>
-                            <td>{{ acao.responsavel }}</td>
-                            <td>{{ acao.status}}</td>
-                            <td>{{ acao.observacao}}</td>
-                            <td><a href="{{ url_for('planejamento.alterar_acaope', acao_id=acao.id) }}"><button style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Alterar</button></a></td>
-                     {% endfor %}
-                    {% if loop.last %}
-                        {% for _ in range(2 - loop.length) %}
-                            <tr><td colspan="7"></td></tr> <!-- Adapte para o número total de colunas -->
+    <div id="tabela-acoes" style="display: {% if planejamento_selecionado %}block{% else %}none{% endif %}; margin-top: 20px;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Objetivo</th>
+                    <th>Meta</th>
+                    <th>Porcentagem de Execução</th>
+                    <th>Ação</th>
+                    <th>Data de Início</th>
+                    <th>Data de Término</th>
+                    <th>Responsável</th>
+                    <th>Status</th>
+                    <th>Observação</th>
+                    <th>Alterar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for objetivo in objetivos %}
+                    {% for meta in metas if meta.objetivo_pe_id == objetivo.id %}
+                        {% for acao in acoes if acao.meta_pe_id == meta.id %}
+                            <tr>
+                                <td>{{ objetivo.nome }}</td>
+                                <td>{{ meta.nome }}</td>
+                                <td>{{ meta.porcentagem_execucao }}</td>
+                                <td>{{ acao.nome }}</td>
+                                <td>{{ acao.data_inicio }}</td>
+                                <td>{{ acao.data_termino }}</td>
+                                <td>{{ acao.responsavel }}</td>
+                                <td>{{ acao.status }}</td>
+                                <td>{{ acao.observacao }}</td>
+                                <td><a href="{{ url_for('planejamento.alterar_acaope', acao_id=acao.id) }}"><button style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Alterar</button></a></td>
+                            </tr>
                         {% endfor %}
-                    {% endif %}
+                    {% endfor %}
                 {% endfor %}
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <script>
-        function alterarAcao(id) {
-            // Adicione aqui o código para manipular a ação de alteração com base no ID passado
-            alert("Alterar ação com ID: " + id);
-        }
-    </script>
+            </tbody>
+        </table>
+    </div>
+    
     <div style="text-align: center;">
         <form action="{{ url_for('associar_acaope') }}" method="GET" style="display: inline;">
-        <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
+            <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
         </form>
         <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; display: inline;">Cancelar</button>
-
-        <script>
-            function cancelar() {
-                // Redireciona para a página do coordenador após o login
-                window.location.href = "{{ url_for('login.get_coordenador') }}";
-            }
-        </script> 
     </div>
+
+    <script>
+        function cancelar() {
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
+        }
+    </script>
 </body>
-{% endblock conteudo %}
+{% endblock %}

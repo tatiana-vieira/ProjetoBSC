@@ -660,7 +660,17 @@ def associar_acaope():
 
 ################################################################################################################################
 
-
+@app.route('/relplano')
+def relatorio_planejamento():
+    # Aqui você pode adicionar qualquer lógica necessária para renderizar a página de planejamento estratégico
+    return render_template('relplanejamento.html')
 #################################################################################################################################
+@app.route('/associar_metaspe', methods=['GET', 'POST'])
+def associar_metaspe():
+
+    # Aqui você pode adicionar qualquer lógica necessária para renderizar a página de planejamento estratégico
+      return render_template('relplanejamento.html')
+#################################################################################################################################
+##################################################################################################################################
 if __name__ == '__main__':
     app.run(debug=True)

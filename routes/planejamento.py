@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash,
 from .models import Users, Programa, PlanejamentoEstrategico, PDI,ObjetivoPE,Objetivo,MetaPE,AcaoPE,IndicadorPlan,Valorindicador # Certifique-se de importar seus modelos corretamente
 from routes.db import db
 from flask_bcrypt import Bcrypt
-from flask_login import login_user, login_required, LoginManager, current_user
+from flask_login import  login_required, LoginManager, current_user
 from functools import wraps
 
 
@@ -353,19 +353,14 @@ def associar_metaspe():
                               planejamentos_estrategicos=planejamentos_estrategicos,
                               objetivo_options=objetivo_options)
     
-#@planejamento_route.route('/get_coordenador')
-#@login_required
-#def get_coordenador():
-  
- #   return render_template('indexcord.html')
-
-    
+#######################################################################################################################    
 @planejamento_route.route('/get_objetivosplano/<int:planejamento_id>')
 def get_objetivos(planejamento_id):
     objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
     print(objetivos)
     options = [{'id': objetivo.id, 'nome': objetivo.nome} for objetivo in objetivos]
     return jsonify(options)
+    
     
 ##############################################################################################################################
 @planejamento_route.route('/alterar_metape/<int:metape_id>', methods=['GET', 'POST'])

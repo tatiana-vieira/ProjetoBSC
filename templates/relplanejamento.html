@@ -5,92 +5,84 @@
 {% endblock %}
 
 {% block conteudo %}
-<body>
-    <h4 style="text-align: center; color: #003366;">Planejamento Estratégico</h4>
+<div style="text-align: center;">
+    <h4 style="color: #003366;">Selecione um Planejamento Estratégico:</h4>
+    <select id="planejamento_estrategico" name="planejamento_estrategico" required style="width: 300px; margin-bottom: 20px;">
+        <option value="">-- Selecione --</option>
+        {% for planejamento in planejamentos %}
+            <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
+        {% endfor %}
+    </select>
+    <button id="buscar" class="btn btn-primary">Buscar</button>
+</div>
 
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 10px;
-            text-align: center;
-            border: 1px solid #dddddd;
-        }
-        th {
-            background-color: #f2f2f2;
-            color: #003366;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        tr:nth-child(odd) {
-            background-color: #ffffff;
-        }
-    </style>
+<div id="tabela-planejamento" style="display: none; margin-top: 20px;">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Objetivo</th>
+                <th>Meta</th>
+                <th>Indicador</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Conteúdo será preenchido via AJAX -->
+        </tbody>
+    </table>
+</div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Objetivo</th>         
-                    <th>Meta</th>           
-                    <th>Indicador</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td colspan="3">
-                        <select id="planejamento_estrategico" name="planejamento_estrategico" required style="width: 100%; margin-bottom: 10px;">
-                            {% for planejamento in planejamentos %}
-                                <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
-                            {% endfor %}
-                        </select>
-                    </td>
-                </tr>
-                {% if planejamento_estrategico_id %}
-                    {% for objetivo in objetivos %}
-                        {% for meta in metas if meta.objetivo_pe.planejamento_estrategico_id == planejamento_estrategico_id %}
-                            {% for indicador in indicadores if indicador.meta_pe.objetivo_pe.planejamento_estrategico_id == planejamento_estrategico_id %}
-                                <tr>
-                                    <td>{{ objetivo.nome }}</td>
-                                    <td>{{ meta.nome }}</td>
-                                    <td>{{ indicador.nome }}</td>
-                                </tr>
-                            {% endfor %}
-                            {% if loop.last %}
-                                {% for _ in range(2 - loop.length) %}
-                                    <tr><td colspan="3"></td></tr>
-                                {% endfor %}
-                            {% endif %}
-                        {% endfor %}
-                    {% endfor %}
-                {% endif %}
-            </tbody>
-        </table>
-    <div style="text-align: center;">
-        <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; display: inline;">Cancelar</button>
-    </div>
+<div style="text-align: center;">
+    <button type="button" onclick="cancelar()" class="btn btn-danger" style="margin-top: 20px;">Cancelar</button>
+</div>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('#planejamento_estrategico').change(function() {
-                var pdi_id = $(this).val();
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#buscar').click(function() {
+            var planejamento_id = $('#planejamento_estrategico').val();
+            if (planejamento_id) {
                 $.ajax({
-                    url: '/relplano/' + pdi_id,
+                    url: '/relplano',
                     type: 'GET',
+                    data: { planejamento_selecionado: planejamento_id },
                     success: function(response) {
-                        $('#resultado').html(response);
+                        if (response.error) {
+                            alert(response.error);
+                            return;
+                        }
+                        var tbody = $('#tabela-planejamento tbody');
+                        tbody.empty(); // Clear existing content
+                        response.objetivos.forEach(function(objetivo) {
+                            var objetivoNome = objetivo.nome;
+                            objetivo.metas.forEach(function(meta) {
+                                var metaNome = meta.nome;
+                                meta.indicadores.forEach(function(indicador) {
+                                    var row = '<tr>' +
+                                        '<td>' + objetivoNome + '</td>' +
+                                        '<td>' + metaNome + '</td>' +
+                                        '<td>' + indicador.nome + '</td>' +
+                                        '</tr>';
+                                    tbody.append(row);
+                                });
+                            });
+                        });
+                        $('#tabela-planejamento').show(); // Show the table container
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText); // Log any errors
                     }
                 });
-            });
+            } else {
+                alert('Por favor, selecione um planejamento.');
+                $('#tabela-planejamento').hide();
+                $('#tabela-planejamento tbody').empty(); // Clear the table if no selection
+            }
         });
+    });
 
-        function cancelar() {
-            // Redireciona para a página do coordenador após o login
-            window.location.href = "{{ url_for('login.get_coordenador') }}";
-        }
-    </script> 
-</body>
-{% endblock conteudo %}
+    function cancelar() {
+        // Redirect to the coordinator page after login
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
+</script>
+{% endblock %}

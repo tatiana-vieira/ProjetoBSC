@@ -1,56 +1,47 @@
-from flask import render_template,request,redirect,flash,session,url_for
+from flask import render_template,redirect,flash,session,url_for,request,jsonify
 from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, IndicadorPlan,Programa
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint,session
+from flask_login import  login_required
 
 
 relatorioplanejamento_route = Blueprint('relatorioplanejamento', __name__)
 
+@relatorioplanejamento_route.route('/relplano', methods=['GET'])
+@login_required
+def exibir_detalhes_planejamento():
+    if session.get('role') == 'Coordenador':
+        coordenador_programa_id = session.get('programa_id')
+        programa = Programa.query.get(coordenador_programa_id)
+        
+        if not programa:
+            flash('Não foi possível encontrar o programa associado ao coordenador.', 'warning')
+            return redirect(url_for('login.get_coordenador'))
 
-from flask import session, redirect, url_for, flash
+        planejamentos = programa.planejamentos
 
-@relatorioplanejamento_route.route('/relplano')
-def exibir_relplanejamento():
-    # Verificar se o usuário está logado como coordenador
-    if 'role' in session and session['role'] == 'Coordenador':
-        # Obter o ID do coordenador logado
-        coordenador_id = session['user_id']
+        planejamento_selecionado_id = request.args.get('planejamento_selecionado')
+        if planejamento_selecionado_id:
+            planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
+            if not planejamento_selecionado:
+                return jsonify({'error': 'Planejamento não encontrado'}), 404
 
-        # Filtrar os planejamentos estratégicos associados ao coordenador logado
-        planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=coordenador_id).all()
-
-        # Se nenhum planejamento estratégico foi encontrado, retornar uma mensagem adequada
-        if not planejamentos:
-            flash('Não há planejamentos estratégicos associados ao coordenador logado.', 'warning')
-            return redirect(url_for('login.get_coordenador'))  # Redirecionar para a página de cadastro de PDI ou outra página adequada
-       
-        # Inicializar listas vazias para armazenar objetivos, metas e indicadores
-        todos_objetivos = []
-        todas_metas = []
-        todos_indicadores = []
-
-        # Para cada planejamento estratégico, obter os objetivos, metas e indicadores associados
-        for planejamento in planejamentos:
-            objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+            objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
+            metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+            indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas])).all()
             
-            # Para cada objetivo, obter as metas e indicadores associados
+            dados = []
             for objetivo in objetivos:
-                metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
-                indicadores = []
-                
-                # Para cada meta, obter os indicadores associados
-                for meta in metas:
-                    indicadores.extend(IndicadorPlan.query.filter_by(meta_pe_id=meta.id).all())
-                
-                # Adicionar os objetivos, metas e indicadores às listas
-                todos_objetivos.extend(objetivos)
-                todas_metas.extend(metas)
-                todos_indicadores.extend(indicadores)
+                metas_dados = []
+                for meta in [m for m in metas if m.objetivo_pe_id == objetivo.id]:
+                    indicadores_dados = [{'nome': indicador.nome} for indicador in indicadores if indicador.meta_pe_id == meta.id]
+                    metas_dados.append({'nome': meta.nome, 'indicadores': indicadores_dados})
+                dados.append({'nome': objetivo.nome, 'metas': metas_dados})
 
-        return render_template('relplanejamento.html', planejamentos=planejamentos, objetivos=todos_objetivos, metas=todas_metas, indicadores=todos_indicadores)
+            return jsonify({'objetivos': dados})
+
+        return render_template('relplanejamento.html', programa=programa, planejamentos=planejamentos)
+    
     else:
         flash('Você não tem permissão para acessar esta página.', 'danger')
-        return redirect(url_for('login_page'))
-    
-
-   
+        return redirect(url_for('login.login_page'))

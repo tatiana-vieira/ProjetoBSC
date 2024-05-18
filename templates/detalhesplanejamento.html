@@ -1,0 +1,11 @@
+{% for objetivo in objetivos %}
+    {% for meta in objetivo.metas %}
+        {% for indicador in meta.indicadores %}
+            <tr>
+                <td>{{ objetivo.nome }}</td>
+                <td>{{ meta.nome }}</td>
+                <td>{{ indicador.nome }}</td>
+            </tr>
+        {% endfor %}
+    {% endfor %}
+{% endfor %}
