@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 
 {% block titulo %}
-  PDI - 2024:2028
+  Planejamento - {{ pdi.nome }}
 {% endblock %}
 
 {% block conteudo %}
 <body>
-    <h4 style="text-align: center; color: #003366;">Plano de Desenvolvimento Institucional - {{ pdi.nome }}</h4>
+    <h4 style="text-align: center; color: #003366;">Planejamento - {{ pdi.nome }}</h4>
 
     <style>
         table {
@@ -66,8 +66,11 @@
                                 <td rowspan="{{ metas | selectattr('objetivo_id', 'equalto', objetivo.id) | map(attribute='id') | map('length') | sum }}">{{ objetivo.nome }}</td>
                                 {% set first_objetivo = False %}
                             {% endif %}
-                            <td>{{ meta.nome }}</td>
-                            <td>{{ meta.porcentagem_execucao }}</td>
+                            {% if first_meta %}
+                                <td>{{ meta.nome }}</td>
+                                <td>{{ meta.porcentagem_execucao }}</td>
+                                {% set first_meta = False %}
+                            {% endif %}
                             <td>-</td>
                         </tr>
                     {% endif %}

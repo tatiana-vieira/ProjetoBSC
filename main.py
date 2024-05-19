@@ -13,7 +13,7 @@ from routes.relatorioplanejamento import relatorioplanejamento_route
 from routes.relatorioacao import relatorioacao_route
 from routes.relatoriometas import relatoriometas_route
 from routes.altpdi import altpdi_route
-from routes.db import db
+from routes.db import db,init_db
 from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
 from wtforms import SelectField, StringField, SubmitField
@@ -38,6 +38,7 @@ db.init_app(app)
 
 # Inicialize o objeto Bcrypt
 bcrypt = Bcrypt(app)
+#init_db(app)
 
 # Inicialize o objeto LoginManager
 login_manager = LoginManager()
@@ -321,9 +322,13 @@ def processar_formulario_pdi(pdi_id=None):
         return 'Acesso não autorizado'
 
     # Processa os dados do formulário
-    nome = request.form['nome']
-    datainicio = request.form['datainicio']
-    datafim = request.form['datafim']
+    nome = request.form.get('nome')
+    datainicio = request.form.get('datainicio')
+    datafim = request.form.get('datafim')
+    id_meta = request.form.get('id_meta')  # Usando get para capturar o id_meta
+
+    if not nome or not datainicio or not datafim or not id_meta:
+        return 'Todos os campos são obrigatórios'
 
     if pdi_id:
         # Atualiza um PDI existente
@@ -331,15 +336,16 @@ def processar_formulario_pdi(pdi_id=None):
         pdi.nome = nome
         pdi.datainicio = datainicio
         pdi.datafim = datafim
+        pdi.id_meta = id_meta  # Atualizando id_meta
     else:
         # Insere os dados no banco de dados
-        pdi = PDI(nome=nome, datainicio=datainicio, datafim=datafim)
+        pdi = PDI(nome=nome, datainicio=datainicio, datafim=datafim, id_meta=id_meta)
         db.session.add(pdi)
     
     db.session.commit()
     
     return redirect(url_for('sucesso_cadastro'))
-######################################################################################
+
 @app.route('/cadastro_pdi', methods=['GET', 'POST'])
 def cadastro_pdi():
     if request.method == 'POST':
@@ -363,7 +369,6 @@ def lista_pdis():
 @app.route('/sucesso_cadastro')
 def sucesso_cadastro():
     return 'Cadastro realizado com sucesso!'
-
 
 ######################Cadastro Objetivo ######################################
 @app.route('/lista_objetivos')
@@ -536,43 +541,6 @@ def escolher_objetivo_para_alteracao():
     return render_template('escolher_objetivo_para_alteracao.html', pdi_id=pdi_id, objetivos=objetivos)
 ################################################################################################################################
 ######################################################################
-@app.route('/cadastro_indicador', methods=['GET', 'POST'])
-def cadastro_indicador():
-    if request.method == 'POST':
-        return processar_formulario_indicador()
-
-    # Busca todos os PDIs
-    pdis = PDI.query.all()
-
-    # Filtra os objetivos relacionados aos PDIs
-    objetivos = Objetivo.query.filter(Objetivo.pdi_id.in_([pdi.id for pdi in pdis])).all()
-
-    # Filtra as metas relacionadas aos objetivos
-    metas = Meta.query.filter(Meta.objetivo_id.in_([objetivo.id for objetivo in objetivos])).all()
-
-    # Filtra os indicadores relacionados às metas
-    indicadores = Indicador.query.filter(Indicador.meta_pdi_id.in_([meta.id for meta in metas])).all()
-
-    return render_template('cadastro_indicador.html', pdis=pdis, objetivos=objetivos, metas=metas, indicadores=indicadores)
-
-def processar_formulario_indicador():
-    if 'email' not in session:
-        return 'Acesso não autorizado'
-
-    user = Users.query.filter_by(email=session['email']).first()
-    if user.role != 'Pro-reitor':
-        return 'Acesso não autorizado'
-
-    indicador_id = request.form['indicador_id']
-    meta_pdi_id = request.form['meta_pdi_id']
-    nome = request.form['nome']
-
-    novo_indicador = Indicador(meta_pdi_id=meta_pdi_id, indicador_id=indicador_id, nome=nome)
-    db.session.add(novo_indicador)
-    db.session.commit()
-
-    return redirect(url_for('sucesso_cadastro'))
-
 ###############################################################
 @app.route('/visualizacao')
 def visualizacao():
@@ -767,6 +735,8 @@ def associar_metaspe():
     # Aqui você pode adicionar qualquer lógica necessária para renderizar a página de planejamento estratégico
       return render_template('relatoriometas.html')
 #################################################################################################################################
+
+##############################################################################################################################
 
 @app.route('/altpdi')
 def exibir_altpdi():

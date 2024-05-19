@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block titulo %}
+  Selecionar Planejamento
+{% endblock %}
+
+{% block conteudo %}
+<body>
+    <h4 style="text-align: center; color: #003366;">Selecionar Planejamento</h4>
+    <form method="POST" action="{{ url_for('altpdi.selecionar_planejamento') }}" style="text-align: center; margin: auto; width: 50%;">
+        <label for="pdi_id">Planejamento:</label>
+        <select id="pdi_id" name="pdi_id" required style="width: 100%; margin-bottom: 10px;">
+            {% for pdi in pdis %}
+                <option value="{{ pdi.id }}">{{ pdi.nome }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Visualizar Dados</button>
+    </form>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div style="text-align: center; margin-top: 20px; color: red;">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+</body>
+{% endblock %}
