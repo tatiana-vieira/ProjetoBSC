@@ -41,30 +41,27 @@
         </thead>
         <tbody>
             {% for objetivo in objetivos %}
-                {% set first_objetivo = True %}
-                {% for meta in metas if meta.objetivo_id == objetivo.id %}
-                    {% set first_meta = True %}
+                {% set metas_objetivo = metas | selectattr('objetivo_id', 'equalto', objetivo.id) | list %}
+                {% set rowspan_objetivo = metas_objetivo | map(attribute='id') | list | length %}
+                {% for meta in metas_objetivo %}
                     {% set indicadores_meta = indicadores | selectattr('meta_pdi_id', 'equalto', meta.id) | list %}
-                    {% if indicadores_meta %}
-                        {% for indicador in indicadores_meta %}
-                            <tr>
-                                {% if first_objetivo %}
-                                    <td rowspan="{{ metas | selectattr('objetivo_id', 'equalto', objetivo.id) | map(attribute='id') | map('length') | sum }}">{{ objetivo.nome }}</td>
-                                    {% set first_objetivo = False %}
-                                {% endif %}
-                                {% if first_meta %}
-                                    <td rowspan="{{ indicadores_meta | length }}">{{ meta.nome }}</td>
-                                    <td rowspan="{{ indicadores_meta | length }}">{{ meta.porcentagem_execucao }}</td>
-                                    {% set first_meta = False %}
-                                {% endif %}
-                                <td>{{ indicador.nome }}</td>
-                            </tr>
-                        {% endfor %}
-                    {% else %}
+                    {% set rowspan_meta = indicadores_meta | length %}
+                    {% for indicador in indicadores_meta %}
                         <tr>
-                            {% if first_objetivo %}
-                                <td rowspan="{{ metas | selectattr('objetivo_id', 'equalto', objetivo.id) | map(attribute='id') | map('length') | sum }}">{{ objetivo.nome }}</td>
-                                {% set first_objetivo = False %}
+                            {% if loop.index0 == 0 and loop.revindex0 == rowspan_objetivo - 1 %}
+                                <td rowspan="{{ rowspan_objetivo }}">{{ objetivo.nome }}</td>
+                            {% endif %}
+                            {% if loop.index0 == 0 %}
+                                <td rowspan="{{ rowspan_meta }}">{{ meta.nome }}</td>
+                                <td rowspan="{{ rowspan_meta }}">{{ meta.porcentagem_execucao }}</td>
+                            {% endif %}
+                            <td>{{ indicador.nome }}</td>
+                        </tr>
+                    {% endfor %}
+                    {% if indicadores_meta | length == 0 %}
+                        <tr>
+                            {% if loop.index0 == 0 %}
+                                <td rowspan="{{ metas_objetivo | length }}">-</td>
                             {% endif %}
                             <td>{{ meta.nome }}</td>
                             <td>{{ meta.porcentagem_execucao }}</td>
@@ -72,14 +69,6 @@
                         </tr>
                     {% endif %}
                 {% endfor %}
-                {% if not metas | selectattr('objetivo_id', 'equalto', objetivo.id) | list %}
-                    <tr>
-                        <td>{{ objetivo.nome }}</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                    </tr>
-                {% endif %}
             {% endfor %}
         </tbody>
     </table>

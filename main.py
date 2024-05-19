@@ -78,6 +78,7 @@ app.register_blueprint(relatorioplanejamento_route)
 app.register_blueprint(relatorioacao_route)
 app.register_blueprint(relatorioindicador_route)
 app.register_blueprint(relatoriometas_route)
+app.register_blueprint(altpdi_route)
 
 #########################################################################################33
 @app.route('/')
@@ -737,15 +738,27 @@ def associar_metaspe():
 #################################################################################################################################
 
 ##############################################################################################################################
-
-@app.route('/altpdi')
+@app.route('/altpdi', methods=['GET', 'POST'])
 def exibir_altpdi():
-    pdi_data = PDI.query.all()
-    objetivos = Objetivo.query.filter(Objetivo.pdi_id.in_([pdi.id for pdi in pdi_data])).all()
+    if request.method == 'POST':
+        pdi_id = request.form.get('pdi_id')
+        return redirect(url_for('exibir_altpdi', pdi_id=pdi_id))
+
+    pdi_id = request.args.get('pdi_id')
+    if not pdi_id:
+        pdi_data = PDI.query.all()
+        return render_template('selecionar_programa.html', pdis=pdi_data)
+    
+    pdi_data = PDI.query.filter_by(id=pdi_id).first()
+    if not pdi_data:
+        flash('PDI não encontrado.')
+        return redirect(url_for('exibir_altpdi'))
+
+    objetivos = Objetivo.query.filter_by(pdi_id=pdi_id).all()
     metas = Meta.query.filter(Meta.objetivo_id.in_([objetivo.id for objetivo in objetivos])).all()
     indicadores = Indicador.query.filter(Indicador.meta_pdi_id.in_([meta.id for meta in metas])).all()
-    
-    return render_template('altpdi.html', objetivos=objetivos, metas=metas, indicadores=indicadores)
+
+    return render_template('altpdi.html', pdi=pdi_data, objetivos=objetivos, metas=metas, indicadores=indicadores)
 
 
 ##################################################################################33

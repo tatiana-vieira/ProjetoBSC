@@ -34,8 +34,14 @@ def exibir_altpdi():
         flash('Ainda não há planejamento para este programa.')
         return redirect(url_for('selecionar_programa'))
 
-    return render_template('altpdi.html', pdi=pdi_data, objetivos=objetivos, metas=metas, indicadores=indicadores)
+    # Debug prints
+    print(f"PDI Data: {pdi_data}")
+    print(f"Objetivos: {objetivos}")
+    print(f"Metas: {metas}")
+    print(f"Indicadores: {indicadores}")
 
+    return render_template('altpdi.html', pdi=pdi_data, objetivos=objetivos, metas=metas, indicadores=indicadores)
+#############################################################################
 
 @altpdi_route.route('/selecionar_planejamento', methods=['GET', 'POST'])
 def selecionar_planejamento():
@@ -65,4 +71,5 @@ def exibir_planejamento():
         flash('Ainda não há planejamento para este PDI.')
         return redirect(url_for('altpdi.selecionar_planejamento'))
 
+    print(f"PDI Data: {pdi_data}")  # Adicionado para depuração
     return render_template('exibir_planejamento.html', pdi=pdi_data, objetivos=objetivos, metas=metas, indicadores=indicadores)
