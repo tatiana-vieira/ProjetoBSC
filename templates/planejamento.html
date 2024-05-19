@@ -28,10 +28,11 @@
 </div>
 
 
-    <script>
-        function cancelar() {
-            window.location.href = "{{ url_for('login.get_proreitor') }}";
-        }
-    </script> 
+<script>
+    function cancelar() {
+        // Redireciona para a página do coordenador após o login
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
+</script> 
 
 {% endblock %}
