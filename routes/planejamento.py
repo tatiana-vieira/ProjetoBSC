@@ -10,6 +10,7 @@ planejamento_route = Blueprint('planejamento', __name__)
 login_manager = LoginManager(planejamento_route)
 
 # Implemente o decorador coordenador_required
+
 def coordenador_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -75,7 +76,9 @@ def associar_objetivospe():
         db.session.commit()
 
         flash('Objetivo cadastrado com sucesso!', 'success')
-        return redirect(url_for('login.get_coordenador'))
+        # Redireciona para a mesma página para exibir a mensagem
+        return redirect(url_for('associar_objetivospe'))
+
     else:
         # Se o método não for POST, obtemos os dados necessários apenas do programa do Coordenador logado
         programa_id = current_user.programa_id
@@ -100,19 +103,17 @@ def associar_objetivospe():
         return render_template('objetivope.html', objetivos_por_planejamento=objetivos_por_planejamento)
 
 ###################################################################################################################################
-###################################################################################################################################
-
-#####################################################################################################################################3
 #######################################################################################################################
 @planejamento_route.route('/associar_acaope', methods=['GET', 'POST'])
+@coordenador_required
 def associar_acaope():
     if request.method == 'POST':
         meta_pe_id = request.form['meta_pe_id']
         nome = request.form['nome']
-        porcentagem_execucao = request.form['porcentagem_execucao']   
+        porcentagem_execucao = request.form['porcentagem_execucao']
         data_inicio = request.form['data_inicio']
-        data_termino = request.form['data_termino']   
-        responsavel=request.form['responsavel']
+        data_termino = request.form['data_termino']
+        responsavel = request.form['responsavel']
         status = request.form['status']
         observacao = request.form['observacao']
 
@@ -120,43 +121,31 @@ def associar_acaope():
         meta_pe = MetaPE.query.get(meta_pe_id)
         if meta_pe is None:
             flash('Meta não encontrada!', 'error')
-            return redirect(url_for('get_coordenador'))
-        
+            return redirect(url_for('associar_acaope'))
+
         # Cria uma nova ação associada à meta
         nova_acao = AcaoPE(nome=nome, meta_pe_id=meta_pe_id, porcentagem_execucao=porcentagem_execucao, data_inicio=data_inicio, data_termino=data_termino,
-                       responsavel=responsavel,status=status, observacao=observacao )
+                           responsavel=responsavel, status=status, observacao=observacao)
         db.session.add(nova_acao)
         db.session.commit()
 
         flash('Ação cadastrada com sucesso!', 'success')
-        return redirect(url_for('get_coordenador'))
-    
+        return redirect(url_for('associar_acaope'))
+
     else:
-        # Se o método não for POST, obtenha os dados necessários para o formulário
-        # Obtenha o programa do Coordenador logado
         programa_id = current_user.programa_id
-        
-        # Se o programa existir, obtenha os planejamentos estratégicos associados a ele
         if programa_id:
             planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-            
-            # Inicialize uma lista para armazenar as metas associadas a objetivos associados a esses planejamentos estratégicos
             metas_pe_associadas = []
-            
-            # Para cada planejamento estratégico, obtenha os objetivos associados
             for planejamento in planejamentos:
                 objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
-                
-                # Para cada objetivo, obtenha as metas associadas
                 for objetivo in objetivos:
                     metas_pe = MetaPE.query.filter_by(objetivo_pe_id=objetivo.id).all()
                     metas_pe_associadas.extend(metas_pe)
-
             return render_template('acaope.html', metas_pe=metas_pe_associadas)
         else:
             flash('Programa não encontrado!', 'error')
-            return redirect(url_for('get_coordenador'))
-####################################################################################################### 
+            return redirect(url_for('login.get_coordenador'))
 ########################################## Alterar ação #####################################################
 @planejamento_route.route('/alterar_acaope/<int:acao_id>', methods=['GET', 'POST'])
 def alterar_acaope(acao_id):
@@ -319,18 +308,18 @@ def associar_metaspe():
             db.session.add(nova_meta)
             db.session.commit()
             flash('Meta cadastrada com sucesso!', 'success')
-            return redirect(url_for('login.get_coordenador'))  # Redireciona após a criação bem-sucedida
+            return redirect(url_for('associar_metaspe'))  # Redireciona para a mesma página para exibir a mensagem de sucesso
         except Exception as e:
             print("Ocorreu um erro ao cadastrar a meta:", e)
             db.session.rollback()
             flash('Erro ao cadastrar a meta. Por favor, tente novamente.', 'danger')
-            redirect(url_for('login.get_coordenador'))  # Redireciona após a criação bem-sucedida
+            return redirect(url_for('associar_metaspe'))  # Redireciona para a mesma página para exibir a mensagem de erro
 
     else:
         # Handle GET request
         if 'email' not in session:
             flash('Você precisa estar logado para acessar esta página.', 'danger')
-            return redirect(url_for('login_page'))
+            return redirect(url_for('login.login_page'))
 
         programa_id = session.get('programa_id')
 
@@ -352,7 +341,6 @@ def associar_metaspe():
         return render_template('metaspe.html',
                               planejamentos_estrategicos=planejamentos_estrategicos,
                               objetivo_options=objetivo_options)
-    
 #######################################################################################################################    
 @planejamento_route.route('/get_objetivosplano/<int:planejamento_id>')
 def get_objetivos(planejamento_id):

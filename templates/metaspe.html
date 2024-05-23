@@ -1,68 +1,79 @@
 {% extends 'basecord.html' %}
 
 {% block titulo %}
-  Objetivos - Planejamento Estratégico
+    Cadastro do Planejamento Estratégico - PRPPG
 {% endblock %}
 
 {% block conteudo %}
-<div style="margin: auto; width: 50%; text-align: center;">
-  <div class="form-block"><br>
-    <h2>Planejamento Estratégico - Meta</h2><br>
-    <form id="form-metaspe" method="POST" action="{{ url_for('planejamento.associar_metaspe') }}">
-      <label for="planejamento_id">Selecione o Planejamento Estratégico:</label></br>
-      <select id="planejamento_id" name="planejamento_id" required style="width: 100%; margin-bottom: 10px;">
-          {% for pe in planejamentos_estrategicos %}
-              <option value="{{ pe.id }}">{{ pe.nome }}</option>
-          {% endfor %}
-      </select><br>
-  
-      <label for="objetivo_pe_id">Selecione o Objetivo:</label></br>
-      <select id="objetivo_pe_id" name="objetivo_pe_id" required style="width: 100%; margin-bottom: 10px;">
-          <!-- Objetivos serão preenchidos dinamicamente via JavaScript -->
-      </select><br>
-      
-      <label for="nome">Nome da Meta:</label><br>
-      <input type="text" id="nome" name="nome" required style="width: 100%; margin-bottom: 10px;"><br>
-      
-      <label for="porcentagem_execucao">Porcentagem de Execução:</label><br>
-      <input type="number" id="porcentagem_execucao" name="porcentagem_execucao" required style="width: 100%; margin-bottom: 10px;"><br>
-      
-      <input type="hidden" id="planejamento_id_hidden" name="planejamento_id_hidden">
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
 
-      <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
-      <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button><br>            
-    </form>
-</div>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<form method="POST" action="{{ url_for('associar_metaspe') }}">
+    <label for="planejamento">Selecione o Planejamento Estratégico:</label>
+    <select name="planejamento_id" id="planejamento_select" required onchange="updateObjetivos(this.value)">
+        <option value="">Selecione...</option>
+        {% for planejamento in planejamentos_estrategicos %}
+            <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
+        {% endfor %}
+    </select>
+    <br>
+
+    <label for="objetivo_pe_id">Selecione o Objetivo:</label>
+    <select name="objetivo_pe_id" id="objetivo_select" required>
+        <option value="">Selecione...</option>
+    </select>
+    <br>
+
+    <label for="nome">Nome da Meta:</label>
+    <input type="text" id="nome" name="nome" required style="width: 100%; margin-bottom: 10px;"><br>
+
+    <label for="porcentagem_execucao">Porcentagem de Execução:</label>
+    <input type="number" id="porcentagem_execucao" name="porcentagem_execucao" required style="width: 100%; margin-bottom: 10px;"><br>
+
+    <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
+    <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button><br>
+</form>
+
 <script>
-$(document).ready(function() {
-  $('#planejamento_id').change(function() {
-    var planejamento_id = $(this).val();
-    $('#planejamento_id_hidden').val(planejamento_id);
+    function cancelar() {
+        // Redireciona para a página do coordenador após o login
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
 
-    $.ajax({
-      url: '/get_objetivosplano/' + planejamento_id,
-      type: 'GET',
-      success: function(data) {
-        $('#objetivo_pe_id').html('');
-        $.each(data, function(index, objetivo) {
-          $('#objetivo_pe_id').append('<option value="' + objetivo.id + '">' + objetivo.nome + '</option>');
-        });
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        console.error("Erro ao recuperar objetivos:", textStatus, errorThrown);
-        // Optionally display an error message to the user
-      }
+    function updateObjetivos(planejamentoId) {
+        if (planejamentoId) {
+            fetch(`/get_objetivosplano/${planejamentoId}`)
+                .then(response => response.json())
+                .then(data => {
+                    var objetivos = document.getElementById('objetivo_select');
+                    objetivos.innerHTML = '<option value="">Selecione...</option>';  // Clear current options
+                    data.forEach(function(objetivo) {
+                        var option = document.createElement('option');
+                        option.value = objetivo.id;
+                        option.textContent = objetivo.nome;
+                        objetivos.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        } else {
+            // Limpa a lista de objetivos se nenhum planejamento estiver selecionado
+            document.getElementById('objetivo_select').innerHTML = '<option value="">Selecione...</option>';
+        }
+    }
+
+    // Chama a função para definir os objetivos do planejamento inicial, se houver um pré-selecionado
+    document.addEventListener('DOMContentLoaded', function() {
+        var planejamentoSelect = document.getElementById('planejamento_select');
+        if (planejamentoSelect.value) {
+            updateObjetivos(planejamentoSelect.value);
+        }
     });
-  });
-});
-
-
-  function cancelar() {
-    // Redireciona para a página do coordenador após o login
-    window.location.href = "{{ url_for('login.get_coordenador') }}";
-  }
-</script> 
-  <!-- Exibir objetivos relacionados ao PDI selecionado -->
-
+</script>
 {% endblock %}
