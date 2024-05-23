@@ -26,13 +26,11 @@ def exibir_relatorioacao():
         acoespe = []
 
         if planejamento_selecionado_id:
-            print(f"Planejamento selecionado ID: {planejamento_selecionado_id}")
             planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
             if not planejamento_selecionado:
                 flash('Planejamento não encontrado.', 'warning')
                 return redirect(url_for('relatorioacao.exibir_relatorioacao'))
 
-            print(f"Planejamento selecionado: {planejamento_selecionado.nome}")
             objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
             metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
             acoespe = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()

@@ -1,11 +1,23 @@
 {% extends 'basecord.html' %}
 
 {% block titulo %}
-  Planejamento Estratégico -Alterar Ação
+  Planejamento Estratégico - Alterar Ação
 {% endblock %}
 
 {% block conteudo %}
-<body>
+<div style="margin: auto; width: 50%; text-align: center;">
+    <!-- Mensagens Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div>
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} text-center">{{ message }}</div>
+        {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    <!-- Fim das Mensagens Flash -->
+
     <h1 style="text-align: center;">Alterar Ação</h1>
     <form action="{{ url_for('planejamento.alterar_acaope', acao_id=acao.id) }}" method="POST" style="text-align: center;">
        <label for="data_termino">Data de Término:</label><br>
@@ -20,6 +32,9 @@
         <label for="observacao">Observação:</label><br>
         <textarea id="observacao" name="observacao" rows="4" cols="80">{{ acao.observacao }}</textarea><br><br>
         
+        <label for="porcentagem_execucao">Porcentagem da Execução:</label><br>
+        <input type="text" id="porcentagem_execucao" name="porcentagem_execucao" value="{{ acao.porcentagem_execucao }}" required style="width: 50%; margin-bottom: 10px;"><br>
+
         <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar</button>
         <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button><br>            
         <script>
@@ -28,6 +43,6 @@
               window.location.href = "{{ url_for('login.get_coordenador') }}";
           }
         </script>     
-      </form>
-</body>
+    </form>
+</div>
 {% endblock conteudo %}

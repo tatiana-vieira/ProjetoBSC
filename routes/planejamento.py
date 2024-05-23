@@ -162,6 +162,9 @@ def alterar_acaope(acao_id):
             acao.status = request.form['status']
         if 'observacao' in request.form:
             acao.observacao = request.form['observacao']
+        if 'porcentagem_execucao' in request.form:
+            acao.porcentagem_execucao = request.form['porcentagem_execucao']
+        
         
         # Salva as alterações no banco de dados
         db.session.commit()
