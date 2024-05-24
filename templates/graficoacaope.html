@@ -1,0 +1,53 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+    Cadastro de Metas - PRPPG
+{% endblock %}
+
+{% block conteudo %}
+<body>
+    <div class="container">
+        <h1 class="text-center">Ações do Planejamento Estratégico</h1>
+        <form method="get" action="{{ url_for('graficoacaope.exibir_graficoacaope') }}">
+            <div class="form-group">
+                <label for="planejamento_selecionado">Selecionar Planejamento:</label>
+                <select class="form-control" id="planejamento_selecionado" name="planejamento_selecionado" required onchange="this.form.submit()">
+                    <option value="">Selecione um planejamento</option>
+                    {% for planejamento in planejamentos %}
+                        <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento.id == planejamento_selecionado.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="meta_selecionada" style="margin-top: 1em;">Selecionar Meta:</label>
+                <select class="form-control" id="meta_selecionada" name="meta_selecionada" required>
+                    <option value="">Selecione uma meta</option>
+                    {% for meta in metas %}
+                        <option value="{{ meta.id }}" {% if meta_selecionada_id and meta.id == meta_selecionada_id %}selected{% endif %}>{{ meta.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary" style="margin-top: 1em;">Gerar Gráfico</button>
+            </div>
+        </form>
+
+        {% if graficos %}
+            <h2 class="text-center">Gráficos de Ações</h2>
+            {% for grafico in graficos %}
+                <div class="card my-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-center">Meta: {{ grafico.meta }}</h5>
+                        <div class="text-center">
+                            <img src="data:image/png;base64,{{ grafico.grafico }}" class="img-fluid" alt="Gráfico de Pizza">
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</body>
+{% endblock %}
