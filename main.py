@@ -13,6 +13,7 @@ from routes.relatorioplanejamento import relatorioplanejamento_route
 from routes.relatorioacao import relatorioacao_route
 from routes.relatoriometas import relatoriometas_route
 from routes.altpdi import altpdi_route
+from routes.graficogrant import graficogrant_route
 from routes.graficoacaope import graficoacaope_route
 from routes.db import db,init_db
 from flask_bcrypt import Bcrypt
@@ -80,6 +81,7 @@ app.register_blueprint(relatorioacao_route)
 app.register_blueprint(relatorioindicador_route)
 app.register_blueprint(relatoriometas_route)
 app.register_blueprint(altpdi_route)
+app.register_blueprint(graficogrant_route)
 app.register_blueprint(graficoacaope_route)
 
 #########################################################################################33

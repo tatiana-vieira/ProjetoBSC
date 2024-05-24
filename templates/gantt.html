@@ -1,0 +1,42 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+    Gráfico de Gantt
+{% endblock %}
+
+{% block conteudo %}
+<body>
+    <div class="container">
+        <h1 class="text-center">Gráfico de Gantt das Ações</h1>
+        <form method="get" action="{{ url_for('graficogrant.exibir_gantt') }}">
+            <div class="form-group text-center">
+                <label for="planejamento_selecionado">Selecionar Planejamento:</label>
+                <select class="form-control" id="planejamento_selecionado" name="planejamento_selecionado" required onchange="this.form.submit()">
+                    <option value="">Selecione um planejamento</option>
+                    {% for planejamento in planejamentos %}
+                        <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento.id == planejamento_selecionado.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+
+        {% if plot_url %}
+            <div class="text-center">
+                <img src="data:image/png;base64,{{ plot_url }}" class="img-fluid" alt="Gráfico de Gantt">
+            </div>
+        {% endif %}
+    </div>
+    <div style="text-align: center; margin-top: 20px;">
+        <button type="button" onclick="fechar()" style="background-color: #090975; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+    </div>
+
+    <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
+        }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</body>
+{% endblock %}
