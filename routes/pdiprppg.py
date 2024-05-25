@@ -11,6 +11,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib import colors
 
+
 pdiprppg_route = Blueprint('pdiprppg', __name__)
 
 @pdiprppg_route.route('/relpdi')

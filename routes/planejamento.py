@@ -1,9 +1,15 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session,jsonify
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session,jsonify,send_file
 from .models import Users, Programa, PlanejamentoEstrategico, PDI,ObjetivoPE,Objetivo,MetaPE,AcaoPE,IndicadorPlan,Valorindicador # Certifique-se de importar seus modelos corretamente
 from routes.db import db
 from flask_bcrypt import Bcrypt
+import io
+import pandas as pd
 from flask_login import  login_required, LoginManager, current_user
 from functools import wraps
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
+from reportlab.lib import colors
 
 
 planejamento_route = Blueprint('planejamento', __name__)
@@ -376,9 +382,6 @@ def alterar_metape(metape_id):
     # Passa a variável 'meta' para o template
     return render_template('alterarmetas.html', meta=meta_pe, mensagem=mensagem)
 #############################################################################
-
-
-
 #################################################################################
 @planejamento_route.route('/sucesso', methods=['GET'])
 def sucesso():
@@ -386,3 +389,79 @@ def sucesso():
     return render_template('sucesso.html', mensagem=mensagem)
 
 ##################################################################################
+@planejamento_route.route('/export_programa/excel/<int:programa_id>')
+@login_required
+def export_programa_excel(programa_id):
+    planejamentope = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+    objetivospe = ObjetivoPE.query.filter(ObjetivoPE.objetivo_pdi_id.in_([pdi.id for pdi in planejamentope])).all()
+    metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
+    indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metaspe])).all()
+    
+    data = []
+    for objetivo in objetivospe:
+        for meta in metaspe:
+            if meta.objetivo_pe_id == objetivo.id:
+                for indicador in indicadores:
+                    if indicador.meta_pe_id == meta.id:
+                        data.append({
+                            'Objetivo': objetivo.nome,
+                            'Meta': meta.nome,
+                            'Indicador': indicador.nome
+                        })
+
+    df = pd.DataFrame(data)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Planejamento Estratégico')
+    output.seek(0)
+
+    return send_file(output, as_attachment=True, download_name='planejamento_estrategico.xlsx', mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+@planejamento_route.route('/export_programa/pdf/<int:programa_id>')
+@login_required
+def export_programa_pdf(programa_id):
+    planejamentope = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+    objetivospe = ObjetivoPE.query.filter(ObjetivoPE.objetivo_pdi_id.in_([pdi.id for pdi in planejamentope])).all()
+    metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
+    indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metaspe])).all()
+    
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    styleN = styles['BodyText']
+    styleN.alignment = 4  # Justify
+
+    elements = []
+    elements.append(Paragraph("Planejamento Estratégico", styles['Title']))
+
+    data = [['Objetivo', 'Meta', 'Indicador']]
+    
+    for objetivo in objetivospe:
+        for meta in metaspe:
+            if meta.objetivo_pe_id == objetivo.id:
+                for indicador in indicadores:
+                    if indicador.meta_pe_id == meta.id:
+                        data.append([
+                            Paragraph(objetivo.nome, styleN),
+                            Paragraph(meta.nome, styleN),
+                            Paragraph(indicador.nome, styleN)
+                        ])
+
+    table = Table(data, colWidths=[150, 150, 150])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+
+    elements.append(table)
+    doc.build(elements)
+
+    buffer.seek(0)
+
+    return send_file(buffer, as_attachment=True, download_name='planejamento_estrategico.pdf', mimetype='application/pdf')
