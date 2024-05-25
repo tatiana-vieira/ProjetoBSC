@@ -3,7 +3,7 @@ from sqlalchemy import select
 from routes.models import Ensino, Engajamento, Transfconhecimento, Pesquisar, Orientacao, PDI, Meta, Objetivo, Indicador, Producaointelectual, Users, Programa,BSC
 from routes.models import MetaPE,IndicadorPlan,AcaoPE,ObjetivoPE,PlanejamentoEstrategico
 from routes.multidimensional import multidimensional_route
-from routes.pdiprppg import pdi_route
+from routes.pdiprppg import pdiprppg_route
 from routes.producao import producao_route
 from routes.indicador import indicador_route
 from routes.login import login_route
@@ -72,7 +72,7 @@ def add_session_config():
 
 app.register_blueprint(login_route)
 app.register_blueprint(multidimensional_route)
-app.register_blueprint(pdi_route)
+app.register_blueprint(pdiprppg_route)
 app.register_blueprint(producao_route)
 app.register_blueprint(indicador_route)
 app.register_blueprint(planejamento_route)

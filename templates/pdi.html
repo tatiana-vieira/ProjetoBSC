@@ -29,43 +29,47 @@
             background-color: #ffffff;
         }
     </style>
-        <table>
-            <thead>
+    <table>
+        <thead>
             <tr> 
-            
                 <th>Objetivo</th>         
                 <th>Meta</th>           
                 <th>Indicador</th>
-                
             </tr>
-            </thead>
-            <tbody>
-                  {% for objetivo in objetivos %}
-                        {% for meta in metas if meta.objetivo_id == objetivo.id %}
-                            {% for indicador in indicadores if indicador.meta_pdi_id == meta.id %}
-                                <tr>
-                                    <td>{{ objetivo.nome }}</td>
-                                    <td>{{ meta.nome }}</td>
-                                    <td>{{ indicador.nome }}</td>
-                                </tr>
-                            {% endfor %}
-                            {% if loop.last %}
-                                {% for _ in range(2 - loop.length) %}
-                                    <tr><td colspan="3"></td></tr>
-                                {% endfor %}
-                            {% endif %}
+        </thead>
+        <tbody>
+            {% for objetivo in objetivos %}
+                {% for meta in metas if meta.objetivo_id == objetivo.id %}
+                    {% for indicador in indicadores if indicador.meta_pdi_id == meta.id %}
+                        <tr>
+                            <td>{{ objetivo.nome }}</td>
+                            <td>{{ meta.nome }}</td>
+                            <td>{{ indicador.nome }}</td>
+                        </tr>
+                    {% endfor %}
+                    {% if loop.last %}
+                        {% for _ in range(2 - loop.length) %}
+                            <tr><td colspan="3"></td></tr>
                         {% endfor %}
-                  {% endfor %}
-            </tbody>
-       </table>
-       <div style="text-align: center; margin-top: 20px;">
-        <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
-       </div>
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+    <div style="text-align: center; margin-top: 20px;">
+        <form action="{{ url_for('pdiprppg.export_pdi_excel') }}" method="GET" style="display: inline;">
+            <button type="submit" class="btn btn-secondary">Exportar Excel</button>
+        </form>
+        <form action="{{ url_for('pdiprppg.export_pdi_pdf') }}" method="GET" style="display: inline;">
+            <button type="submit" class="btn btn-secondary">Exportar PDF</button>
+        </form>
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
+    </div>
 
-        <script>
-            function fechar() {
-                window.location.href = "{{ url_for('login.get_coordenador') }}";
-            }
-        </script>
+    <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
+        }
+    </script>
 </body>
-{% endblock conteudo %}
+{% endblock %}
