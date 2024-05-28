@@ -1,20 +1,55 @@
 {% extends 'basecord.html' %}
 
-{% block content %}
-<h1>Adicionar Variável para Indicador: {{ indicador.nome }}</h1>
+{% block conteudo %}
+<h1 class="text-center">Cadastro de Variáveis</h1>
 
-<form method="POST">
-    <label for="nome">Nome da Variável:</label>
-    <input type="text" id="nome" name="nome" required>
-    <button type="submit">Adicionar Variável</button>
-</form>
+<div class="container">
+    <div class="bordered-section">
+        <h4 class="text-center">Cadastro de Variáveis</h4>
+        <div class="form-group row justify-content-center" id="variaveis-container">
+            <label for="variavel-nome" class="col-sm-2 col-form-label">Nome da variável:</label><br>
+            <div class="col-sm-4">
+                <input type="text" id="variavel-nome" name="variavel-nome[]" class="form-control" placeholder="Nome da variável" required>
+            </div>
+            <div class="col-sm-2">
+                <button type="button" class="btn btn-secondary" id="add-variavel" style="background-color: #6c757d; color: white;">Adicionar variável</button><br>
+            </div>
+        </div>
+    </div>
+</div>
 
-<h2>Variáveis Existentes</h2>
-<ul>
-    {% for variavel in variaveis %}
-        <li>{{ variavel.nome }} <form action="{{ url_for('calculoindicador.remover_variavel', variavel_id=variavel.id) }}" method="post" style="display:inline;"><button type="submit" class="btn btn-danger btn-sm">Remover</button></form></li>
-    {% endfor %}
-</ul>
+<script>
+document.getElementById('add-variavel').addEventListener('click', function() {
+    var container = document.getElementById('variaveis-container');
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.name = 'variavel-nome[]';
+    input.className = 'form-control';
+    input.placeholder = 'Nome da variável';
+    input.required = true;
 
-<a href="{{ url_for('calculoindicador.indicadores') }}">Voltar</a>
+    var div = document.createElement('div');
+    div.className = 'col-sm-4 offset-sm-2 mt-2';
+    div.appendChild(input);
+
+    var btnRemove = document.createElement('button');
+    btnRemove.type = 'button';
+    btnRemove.className = 'btn btn-danger mt-2';
+    btnRemove.innerText = 'Remover';
+    btnRemove.onclick = function() {
+        container.removeChild(div);
+        container.removeChild(btnRemove);
+    };
+
+    container.appendChild(div);
+    container.appendChild(btnRemove);
+});
+</script>
+
+<style>
+.bordered-section {
+    border: 2px solid black;
+    padding: 20px;
+}
+</style>
 {% endblock %}

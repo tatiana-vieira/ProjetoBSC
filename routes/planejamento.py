@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session,jsonify,send_file
-from .models import Users, Programa, PlanejamentoEstrategico, PDI,ObjetivoPE,Objetivo,MetaPE,AcaoPE,IndicadorPlan,Valorindicador # Certifique-se de importar seus modelos corretamente
+from .models import Users, Programa, PlanejamentoEstrategico, PDI,ObjetivoPE,Objetivo,MetaPE,AcaoPE,IndicadorPlan,Valorindicador,Valormeta # Certifique-se de importar seus modelos corretamente
 from routes.db import db
 from flask_bcrypt import Bcrypt
 import io
@@ -306,56 +306,71 @@ def alterar_indicadorpe(indicador_id):
 @planejamento_route.route('/associar_metaspe', methods=['GET', 'POST'])
 @login_required
 def associar_metaspe():
-    if request.method == 'POST':
-        # Process form submission
-        if 'programa_id' not in session:
-            flash('Nenhum programa do usuário encontrado. Faça login novamente.', 'danger')
-            return redirect(url_for('login.login_page'))
+    programa_id = current_user.programa_id
+    if programa_id:
+        planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+        objetivos_pe_associados = []
 
-        # Extract form data
-        nome = request.form['nome']
-        objetivo_pe_id = request.form['objetivo_pe_id']
-        porcentagem_execucao = request.form['porcentagem_execucao']
+        for planejamento in planejamentos:
+            objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+            objetivos_pe_associados.extend(objetivos)
 
-        try:
-            # Create new meta
-            nova_meta = MetaPE(objetivo_pe_id=objetivo_pe_id, nome=nome, porcentagem_execucao=porcentagem_execucao)
-            db.session.add(nova_meta)
-            db.session.commit()
-            flash('Meta cadastrada com sucesso!', 'success')
-            return redirect(url_for('associar_metaspe'))  # Redireciona para a mesma página para exibir a mensagem de sucesso
-        except Exception as e:
-            print("Ocorreu um erro ao cadastrar a meta:", e)
-            db.session.rollback()
-            flash('Erro ao cadastrar a meta. Por favor, tente novamente.', 'danger')
-            return redirect(url_for('associar_metaspe'))  # Redireciona para a mesma página para exibir a mensagem de erro
+        if request.method == 'POST':
+            objetivo_pe_id = request.form['objetivo_pe_id']
+            nome_meta = request.form['nome']
+            objetivo_pe = ObjetivoPE.query.get(objetivo_pe_id)
+            if objetivo_pe is None:
+                flash('Objetivo não encontrado!', 'error')
+                return redirect(url_for('associar_metaspe'))
+
+            # Verifica se a meta já existe na tabela MetaPE
+            meta_existente = MetaPE.query.filter_by(nome=nome_meta, objetivo_pe_id=objetivo_pe_id).first()
+            meta_id = None  # Inicializa a variável meta_id
+
+            if meta_existente:
+                meta_id = meta_existente.id
+            else:
+                nova_meta = MetaPE(objetivo_pe_id=objetivo_pe_id, nome=nome_meta)
+                db.session.add(nova_meta)
+                db.session.commit()
+                meta_id = nova_meta.id
+                print(f"Nova Meta criada com ID: {meta_id}")
+
+            # Verifique se a meta foi criada com sucesso
+            if not meta_id:
+                flash('Erro ao criar a meta!', 'error')
+                return redirect(url_for('associar_metaspe'))
+
+            # Adiciona uma verificação para garantir que o meta_id é válido
+            meta = MetaPE.query.get(meta_id)
+            if not meta:
+                flash('Erro: Meta não encontrada após criação!', 'error')
+                return redirect(url_for('associar_metaspe'))
+
+            # Se a meta foi criada com sucesso, cadastrar os valores da meta
+            try:
+                anos = request.form.getlist('ano[]')
+                semestres = request.form.getlist('semestre[]')
+                valores = request.form.getlist('valor[]')
+
+                for ano, semestre, valor in zip(anos, semestres, valores):
+                    valor = valor.replace(',', '.')  # Substituir vírgula por ponto
+                    novo_valor = Valormeta(metape_id=meta_id, ano=int(ano), semestre=int(semestre), valor=float(valor))
+                    db.session.add(novo_valor)
+
+                db.session.commit()
+                flash('Meta e valores cadastrados com sucesso!', 'success')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao cadastrar valores da meta: {str(e)}', 'error')
+            
+            return redirect(url_for('associar_metaspe'))
+
+        return render_template('metaspe.html', objetivos_pe=objetivos_pe_associados)
 
     else:
-        # Handle GET request
-        if 'email' not in session:
-            flash('Você precisa estar logado para acessar esta página.', 'danger')
-            return redirect(url_for('login.login_page'))
-
-        programa_id = session.get('programa_id')
-
-        # Retrieve Planejamentos Estratégicos
-        planejamentos_estrategicos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-
-        # Retrieve objectives (if a Planejamento Estratégico is selected)
-        objetivo_options = []
-        if request.args.get('planejamento_id'):
-            try:
-                planejamento_id = int(request.args.get('planejamento_id'))
-                objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
-                objetivo_options = [{'id': objetivo.id, 'nome': objetivo.nome} for objetivo in objetivos]
-            except Exception as e:
-                print("Erro ao recuperar objetivos:", e)
-                # Handle potential error (e.g., invalid ID)
-
-        # Pass data to the template
-        return render_template('metaspe.html',
-                              planejamentos_estrategicos=planejamentos_estrategicos,
-                              objetivo_options=objetivo_options)
+        flash('Programa não encontrado!', 'error')
+        return redirect(url_for('associar_metaspe'))
 #######################################################################################################################    
 @planejamento_route.route('/get_objetivosplano/<int:planejamento_id>')
 def get_objetivos(planejamento_id):
@@ -376,9 +391,7 @@ def alterar_metape(metape_id):
         # Atualiza os campos da meta PE com os dados do formulário, se fornecidos
         if 'nome' in request.form:
             meta_pe.nome = request.form['nome']
-        if 'porcentagem_execucao' in request.form:
-            meta_pe.porcentagem_execucao = request.form['porcentagem_execucao']
-        
+                
         # Salva as alterações no banco de dados
         db.session.commit()
 
@@ -413,14 +426,12 @@ def export_programa_excel(programa_id):
                         data.append({
                             'Objetivo': objetivo.nome,
                             'Meta': meta.nome,
-                            'Porcentagem de Execução': meta.porcentagem_execucao,
                             'Indicador': indicador_nome
                         })
                 else:
                     data.append({
                         'Objetivo': objetivo.nome,
                         'Meta': meta.nome,
-                        'Porcentagem de Execução': meta.porcentagem_execucao,
                         'Indicador': '-'
                     })
 
@@ -466,14 +477,12 @@ def export_programa_pdf(programa_id):
                         data.append([
                             Paragraph(objetivo.nome, styleN),
                             Paragraph(meta.nome, styleN),
-                            Paragraph(str(meta.porcentagem_execucao), styleN),
                             Paragraph(indicador_nome, styleN)
                         ])
                 else:
                     data.append([
                         Paragraph(objetivo.nome, styleN),
                         Paragraph(meta.nome, styleN),
-                        Paragraph(str(meta.porcentagem_execucao), styleN),
                         Paragraph('-', styleN)
                     ])
 

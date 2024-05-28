@@ -1,113 +1,139 @@
 {% extends 'basecord.html' %}
 
 {% block conteudo %}
-<h1 class="text-center">Indicadores</h1>
+<h1 class="text-center">Cadastro de Indicadores</h1>
 
 <div class="container">
-    <form method="POST">
-        <div class="form-group row justify-content-center">
-            <label for="nome" class="col-sm-2 col-form-label">Nome:</label>
-            <div class="col-sm-6">
-                <input type="text" id="nome" name="nome" class="form-control" placeholder="Nome do Indicador" required><br>
+    <!-- Seção de Cadastro de Indicadores -->
+    <div class="bordered-section">
+        <h4 class="text-center">Cadastro de Indicadores</h4>
+        <form method="POST">
+            <div class="form-group row justify-content-center">
+                <label for="nome" class="col-sm-2 col-form-label">Nome:</label>
+                <div class="col-sm-6">
+                    <input type="text" id="nome" name="nome" class="form-control" placeholder="Nome do Indicador" required><br>
+                </div>
             </div>
-        </div>
-        <div class="form-group row justify-content-center">
-            <label for="descricao" class="col-sm-2 col-form-label">Descrição:</label>
-            <div class="col-sm-6">
-                <input type="text" id="descricao" name="descricao" class="form-control" placeholder="Descrição do Indicador" required><br>
+            <div class="form-group row justify-content-center">
+                <label for="descricao" class="col-sm-2 col-form-label">Descrição:</label>
+                <div class="col-sm-6">
+                    <input type="text" id="descricao" name="descricao" class="form-control" placeholder="Descrição do Indicador" required><br>
+                </div>
             </div>
-        </div>
-        
-        <div class="form-group row justify-content-center" id="variaveis-container">
-            <label for="variavel-nome" class="col-sm-2 col-form-label">Nome da variável:</label><br>
-            <div class="col-sm-4">
-                <input type="text" id="variavel-nome" name="variavel-nome[]" class="form-control" placeholder="Nome da variável" required>
+
+            <!-- Seção de Cadastro de Variáveis -->
+            <div class="bordered-section mt-4">
+                <h4 class="text-center">Cadastro de Variáveis</h4>
+                <div id="variaveis-container">
+                    <div class="form-group row justify-content-center">
+                        <label for="variavel-nome" class="col-sm-2 col-form-label">Nome da variável:</label><br>
+                        <div class="col-sm-4">
+                            <input type="text" id="variavel-nome" name="variavel-nome[]" class="form-control" placeholder="Nome da variável" required>
+                        </div>
+                        <div class="col-sm-2">
+                            <button type="button" class="btn btn-secondary" id="add-variavel" style="background-color: #6c757d; color: white;">Adicionar variável</button><br>
+                        </div>
+                    </div>
+                </div>
+                <div id="sinais-container" class="mt-4">
+                    <h4 class="text-center">Cadastro de Fórmulas</h4>
+                    <div class="form-group row justify-content-center">
+                        <label for="sinal" class="col-sm-2 col-form-label">Sinal:</label>
+                        <div class="col-sm-4">
+                            <select id="sinal" name="sinal[]" class="form-control" required>
+                                <option value="+">+</option>
+                                <option value="-">-</option>
+                                <option value="*">*</option>
+                                <option value="/">/</option>
+                                <option value="=">=</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-2">
+                            <button type="button" class="btn btn-primary" id="add-sinal" style="background-color: #007bff; color: white;">Adicionar sinal</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="col-sm-2">
-                <button type="button" class="btn btn-secondary" id="add-variavel" style="background-color: #6c757d; color: white;">Adicionar variável</button><br>
+            
+            <!-- Botão para salvar -->
+            <div class="form-group row justify-content-center mt-4">
+                <div class="col-sm-4 text-center">
+                    <button type="submit" class="btn btn-success" style="background-color: #28a745; color: white;">Salvar Indicador</button>
+                    <button type="button" onclick="fechar()" class="btn btn-danger">Fechar</button>
+                </div>
             </div>
-        </div>
-        
-        <div class="form-group row justify-content-center" id="sinais-container">
-            <label for="sinal" class="col-sm-2 col-form-label">Sinal:</label>
-            <div class="col-sm-4">
-                <select id="sinal" name="sinal[]" class="form-control" required>
-                    <option value="+">+</option>
-                    <option value="-">-</option>
-                    <option value="*">*</option>
-                    <option value="/">/</option>
-                </select>
-            </div>
-            <div class="col-sm-2">
-                <button type="button" class="btn btn-secondary" id="add-sinal" style="background-color: #007bff; color: white;">Adicionar sinal</button>
-            </div>
-        </div>
-        
-        <div class="form-group row justify-content-center">
-            <div class="col-sm-4">
-                <button type="submit" class="btn btn-primary" style="background-color: #28a745; color: white;">Salvar Indicador</button>
-            </div>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 
 <script>
-document.getElementById('add-variavel').addEventListener('click', function() {
-    var container = document.getElementById('variaveis-container');
-    var input = document.createElement('input');
-    input.type = 'text';
-    input.name = 'variavel-nome[]';
-    input.className = 'form-control';
-    input.placeholder = 'Nome da variável';
-    input.required = true;
-
-    var div = document.createElement('div');
-    div.className = 'col-sm-4 offset-sm-2 mt-2';
-    div.appendChild(input);
-
-    var btnRemove = document.createElement('button');
-    btnRemove.type = 'button';
-    btnRemove.className = 'btn btn-danger mt-2';
-    btnRemove.innerText = 'Remover';
-    btnRemove.onclick = function() {
-        container.removeChild(div);
-        container.removeChild(btnRemove);
-    };
-
-    container.appendChild(div);
-    container.appendChild(btnRemove);
-});
-
-document.getElementById('add-sinal').addEventListener('click', function() {
-    var container = document.getElementById('sinais-container');
-    var select = document.createElement('select');
-    select.name = 'sinal[]';
-    select.className = 'form-control';
-    select.required = true;
-
-    var options = ['+', '-', '*', '/'];
-    for (var i = 0; i < options.length; i++) {
-        var option = document.createElement('option');
-        option.value = options[i];
-        option.text = options[i];
-        select.appendChild(option);
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
     }
 
-    var div = document.createElement('div');
-    div.className = 'col-sm-4 offset-sm-2 mt-2';
-    div.appendChild(select);
+    document.getElementById('add-variavel').addEventListener('click', function() {
+        var container = document.getElementById('variaveis-container');
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.name = 'variavel-nome[]';
+        input.className = 'form-control';
+        input.placeholder = 'Nome da variável';
+        input.required = true;
 
-    var btnRemove = document.createElement('button');
-    btnRemove.type = 'button';
-    btnRemove.className = 'btn btn-danger mt-2';
-    btnRemove.innerText = 'Remover';
-    btnRemove.onclick = function() {
-        container.removeChild(div);
-        container.removeChild(btnRemove);
-    };
+        var div = document.createElement('div');
+        div.className = 'form-group row justify-content-center mt-2';
+        div.appendChild(input);
 
-    container.appendChild(div);
-    container.appendChild(btnRemove);
-});
+        var btnRemove = document.createElement('button');
+        btnRemove.type = 'button';
+        btnRemove.className = 'btn btn-danger ml-2';
+        btnRemove.innerText = 'Remover';
+        btnRemove.onclick = function() {
+            container.removeChild(div);
+            container.removeChild(btnRemove);
+        };
+
+        container.appendChild(div);
+        container.appendChild(btnRemove);
+    });
+
+    document.getElementById('add-sinal').addEventListener('click', function() {
+        var container = document.getElementById('sinais-container');
+        var select = document.createElement('select');
+        select.name = 'sinal[]';
+        select.className = 'form-control';
+        select.required = true;
+
+        var options = ['+', '-', '*', '/', '='];
+        for (var i = 0; i < options.length; i++) {
+            var option = document.createElement('option');
+            option.value = options[i];
+            option.text = options[i];
+            select.appendChild(option);
+        }
+
+        var div = document.createElement('div');
+        div.className = 'form-group row justify-content-center mt-2';
+        div.appendChild(select);
+
+        var btnRemove = document.createElement('button');
+        btnRemove.type = 'button';
+        btnRemove.className = 'btn btn-danger ml-2';
+        btnRemove.innerText = 'Remover';
+        btnRemove.onclick = function() {
+            container.removeChild(div);
+            container.removeChild(btnRemove);
+        };
+
+        container.appendChild(div);
+        container.appendChild(btnRemove);
+    });
 </script>
+
+<style>
+.bordered-section {
+    border: 2px solid black;
+    padding: 20px;
+}
+</style>
 {% endblock %}

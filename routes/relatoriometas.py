@@ -63,10 +63,11 @@ def salvar_alteracao_meta(meta_id):
         if porcentagem_execucao:
             meta.porcentagem_execucao = porcentagem_execucao
         db.session.commit()
-        return redirect(url_for('relatoriometas.sucesso')), 302
+        flash('Meta alterada com sucesso!', 'success')
+        return redirect(url_for('relatoriometas.exibir_relatoriometas', planejamento_selecionado=meta.objetivo_pe.planejamento_estrategico_id))
     else:
         return jsonify({'error': 'Método não permitido'}), 405
-
+    
 @relatoriometas_route.route('/sucesso')
 def sucesso():
     return render_template('sucesso.html')

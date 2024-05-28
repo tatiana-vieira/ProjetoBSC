@@ -262,8 +262,16 @@ class MetaPE(db.Model):
     nome = db.Column(db.String(250), nullable=False)
     objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'))
     porcentagem_execucao = db.Column(db.Float)
+    objetivo_pe = db.relationship('ObjetivoPE', backref='meta_pe')
 
-    objetivo_pe = db.relationship('ObjetivoPE',backref="meta_pe")
+class Valormeta(db.Model):
+    __tablename__ = 'valormeta'
+    id = db.Column(db.Integer, primary_key=True)
+    valor = db.Column(db.Numeric(10, 2))
+    ano = db.Column(db.Integer, nullable=False)
+    semestre = db.Column(db.Integer, nullable=False)
+    metape_id = db.Column(db.Integer, db.ForeignKey('meta_pe.id'))
+    meta_pe = db.relationship('MetaPE', backref='valores_metas')
 
 class IndicadorPlan(db.Model):
     __tablename__ = 'indicador_pe'

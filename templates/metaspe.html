@@ -15,65 +15,91 @@
     {% endif %}
 {% endwith %}
 
-<form method="POST" action="{{ url_for('associar_metaspe') }}">
-    <label for="planejamento">Selecione o Planejamento Estratégico:</label>
-    <select name="planejamento_id" id="planejamento_select" required onchange="updateObjetivos(this.value)">
-        <option value="">Selecione...</option>
-        {% for planejamento in planejamentos_estrategicos %}
-            <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
-        {% endfor %}
-    </select>
-    <br>
+<div style="margin: auto; width: 50%; text-align: center;">
+  <div class="form-block">
+    <h3>Cadastro de Metas</h3><br>
+    <form method="POST" action="{{ url_for('associar_metaspe') }}">
+      <label for="objetivo_pe_id">Selecione o Objetivo:</label><br>
+      <select name="objetivo_pe_id" required style="width: 90%; margin-bottom: 10px;">
+          {% for objetivo in objetivos_pe %}
+              <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
+          {% endfor %}
+      </select>
+      <br>
 
-    <label for="objetivo_pe_id">Selecione o Objetivo:</label>
-    <select name="objetivo_pe_id" id="objetivo_select" required>
-        <option value="">Selecione...</option>
-    </select>
-    <br>
+      <label for="nome">Nome da Meta:</label><br>
+      <input type="text" id="nome" name="nome" required style="width: 90%; margin-bottom: 10px;"><br>
 
-    <label for="nome">Nome da Meta:</label>
-    <input type="text" id="nome" name="nome" required style="width: 100%; margin-bottom: 10px;"><br>
+      <div id="campos-dinamicos">
+        <div class="row">
+            <div class="col-md-3">
+                <label for="ano">Ano:</label>
+                <input type="text" name="ano[]" required style="width: 100%; margin-bottom: 8px;">
+            </div>
+            <div class="col-md-3">
+                <label for="semestre">Semestre:</label>
+                <input type="text" name="semestre[]" required style="width: 100%; margin-bottom: 8px;">
+            </div>
+            <div class="col-md-3">
+                <label for="valor">Valor:</label>
+                <input type="text" name="valor[]" required style="width: 100%; margin-bottom: 8px;">
+            </div>
+            <div class="col-md-3" style="display: flex; align-items: flex-end;">
+                <button type="button" id="add-button" style="background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-top: 8px;">Adicionar</button>
+            </div>
+        </div>
+      </div>
 
-    <label for="porcentagem_execucao">Porcentagem de Execução:</label>
-    <input type="number" id="porcentagem_execucao" name="porcentagem_execucao" required style="width: 100%; margin-bottom: 10px;"><br>
+      <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
+      <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button><br>            
+   </form>
+ </div>
+</div>
 
-    <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
-    <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button><br>
-</form>
+<style>
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.alert-error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+</style>
 
 <script>
-    function cancelar() {
-        // Redireciona para a página do coordenador após o login
-        window.location.href = "{{ url_for('login.get_coordenador') }}";
-    }
+  function cancelar() {
+      window.location.href = "{{ url_for('login.get_coordenador') }}";
+  }
 
-    function updateObjetivos(planejamentoId) {
-        if (planejamentoId) {
-            fetch(`/get_objetivosplano/${planejamentoId}`)
-                .then(response => response.json())
-                .then(data => {
-                    var objetivos = document.getElementById('objetivo_select');
-                    objetivos.innerHTML = '<option value="">Selecione...</option>';  // Clear current options
-                    data.forEach(function(objetivo) {
-                        var option = document.createElement('option');
-                        option.value = objetivo.id;
-                        option.textContent = objetivo.nome;
-                        objetivos.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Error:', error));
-        } else {
-            // Limpa a lista de objetivos se nenhum planejamento estiver selecionado
-            document.getElementById('objetivo_select').innerHTML = '<option value="">Selecione...</option>';
-        }
-    }
+  document.addEventListener('DOMContentLoaded', function() {
+    const addButton = document.getElementById('add-button');
+    const camposDinamicos = document.getElementById('campos-dinamicos');
 
-    // Chama a função para definir os objetivos do planejamento inicial, se houver um pré-selecionado
-    document.addEventListener('DOMContentLoaded', function() {
-        var planejamentoSelect = document.getElementById('planejamento_select');
-        if (planejamentoSelect.value) {
-            updateObjetivos(planejamentoSelect.value);
-        }
+    addButton.addEventListener('click', function() {
+      const novoCampo = document.createElement('div');
+      novoCampo.classList.add('row');
+
+      novoCampo.innerHTML = `
+        <div class="col-md-3">
+          <label for="ano">Ano</label>
+          <input type="text" name="ano[]" required style="width: 100%; margin-bottom: 8px;">
+        </div>
+        <div class="col-md-3">
+          <label for="semestre">Semestre</label>
+          <input type="text" name="semestre[]" required style="width: 100%; margin-bottom: 8px;">
+        </div>
+        <div class="col-md-3">
+          <label for="valor">Valor</label>
+          <input type="text" name="valor[]" required style="width: 100%; margin-bottom: 8px;">
+        </div>
+      `;
+
+      camposDinamicos.appendChild(novoCampo);
     });
+  });
 </script>
 {% endblock %}

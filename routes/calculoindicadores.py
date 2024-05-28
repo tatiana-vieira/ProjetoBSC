@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from .models import db, IndicadorPlan, VariavelPE, MetaPE,Formula
+from .models import db, IndicadorPlan, VariavelPE, MetaPE,Formula,SinalPE
 from flask_login import login_required, LoginManager, current_user
 from functools import wraps
 
@@ -16,41 +16,34 @@ def coordenador_required(f):
     return decorated_function
 
 @calculoindicador_route.route('/calcularindicador', methods=['GET', 'POST'])
-@coordenador_required
+@login_required
 def indicadores():
     if request.method == 'POST':
         nome = request.form.get('nome')
         descricao = request.form.get('descricao')
-        meta_pe_id = request.form.get('meta_pe_id')
-        
-        indicador = IndicadorPlan(nome=nome, descricao=descricao, meta_pe_id=meta_pe_id)
-        db.session.add(indicador)
-        db.session.commit()
-        
+        meta_id = request.form.get('meta')
         variaveis = request.form.getlist('variavel-nome[]')
         sinais = request.form.getlist('sinal[]')
-        
+
+        indicador = IndicadorPlan(nome=nome, descricao=descricao, meta_pe_id=meta_id)
+        db.session.add(indicador)
+        db.session.commit()
+
         for variavel_nome in variaveis:
             variavel = VariavelPE(nome=variavel_nome, indicador_pe_id=indicador.id)
             db.session.add(variavel)
-        
-        # Construir a expressão
-        expressao = ''
-        for i in range(len(variaveis)):
-            expressao += variaveis[i]
-            if i < len(sinais):
-                expressao += ' ' + sinais[i] + ' '
 
-        formula = Formula(indicador_id=indicador.id, expressao=expressao)
-        db.session.add(formula)
-        
+        for sinal_valor in sinais:
+            sinal = SinalPE(valor=sinal_valor, indicador_pe_id=indicador.id)
+            db.session.add(sinal)
+
         db.session.commit()
-        
+
+        flash('Indicador cadastrado com sucesso!', 'success')
         return redirect(url_for('calculoindicador.indicadores'))
-    
-    indicadores = IndicadorPlan.query.all()
+
     metas = MetaPE.query.all()
-    return render_template('add_data.html', indicadores=indicadores, metas=metas)
+    return render_template('add_data.html', metas=metas)
 
 @calculoindicador_route.route('/adicionar_variavel/<int:indicador_id>', methods=['GET', 'POST'])
 def adicionar_variavel(indicador_id):
