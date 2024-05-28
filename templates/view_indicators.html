@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Ver Indicadores</title>
+</head>
+<body>
+    <h1>Indicadores</h1>
+    <table border="1">
+        <tr>
+            <th>Indicador</th>
+            <th>Descrição</th>
+            <th>Fórmula</th>
+            <th>Formato</th>
+            <th>Ações</th>
+        </tr>
+        {% for indicator in indicators %}
+        <tr>
+            <td>{{ indicator.name }}</td>
+            <td>{{ indicator.description }}</td>
+            <td>{{ indicator.formula }}</td>
+            <td>{{ indicator.format }}</td>
+            <td>
+                <a href="{{ url_for('calculoindicador.add_data', indicator_name=indicator.name) }}">Adicionar Dados</a>
+                <a href="{{ url_for('calculoindicador.calculate', indicator_name=indicator.name) }}">Calcular</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="{{ url_for('calculoindicador.indexindicator') }}">Voltar</a>
+</body>
+</html>

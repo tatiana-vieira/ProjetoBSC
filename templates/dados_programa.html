@@ -58,6 +58,7 @@
                     {% else %}
                         <tr>
                             <td>{{ meta.nome }}</td>
+                            <td>{{ meta.porcentagem_execucao }}</td>
                             <td>
                                 {% for indicador in indicadores if indicador.meta_pe_id == meta.id %}
                                     {{ indicador.nome }}

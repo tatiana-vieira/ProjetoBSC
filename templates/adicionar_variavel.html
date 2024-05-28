@@ -1,0 +1,20 @@
+{% extends 'basecord.html' %}
+
+{% block content %}
+<h1>Adicionar Variável para Indicador: {{ indicador.nome }}</h1>
+
+<form method="POST">
+    <label for="nome">Nome da Variável:</label>
+    <input type="text" id="nome" name="nome" required>
+    <button type="submit">Adicionar Variável</button>
+</form>
+
+<h2>Variáveis Existentes</h2>
+<ul>
+    {% for variavel in variaveis %}
+        <li>{{ variavel.nome }} <form action="{{ url_for('calculoindicador.remover_variavel', variavel_id=variavel.id) }}" method="post" style="display:inline;"><button type="submit" class="btn btn-danger btn-sm">Remover</button></form></li>
+    {% endfor %}
+</ul>
+
+<a href="{{ url_for('calculoindicador.indicadores') }}">Voltar</a>
+{% endblock %}

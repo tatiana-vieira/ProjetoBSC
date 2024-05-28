@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Calcular</title>
+</head>
+<body>
+    <h1>Resultados para {{ indicator.name }}</h1>
+    <table border="1">
+        <tr>
+            <th>Mês/Ano</th>
+            <th>Meta</th>
+            <th>Real</th>
+            <th>Resultado</th>
+        </tr>
+        {% for year_month, result in results.items() %}
+        <tr>
+            <td>{{ year_month }}</td>
+            <td>{{ indicator.data[year_month]['target'] }}</td>
+            <td>{{ indicator.data[year_month]['actual'] }}</td>
+            <td>{{ result }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="{{ url_for('calculoindicador.view_indicators') }}">Voltar</a>
+</body>
+</html>

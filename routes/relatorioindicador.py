@@ -11,6 +11,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib import colors
+import matplotlib.pyplot as plt
 
 relatorioindicador_route = Blueprint('relatorioindicador', __name__)
 
@@ -34,13 +35,11 @@ def exibir_relatorioindicador():
         valores_indicadores = {}
 
         if planejamento_selecionado_id:
-            print(f"Planejamento selecionado ID: {planejamento_selecionado_id}")
             planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
             if not planejamento_selecionado:
                 flash('Planejamento não encontrado.', 'warning')
                 return redirect(url_for('relatorioindicador.exibir_relatorioindicador'))
 
-            print(f"Planejamento selecionado: {planejamento_selecionado.nome}")
             objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
             metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
 
@@ -51,7 +50,7 @@ def exibir_relatorioindicador():
             for indicador in IndicadorPlan.query.all():
                 valores_indicadores[indicador.id] = Valorindicador.query.filter(Valorindicador.indicadorpe_id == indicador.id).all()
 
-        return render_template('relatindicadores.html', planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado, objetivos=objetivospe, metas=metaspe, indicadores_por_meta=indicadores_por_meta, valores_indicadores=valores_indicadores)
+        return render_template('dashboard.html', planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado, objetivos=objetivospe, metas=metaspe, indicadores_por_meta=indicadores_por_meta, valores_indicadores=valores_indicadores)
     
     else:
         flash('Você não tem permissão para acessar esta página.', 'danger')
@@ -153,3 +152,45 @@ def export_pdf():
     response.headers['Content-Disposition'] = 'attachment; filename=indicadores.pdf'
     response.headers['Content-Type'] = 'application/pdf'
     return response
+
+@relatorioindicador_route.route('/graficoindicador')
+@login_required
+def exibir_graficoindicador():
+    if session.get('role') != 'Coordenador':
+        flash('Você não tem permissão para acessar esta página.', 'danger')
+        return redirect(url_for('login.login_page'))
+
+    planejamento_selecionado_id = request.args.get('planejamento_selecionado')
+    if not planejamento_selecionado_id:
+        flash('Nenhum planejamento selecionado.', 'warning')
+        return redirect(url_for('relatorioindicador.exibir_relatorioindicador'))
+
+    planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
+    if not planejamento_selecionado:
+        flash('Planejamento não encontrado.', 'warning')
+        return redirect(url_for('relatorioindicador.exibir_relatorioindicador'))
+
+    metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_(
+        [objetivo.id for objetivo in ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()])).all()
+
+    graphs = []
+    for meta in metaspe:
+        indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id == meta.id).all()
+        for indicador in indicadores:
+            valores_indicadores = Valorindicador.query.filter(Valorindicador.indicadorpe_id == indicador.id).all()
+            anos = [vi.ano for vi in valores_indicadores]
+            valores = [vi.valor for vi in valores_indicadores]
+
+            fig, ax = plt.subplots()
+            ax.plot(anos, valores, marker='o')
+            ax.set_title(f'{indicador.nome}')
+            ax.set_xlabel('Ano')
+            ax.set_ylabel('Valor')
+
+            img = BytesIO()
+            fig.savefig(img, format='png')
+            img.seek(0)
+            graph_base64 = base64.b64encode(img.getvalue()).decode('utf8')
+            graphs.append((graph_base64, f'{indicador.nome}'))
+
+    return render_template('graficoindicador.html', planejamentos=PlanejamentoEstrategico.query.all(), planejamento_selecionado=planejamento_selecionado, graphs=graphs)

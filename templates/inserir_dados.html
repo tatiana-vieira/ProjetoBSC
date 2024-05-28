@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inserir Dados</title>
+</head>
+<body>
+    <h1>Inserir Dados</h1>
+    <form action="{{ url_for('calculoindicador.inserir_dados') }}" method="post">
+        <label for="ano">Ano:</label>
+        <input type="text" id="ano" name="ano">
+        <label for="variavel_id">Variável:</label>
+        <select id="variavel_id" name="variavel_id">
+            {% for variavel in variaveis %}
+                <option value="{{ variavel.id }}">{{ variavel.nome }}</option>
+            {% endfor %}
+        </select>
+        <label for="valor">Valor:</label>
+        <input type="text" id="valor" name="valor">
+        <button type="submit">Inserir</button>
+    </form>
+</body>
+</html>

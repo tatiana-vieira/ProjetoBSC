@@ -273,7 +273,37 @@ class IndicadorPlan(db.Model):
     meta_pe_id = db.Column(db.Integer, db.ForeignKey('meta_pe.id'))
 
     meta_pe = db.relationship('MetaPE',backref="indicador_pe")
+    variaveis = db.relationship('VariavelPE', backref='indicador', lazy=True)
     
+class VariavelPE(db.Model):
+  __tablename__ = 'variavel_pe'
+  id = db.Column(db.Integer, primary_key=True)
+  nome = db.Column(db.String(250), nullable=False)   
+  indicador_pe_id = db.Column(db.Integer, db.ForeignKey('indicador_pe.id'))   
+  
+class DadosAnuaisPE(db.Model):
+  __tablename__ = 'dados_anuais_pe'
+  id = db.Column(db.Integer, primary_key=True)
+  ano = db.Column(db.Integer, nullable=False)
+  valor = db.Column(db.Integer, nullable=False)
+  variavel_pe_id = db.Column(db.Integer, db.ForeignKey('variavel_pe.id'))   
+
+class SinalPE(db.Model):
+    __tablename__ = 'sinal_pe'
+    id = db.Column(db.Integer, primary_key=True)
+    sinal = db.Column(db.String(10), nullable=False)
+    indicador_pe_id = db.Column(db.Integer, db.ForeignKey('indicador_pe.id'))
+
+    indicador = db.relationship('IndicadorPlan', backref='sinal_pe')
+
+class Formula(db.Model):
+    __tablename__ = 'formulas'
+    id = db.Column(db.Integer, primary_key=True)
+    indicador_id = db.Column(db.Integer, db.ForeignKey('indicador_pe.id'))
+    expressao = db.Column(db.Text, nullable=False)
+    
+    indicador = db.relationship('IndicadorPlan', backref=db.backref('formulas', lazy=True))
+
 class Valorindicador(db.Model):
     __tablename__ = 'valorindicador'
     id = db.Column(db.Integer, primary_key=True)

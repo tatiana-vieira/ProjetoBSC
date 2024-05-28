@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastrar Variável</title>
+</head>
+<body>
+    <h1>Cadastrar Variável</h1>
+    <form action="{{ url_for('calculoindicador.cadastrar_variavel') }}" method="post">
+        <label for="nome">Nome da Variável:</label>
+        <input type="text" id="nome" name="nome">
+        <label for="indicador_id">Indicador:</label>
+        <select id="indicador_id" name="indicador_id">
+            {% for indicador in indicadores %}
+                <option value="{{ indicador.id }}">{{ indicador.nome }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Cadastrar</button>
+    </form>
+</body>

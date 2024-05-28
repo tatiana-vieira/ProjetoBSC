@@ -1,0 +1,71 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+  Planejamento Estratégico (Indicadores)
+{% endblock %}
+
+{% block conteudo %}
+<body>
+    <h4 style="text-align: center; color: #003366;">Planejamento Estratégico (Indicadores)</h4>
+
+    <div style="text-align: center;">
+        <h4 style="color: #003366;">Selecione um Planejamento Estratégico:</h4>
+        <form method="GET" action="{{ url_for('relatorioindicador.exibir_relatorioindicador') }}">
+            <select id="planejamento_estrategico" name="planejamento_selecionado" required style="width: 300px; margin-bottom: 20px;">
+                <option value="">-- Selecione --</option>
+                {% for planejamento in planejamentos %}
+                    <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento_selecionado.id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </form>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Meta</th>
+                <th>Porcentagem de Execução</th>
+                <th>Indicador</th>
+                <th>Descrição</th>
+                <th>Ano</th>
+                <th>Semestre</th>
+                <th>Valor</th>
+                <th>Alterar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for meta_id, indicadores in indicadores_por_meta.items() %}
+                {% for indicador in indicadores %}
+                    {% for valor in valores_indicadores[indicador.id] %}
+                        <tr>
+                            <td>{{ indicadores_por_meta[meta_id][0].meta_pe.nome }}</td>
+                            <td>{{ indicadores_por_meta[meta_id][0].meta_pe.porcentagem_execucao }}</td>
+                            <td>{{ indicador.nome }}</td>
+                            <td>{{ indicador.descricao }}</td>
+                            <td>{{ valor.ano }}</td>
+                            <td>{{ valor.semestre }}</td>
+                            <td>{{ valor.valor }}</td>
+                            <td><button class="btn btn-success">Alterar</button></td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <form method="GET" action="{{ url_for('relatorioindicador.exibir_graficoindicador') }}" style="display: inline;">
+            <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
+            <button type="submit" class="btn btn-primary">Gerar Gráficos</button>
+        </form>
+        <button type="button" onclick="cancelar()" class="btn btn-danger">Cancelar</button>
+    </div>
+
+    <script>
+        function cancelar() {
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
+        }
+    </script>
+</body>
+{% endblock %}

@@ -39,8 +39,28 @@
                     <div class="card-body">
                         <h5 class="card-title text-center">Meta: {{ grafico.meta }}</h5>
                         <div class="text-center">
-                            <img src="data:image/png;base64,{{ grafico.grafico }}" class="img-fluid" alt="Gráfico de Pizza">
+                            <img src="data:image/png;base64,{{ grafico.grafico }}" class="img-fluid" alt="Gráfico de Barras">
                         </div>
+                        <table class="table table-striped mt-4">
+                            <thead>
+                                <tr>
+                                    <th>Nome da Ação</th>
+                                    <th>Data Início</th>
+                                    <th>Data Término</th>
+                                    <th>Porcentagem de Execução</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for acao in grafico.acoes %}
+                                    <tr>
+                                        <td>{{ acao.nome }}</td>
+                                        <td>{{ acao.data_inicio }}</td>
+                                        <td>{{ acao.data_termino }}</td>
+                                        <td>{{ acao.porcentagem_execucao }}%</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             {% endfor %}

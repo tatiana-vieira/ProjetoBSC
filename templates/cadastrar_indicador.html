@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastrar Indicador</title>
+</head>
+<body>
+    <h1>Cadastrar Indicador</h1>
+    <form action="{{ url_for('calculoindicador.cadastrar_indicador') }}" method="post">
+        <label for="nome">Nome do Indicador:</label>
+        <input type="text" id="nome" name="nome"><br>
+        <label for="descricao">Descrição:</label>
+        <textarea id="descricao" name="descricao"></textarea><br>
+        <button type="submit">Cadastrar</button>
+    </form>
+</body>
+</html>

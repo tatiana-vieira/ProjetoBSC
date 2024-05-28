@@ -191,16 +191,22 @@ def visualizar_programaspe():
 def visualizar_dados_programa():
     programa_id = request.form['programa']
     programa = Programa.query.get(programa_id)
+    print(f"Programa selecionado: {programa}")
     
-    # Lógica para obter os dados do programa selecionado
     planejamentope = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-    objetivospe = ObjetivoPE.query.filter(ObjetivoPE.objetivo_pdi_id.in_([pdi.id for pdi in planejamentope])).all()
-    metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
-    indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metaspe])).all()
+    print(f"Planejamento Estratégico: {planejamentope}")
     
-    # Passar os dados para o template
+    objetivospe = ObjetivoPE.query.filter(ObjetivoPE.planejamento_estrategico_id.in_([pe.id for pe in planejamentope])).all()
+    print(f"Objetivos: {objetivospe}")
+    
+    metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
+    print(f"Metas: {metaspe}")
+    
+    indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metaspe])).all()
+    print(f"Indicadores: {indicadores}")
+    
     return render_template('dados_programa.html', programa=programa, planejamentos=planejamentope, objetivos=objetivospe, metas=metaspe, indicadores=indicadores)
-#############################################################################################33
+###########################################################################################################################
 @planejamento_route.route('/associar_indicadorespe', methods=['GET', 'POST'])
 def associar_indicadorespe():
     # Se o programa existir, obtenha os planejamentos estratégicos associados a ele
@@ -388,12 +394,12 @@ def sucesso():
     mensagem = "Meta alterada com sucesso!"
     return render_template('sucesso.html', mensagem=mensagem)
 
-##################################################################################
+############################################################################################
 @planejamento_route.route('/export_programa/excel/<int:programa_id>')
 @login_required
 def export_programa_excel(programa_id):
     planejamentope = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-    objetivospe = ObjetivoPE.query.filter(ObjetivoPE.objetivo_pdi_id.in_([pdi.id for pdi in planejamentope])).all()
+    objetivospe = ObjetivoPE.query.filter(ObjetivoPE.planejamento_estrategico_id.in_([pe.id for pe in planejamentope])).all()
     metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
     indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metaspe])).all()
     
@@ -401,13 +407,22 @@ def export_programa_excel(programa_id):
     for objetivo in objetivospe:
         for meta in metaspe:
             if meta.objetivo_pe_id == objetivo.id:
-                for indicador in indicadores:
-                    if indicador.meta_pe_id == meta.id:
+                meta_indicadores = [indicador.nome for indicador in indicadores if indicador.meta_pe_id == meta.id]
+                if meta_indicadores:
+                    for indicador_nome in meta_indicadores:
                         data.append({
                             'Objetivo': objetivo.nome,
                             'Meta': meta.nome,
-                            'Indicador': indicador.nome
+                            'Porcentagem de Execução': meta.porcentagem_execucao,
+                            'Indicador': indicador_nome
                         })
+                else:
+                    data.append({
+                        'Objetivo': objetivo.nome,
+                        'Meta': meta.nome,
+                        'Porcentagem de Execução': meta.porcentagem_execucao,
+                        'Indicador': '-'
+                    })
 
     df = pd.DataFrame(data)
     output = io.BytesIO()
@@ -421,10 +436,16 @@ def export_programa_excel(programa_id):
 @login_required
 def export_programa_pdf(programa_id):
     planejamentope = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-    objetivospe = ObjetivoPE.query.filter(ObjetivoPE.objetivo_pdi_id.in_([pdi.id for pdi in planejamentope])).all()
+    objetivospe = ObjetivoPE.query.filter(ObjetivoPE.planejamento_estrategico_id.in_([pe.id for pe in planejamentope])).all()
     metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
     indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metaspe])).all()
-    
+
+    # Debug: Verificar se os dados estão sendo recuperados corretamente
+    print(f"Planejamento Estratégico: {planejamentope}")
+    print(f"Objetivos: {objetivospe}")
+    print(f"Metas: {metaspe}")
+    print(f"Indicadores: {indicadores}")
+
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
     styles = getSampleStyleSheet()
@@ -434,20 +455,32 @@ def export_programa_pdf(programa_id):
     elements = []
     elements.append(Paragraph("Planejamento Estratégico", styles['Title']))
 
-    data = [['Objetivo', 'Meta', 'Indicador']]
+    data = [['Objetivo', 'Meta', 'Porcentagem de Execução', 'Indicador']]
     
     for objetivo in objetivospe:
         for meta in metaspe:
             if meta.objetivo_pe_id == objetivo.id:
-                for indicador in indicadores:
-                    if indicador.meta_pe_id == meta.id:
+                meta_indicadores = [indicador.nome for indicador in indicadores if indicador.meta_pe_id == meta.id]
+                if meta_indicadores:
+                    for indicador_nome in meta_indicadores:
                         data.append([
                             Paragraph(objetivo.nome, styleN),
                             Paragraph(meta.nome, styleN),
-                            Paragraph(indicador.nome, styleN)
+                            Paragraph(str(meta.porcentagem_execucao), styleN),
+                            Paragraph(indicador_nome, styleN)
                         ])
+                else:
+                    data.append([
+                        Paragraph(objetivo.nome, styleN),
+                        Paragraph(meta.nome, styleN),
+                        Paragraph(str(meta.porcentagem_execucao), styleN),
+                        Paragraph('-', styleN)
+                    ])
 
-    table = Table(data, colWidths=[150, 150, 150])
+    # Debug: Print the data to check if it is being captured correctly
+    print(f"Data to be included in PDF: {data}")
+
+    table = Table(data, colWidths=[150, 150, 100, 150])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),

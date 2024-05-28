@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório</title>
+</head>
+<body>
+    <h1>Relatório</h1>
+    <table>
+        <tr>
+            <th>Nome da Variável</th>
+            <th>Total</th>
+        </tr>
+        {% for resultado in resultados %}
+        <tr>
+            <td>{{ resultado[0] }}</td>
+            <td>{{ resultado[1] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

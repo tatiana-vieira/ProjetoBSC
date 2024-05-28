@@ -1,0 +1,48 @@
+{% extends 'basecord.html' %}
+
+{% block content %}
+<h1>Adicionar Fórmula para Indicador: {{ indicador.nome }}</h1>
+
+<form id="formula-form" method="POST">
+    <div id="formula-builder">
+        <div class="form-group">
+            <label for="variavel">Adicionar Variável:</label>
+            <select id="variavel" class="form-control">
+                {% for variavel in variaveis %}
+                    <option value="{{ variavel.nome }}">{{ variavel.nome }}</option>
+                {% endfor %}
+            </select>
+            <button type="button" id="add-variavel" class="btn btn-secondary">+</button>
+        </div>
+        <div class="form-group">
+            <label for="sinal">Adicionar Sinal:</label>
+            <select id="sinal" class="form-control">
+                <option value="+">+</option>
+                <option value="-">-</option>
+                <option value="*">*</option>
+                <option value="/">/</option>
+            </select>
+            <button type="button" id="add-sinal" class="btn btn-secondary">+</button>
+        </div>
+        <div id="formula-display" class="form-group">
+            <label for="expressao">Expressão da Fórmula:</label>
+            <input type="text" id="expressao" name="expressao" class="form-control" readonly>
+        </div>
+        <button type="submit" class="btn btn-primary">Adicionar Fórmula</button>
+    </div>
+</form>
+
+<a href="{{ url_for('calculoindicador.indicadores') }}">Voltar</a>
+
+<script>
+document.getElementById('add-variavel').addEventListener('click', function() {
+    var variavel = document.getElementById('variavel').value;
+    document.getElementById('expressao').value += variavel + ' ';
+});
+
+document.getElementById('add-sinal').addEventListener('click', function() {
+    var sinal = document.getElementById('sinal').value;
+    document.getElementById('expressao').value += sinal + ' ';
+});
+</script>
+{% endblock %}
