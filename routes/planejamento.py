@@ -275,6 +275,7 @@ def associar_indicadorespe():
         return redirect(url_for('get_coordenador'))
 #########################################################################################################3
 @planejamento_route.route('/alterar_indicadorpe/<int:indicador_id>', methods=['GET', 'POST'])
+@login_required
 def alterar_indicadorpe(indicador_id):
     # Busca o indicador a ser alterado pelo ID
     indicador = IndicadorPlan.query.get_or_404(indicador_id)
@@ -282,25 +283,50 @@ def alterar_indicadorpe(indicador_id):
     if request.method == 'POST':
         # Filtra os valores indicadores pelo ID do indicador
         valores_indicadores = Valorindicador.query.filter_by(indicadorpe_id=indicador_id).all()
-        
-        # Atualiza os valores indicadores com os dados do formulário, se fornecidos
-        for valorindicador in valores_indicadores:
-            valorindicador.semestre = request.form.get('semestre' + str(valorindicador.id))
-            valorindicador.ano = request.form.get('ano' + str(valorindicador.id))
-            valorindicador.valor = request.form.get('valor' + str(valorindicador.id))
-        
-        # Salva as alterações no banco de dados
-        db.session.commit()
 
-        flash('Indicador alterado com sucesso!', 'success')
-        return redirect(url_for('login.get_coordenador'))
+        # Coleta os valores do formulário
+        anos = request.form.getlist('anos[]')
+        semestres = request.form.getlist('semestres[]')
+        valores = request.form.getlist('valores[]')
+
+        print(f'Form Data: Anos={anos}, Semestres={semestres}, Valores={valores}')  # Log para depuração
+
+        # Atualiza os valores existentes
+        for index, valor_indicador in enumerate(valores_indicadores):
+            if index < len(anos):
+                semestre = semestres[index]
+                ano = anos[index]
+                valor_valor = valores[index]
+
+                if semestre and ano and valor_valor:
+                    valor_indicador.semestre = semestre
+                    valor_indicador.ano = ano
+                    valor_indicador.valor = valor_valor
+                    print(f'Atualizando valor {valor_indicador.id}: ano={ano}, semestre={semestre}, valor={valor_valor}')
+                else:
+                    db.session.delete(valor_indicador)
+            else:
+                db.session.delete(valor_indicador)
+
+        # Adicionar novos valores
+        for i in range(len(valores_indicadores), len(anos)):
+            novo_valor_indicador = Valorindicador(indicadorpe_id=indicador_id, ano=anos[i], semestre=semestres[i], valor=valores[i])
+            db.session.add(novo_valor_indicador)
+            print(f'Adicionando novo valor: ano={anos[i]}, semestre={semestres[i]}, valor={valores[i]}')
+
+        db.session.commit()
+        flash('Valores do indicador atualizados com sucesso!', 'success')
+        
+        # Filtra novamente os valores indicadores atualizados
+        valores_indicadores = Valorindicador.query.filter_by(indicadorpe_id=indicador_id).all()
+        return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
+
     else:
         # Filtra os valores indicadores pelo ID do indicador
         valores_indicadores = Valorindicador.query.filter_by(indicadorpe_id=indicador_id).all()
         
         # Retorna o formulário de alteração preenchido com os dados do indicador e valores indicadores
         return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
-    
 
 ##############################################################################################################################
 @planejamento_route.route('/associar_metaspe', methods=['GET', 'POST'])

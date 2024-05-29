@@ -1,5 +1,5 @@
 from flask import render_template, request, flash, redirect, url_for, session, make_response
-from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, IndicadorPlan, Valorindicador, Programa
+from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, IndicadorPlan, Valorindicador, Programa,db
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
 import base64
@@ -55,7 +55,7 @@ def exibir_relatorioindicador():
     else:
         flash('Você não tem permissão para acessar esta página.', 'danger')
         return redirect(url_for('login.login_page'))
-
+#################################################################################################333    
 @relatorioindicador_route.route('/export/csv')
 @login_required
 def export_csv():
@@ -150,7 +150,7 @@ def export_pdf():
     response.headers['Content-Disposition'] = 'attachment; filename=indicadores.pdf'
     response.headers['Content-Type'] = 'application/pdf'
     return response
-
+##################################################################################################################33
 @relatorioindicador_route.route('/graficoindicador')
 @login_required
 def exibir_graficoindicador():
@@ -175,15 +175,17 @@ def exibir_graficoindicador():
     for meta in metaspe:
         indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id == meta.id).all()
         for indicador in indicadores:
-            valores_indicadores = Valorindicador.query.filter(Valorindicador.indicadorpe_id == indicador.id).all()
-            anos = [vi.ano for vi in valores_indicadores]
-            valores = [vi.valor for vi in valores_indicadores]
+            valores_indicadores = Valorindicador.query.filter(Valorindicador.indicadorpe_id == indicador.id).order_by(Valorindicador.ano, Valorindicador.semestre).all()
+            anos = [f"{vi.ano}/{vi.semestre}" for vi in valores_indicadores]
+            valores = [float(vi.valor) for vi in valores_indicadores]
 
             fig, ax = plt.subplots()
             ax.plot(anos, valores, marker='o')
             ax.set_title(f'{indicador.nome}')
-            ax.set_xlabel('Ano')
+            ax.set_xlabel('Ano/Semestre')
             ax.set_ylabel('Valor')
+            ax.set_xticks(range(len(anos)))
+            ax.set_xticklabels(anos, rotation=45, ha='right')
 
             img = BytesIO()
             fig.savefig(img, format='png')
@@ -192,3 +194,4 @@ def exibir_graficoindicador():
             graphs.append((graph_base64, f'{indicador.nome}'))
 
     return render_template('graficoindicador.html', planejamentos=PlanejamentoEstrategico.query.all(), planejamento_selecionado=planejamento_selecionado, graphs=graphs)
+##################################################################################################################333

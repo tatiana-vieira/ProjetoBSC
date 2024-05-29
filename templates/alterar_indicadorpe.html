@@ -1,28 +1,42 @@
 {% extends 'basecord.html' %}
 
 {% block titulo %}
-  Planejamento Estratégico -Alterar Valor do Indicador
+  Planejamento Estratégico - Alterar Valor do Indicador
 {% endblock %}
 {% block conteudo %}
 <body>
-  <h1 style="text-align: center;">Alterar Ação</h1>
+  <h1 style="text-align: center;">Alterar Indicador</h1>
+  
+  <!-- Exibir mensagens flash -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="container mt-3">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
   <form action="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}" method="POST" style="text-align: center;">
      {% for valorindicador in valores_indicadores %}
      <label for="semestre">Semestre:</label><br>
-     <input type="text" id="semestre{{ loop.index }}" name="semestre{{ loop.index }}" value="{{ valorindicador.semestre }}" required style="width: 80%; margin-bottom: 10px;"><br>
+     <input type="number" id="semestre{{ loop.index }}" name="semestres[]" value="{{ valorindicador.semestre }}" required style="width: 80%; margin-bottom: 10px;"><br>
       
      <label for="ano">Ano:</label><br>
-     <input type="text" id="ano{{ loop.index }}" name="ano{{ loop.index }}" value="{{ valorindicador.ano }}" required style="width: 80%; margin-bottom: 10px;"><br>
+     <input type="number" id="ano{{ loop.index }}" name="anos[]" value="{{ valorindicador.ano }}" required style="width: 80%; margin-bottom: 10px;"><br>
       
      <label for="valor">Valor:</label><br>
-     <input type="text" id="valor{{ loop.index }}" name="valor{{ loop.index }}" value="{{ valorindicador.valor }}" required style="width: 80%; margin-bottom: 10px;"><br>
+     <input type="text" id="valor{{ loop.index }}" name="valores[]" value="{{ valorindicador.valor }}" required style="width: 80%; margin-bottom: 10px;"><br>
      {% endfor %}
       
      <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar</button>
      <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button><br>            
      <script>
        function cancelar() {
-           // Redireciona para a página do coordenador após o login
            window.location.href = "{{ url_for('login.get_coordenador') }}";
        }
      </script>

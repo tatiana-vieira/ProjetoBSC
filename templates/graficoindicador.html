@@ -25,7 +25,7 @@
         <h2>Gráficos dos Indicadores</h2>
         {% for graph_base64, titulo in graphs %}
             <h3>{{ titulo }}</h3>
-            <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Valores dos Indicadores">
+            <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Valores dos Indicadores" style="max-width: 100%; height: auto;">
         {% endfor %}
     </div>
 
