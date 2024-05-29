@@ -10,7 +10,7 @@
 
     <div style="text-align: center;">
         <h4 style="color: #003366;">Selecione um Planejamento Estratégico:</h4>
-        <form method="GET" action="{{ url_for('relatorioindicador.exibir_relatorioindicador') }}" style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+        <form method="GET" action="{{ url_for('graficoindicador.exibir_relatorioindicador') }}" style="display: flex; justify-content: center; align-items: center; gap: 10px;">
             <label for="planejamento_estrategico" style="color: #003366;">Selecione um Planejamento Estratégico:</label>
             <select id="planejamento_estrategico" name="planejamento_selecionado" required style="width: 300px;">
                 <option value="">-- Selecione --</option>
@@ -55,7 +55,6 @@
                     <th>Ano</th>
                     <th>Semestre</th>
                     <th>Valor</th>
-                    <th>Alterar</th>
                 </tr>
             </thead>
             <tbody>
@@ -69,7 +68,6 @@
                                 <td>{{ valorindicador.ano if valorindicador.ano else '' }}</td>
                                 <td>{{ valorindicador.semestre if valorindicador.semestre else '' }}</td>
                                 <td>{{ valorindicador.valor if valorindicador.valor else '' }}</td>
-                                <td><a href="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}"><button style="background-color: green; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">Alterar</button></a></td>
                             </tr>
                         {% endfor %}
                     {% endfor %}
@@ -80,15 +78,19 @@
     
     <div style="text-align: center; margin-top: 20px;">
         {% if planejamento_selecionado %}
-            <form action="{{ url_for('relatorioindicador.export_csv') }}" method="GET" style="display: inline;">
+            <form action="{{ url_for('graficoindicador.export_csv') }}" method="GET" style="display: inline;">
                 <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
                 <button type="submit" class="btn btn-secondary">Exportar CSV</button>
             </form>
-            <form action="{{ url_for('relatorioindicador.export_pdf') }}" method="GET" style="display: inline;">
+            <form action="{{ url_for('graficoindicador.export_pdf') }}" method="GET" style="display: inline;">
                 <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
                 <button type="submit" class="btn btn-secondary">Exportar PDF</button>
             </form>
         {% endif %}
+        <form method="GET" action="{{ url_for('graficoindicador.exibir_graficoindicador') }}" style="display: inline;">
+            <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
+            <button type="submit" class="btn btn-primary">Gerar Gráfico</button>
+        </form>
         <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
     </div>
 

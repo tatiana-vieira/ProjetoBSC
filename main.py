@@ -16,6 +16,7 @@ from routes.altpdi import altpdi_route
 from routes.graficogrant import graficogrant_route
 from routes.graficoacaope import graficoacaope_route
 from routes.calculoindicadores import calculoindicador_route
+from routes.graficoindicador import graficoindicador_route
 from routes.db import db,init_db
 from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
@@ -85,6 +86,7 @@ app.register_blueprint(altpdi_route)
 app.register_blueprint(graficogrant_route)
 app.register_blueprint(graficoacaope_route)
 app.register_blueprint(calculoindicador_route)
+app.register_blueprint(graficoindicador_route)
 
 #########################################################################################33
 @app.route('/')
