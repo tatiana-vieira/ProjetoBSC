@@ -87,7 +87,6 @@ def export_csv():
             for valorindicador in valores_indicadores:
                 writer.writerow([
                     meta.nome,
-                    meta.porcentagem_execucao,
                     indicador.nome,
                     indicador.descricao,
                     valorindicador.ano,
@@ -132,7 +131,6 @@ def export_pdf():
 
     for meta in metaspe:
         elements.append(Paragraph(f"Meta: {meta.nome}", styles['Heading2']))
-        elements.append(Paragraph(f"Porcentagem de Execução: {meta.porcentagem_execucao}", styles['Normal']))
         
         indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id == meta.id).all()
         for indicador in indicadores:

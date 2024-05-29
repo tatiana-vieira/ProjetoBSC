@@ -261,7 +261,6 @@ class MetaPE(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(250), nullable=False)
     objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'))
-    porcentagem_execucao = db.Column(db.Float)
     objetivo_pe = db.relationship('ObjetivoPE', backref='meta_pe')
 
 class Valormeta(db.Model):

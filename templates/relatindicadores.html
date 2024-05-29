@@ -49,7 +49,6 @@
             <thead>
                 <tr>
                     <th>Meta</th>           
-                    <th>Porcentagem de Execução</th>
                     <th>Indicador</th>
                     <th>Descrição</th>
                     <th>Ano</th>
@@ -64,7 +63,6 @@
                         {% for valorindicador in valores_indicadores[indicador.id] %}
                             <tr>
                                 <td>{{ meta.nome if meta.nome else '' }}</td>
-                                <td>{{ meta.porcentagem_execucao if meta.porcentagem_execucao else '' }}</td>
                                 <td>{{ indicador.nome if indicador.nome else '' }}</td>
                                 <td>{{ indicador.descricao | default('') }}</td>
                                 <td>{{ valorindicador.ano if valorindicador.ano else '' }}</td>

@@ -62,19 +62,42 @@
         <table>
             <thead>
                 <tr>
-                    <th>Meta</th>           
-                    <th>Porcentagem de Execução</th>            
+                    <th>Meta</th>
+                    <th>Ano</th>
+                    <th>Semestre</th>
+                    <th>Valor</th>
                     <th>Alterar</th>
                 </tr>
             </thead>
             <tbody>
                 {% for objetivo in objetivos %}
                     {% for meta in metas if meta.objetivo_pe_id == objetivo.id %}
-                        <tr>
-                            <td>{{ meta.nome if meta.nome else '' }}</td>
-                            <td>{{ meta.porcentagem_execucao if meta.porcentagem_execucao else '' }}</td>
-                            <td><a href="{{ url_for('planejamento.alterar_metape', metape_id=meta.id) }}"><button style="background-color: green; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">Alterar</button></a></td>
-                        </tr>
+                        {% set valores_meta = valoresmetas | selectattr("metape_id", "equalto", meta.id) | list %}
+                        {% if valores_meta %}
+                            {% for valor in valores_meta %}
+                                <tr>
+                                    <td>{{ meta.nome }}</td>
+                                    <td>{{ valor.ano }}</td>
+                                    <td>{{ valor.semestre }}</td>
+                                    <td>{{ valor.valor }}</td>
+                                    <td>
+                                        <a href="{{ url_for('relatoriometas.editar_meta', meta_id=meta.id) }}">
+                                            <button style="background-color: green; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">Alterar</button>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td>{{ meta.nome }}</td>
+                                <td colspan="3">Nenhum valor encontrado</td>
+                                <td>
+                                    <a href="{{ url_for('relatoriometas.editar_meta', meta_id=meta.id) }}">
+                                        <button style="background-color: green; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">Alterar</button>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endif %}
                     {% endfor %}
                 {% endfor %}
             </tbody>

@@ -5,52 +5,76 @@
 {% endblock %}
 
 {% block conteudo %}
-    <div style="margin: auto; width: 50%; text-align: center;">
-        <div class="form-block"><br>
-            <h2>Alterar Meta</h2><br>
-            <form id="MetaForm" method="POST">
-                <label for="pdi_id">PDI:</label>
-                <select id="pdi_id" name="pdi_id" required style="width: 100%; margin-bottom: 10px;">
-                    {% for pdi in lista_pdis %}
-                        <option value="{{ pdi.id }}" {% if pdi.id == meta.objetivo.pdi_id %}selected{% endif %}>{{ pdi.nome }}</option>
+<div style="margin: auto; width: 50%; text-align: center;">
+    <div class="form-block"><br>
+        <h2>Alterar Meta</h2><br>
+        <form id="MetaForm" method="POST" action="{{ url_for('relatoriometas.salvar_alteracao_meta', meta_id=meta.id) }}">
+            <label for="pdi_id">PDI:</label>
+            <select id="pdi_id" name="pdi_id" required style="width: 100%; margin-bottom: 10px;">
+                {% for pdi in lista_pdis %}
+                    <option value="{{ pdi.id }}" {% if pdi.id == meta.objetivo_pe.planejamento_estrategico_id %}selected{% endif %}>{{ pdi.nome }}</option>
+                {% endfor %}
+            </select><br>
+            <label for="objetivo_id">Objetivo:</label>
+            <select id="objetivo_id" name="objetivo_id" required style="width: 100%; margin-bottom: 10px;">
+                {% for objetivo in objetivos %}
+                    <option value="{{ objetivo.id }}" {% if objetivo.id == meta.objetivo_pe_id %}selected{% endif %}>{{ objetivo.nome }}</option>
+                {% endfor %}
+            </select>
+            <label for="nome">Nome da Meta:</label>
+            <input type="text" id="nome" name="nome" value="{{ meta.nome }}" required style="width: 100%; margin-bottom: 10px;"><br>
+            
+            <h3>Valores da Meta</h3>
+            <table style="width: 100%; margin-bottom: 10px;">
+                <thead>
+                    <tr>
+                        <th>Ano</th>
+                        <th>Semestre</th>
+                        <th>Valor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for valor in valores_meta %}
+                        <tr>
+                            <td><input type="number" name="anos[]" value="{{ valor.ano }}" required></td>
+                            <td><input type="number" name="semestres[]" value="{{ valor.semestre }}" required></td>
+                            <td><input type="text" name="valores[]" value="{{ valor.valor }}" required></td>
+                        </tr>
                     {% endfor %}
-                </select><br>
-                <label for="objetivo_id">Objetivo:</label>
-                <select id="objetivo_id" name="objetivo_id" required style="width: 100%; margin-bottom: 10px;">
-                    {% for objetivo in objetivos %}
-                        <option value="{{ objetivo.id }}" {% if objetivo.id == meta.objetivo_id %}selected{% endif %}>{{ objetivo.nome }}</option>
-                    {% endfor %}
-                </select>
-                <label for="nome">Nome da Meta:</label>
-                <input type="text" id="nome" name="nome" value="{{ meta.nome }}" required style="width: 100%; margin-bottom: 10px;"><br>
-                <label for="porcentagem_execucao">Porcentagem de Execução:</label>
-                <input type="number" id="porcentagem_execucao" name="porcentagem_execucao" value="{{ meta.porcentagem_execucao }}" required style="width: 100%; margin-bottom: 10px;"><br>
-                <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar Alterações</button>
-                <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button><br>
-            </form>
-            <script>
-                function cancelar() {
-                    window.location.href = "{{ url_for('cadastro_meta') }}";
-                }
-            </script>
-        </div>
+                    <tr>
+                        <td><input type="number" name="anos[]" placeholder="Ano" required></td>
+                        <td><input type="number" name="semestres[]" placeholder="Semestre" required></td>
+                        <td><input type="text" name="valores[]" placeholder="Valor" required></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar Alterações</button>
+            <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button><br>
+        </form>
+        <script>
+            function cancelar() {
+                window.location.href = "{{ url_for('relatoriometas.exibir_relatoriometas', planejamento_selecionado=meta.objetivo_pe.planejamento_estrategico_id) }}";
+            }
+        </script>
     </div>
-    <script>
-        document.getElementById('pdi_id').addEventListener('change', function() {
-            var pdiId = this.value;
-            fetch('/objetivos_relacionados_pdi/' + pdiId)
-                .then(response => response.json())
-                .then(data => {
-                    var selectObjetivos = document.getElementById('objetivo_id');
-                    selectObjetivos.innerHTML = '';
-                    data.forEach(objetivo => {
-                        var option = document.createElement('option');
-                        option.value = objetivo.id;
-                        option.text = objetivo.nome;
-                        selectObjetivos.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Erro ao buscar objetivos:', error));
-        });
-    </script>
+</div>
+<script>
+    document.getElementById('pdi_id').addEventListener('change', function() {
+        var pdiId = this.value;
+        fetch('/objetivos_relacionados_pdi/' + pdiId)
+            .then(response => response.json())
+            .then(data => {
+                var selectObjetivos = document.getElementById('objetivo_id');
+                selectObjetivos.innerHTML = '';
+                data.forEach(objetivo => {
+                    var option = document.createElement('option');
+                    option.value = objetivo.id;
+                    option.text = objetivo.nome;
+                    selectObjetivos.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Erro ao buscar objetivos:', error));
+    });
+</script>
 {% endblock %}

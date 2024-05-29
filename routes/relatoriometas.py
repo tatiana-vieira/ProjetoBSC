@@ -1,20 +1,17 @@
-from flask import render_template, request, redirect, url_for, jsonify,flash,session
-from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, db,Programa
+from flask import render_template, request, redirect, url_for, jsonify, flash, session
+from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, Valormeta, db, Programa
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
 import base64
 from io import BytesIO
 import matplotlib.pyplot as plt
-from flask_login import  login_required
-import matplotlib.pyplot as plt
+from flask_login import login_required
 import matplotlib.cm as cm
-
 
 relatoriometas_route = Blueprint('relatoriometas', __name__)
 
 def get_planejamento_metas():
-    # Implement the logic to obtain strategic planning goals here
-    metas = MetaPE.query.all()  # Assuming MetaPE is the model for goals
+    metas = MetaPE.query.all()
     return metas
 
 @relatoriometas_route.route('/relatmetas', methods=['GET'])
@@ -33,6 +30,7 @@ def exibir_relatoriometas():
         planejamento_selecionado = None
         objetivospe = []
         metaspe = []
+        valoresmetas = []  # Inicialize valoresmetas aqui
 
         if planejamento_selecionado_id:
             print(f"Planejamento selecionado ID: {planejamento_selecionado_id}")
@@ -44,35 +42,58 @@ def exibir_relatoriometas():
             print(f"Planejamento selecionado: {planejamento_selecionado.nome}")
             objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
             metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
-            print(f"Objetivos: {len(objetivospe)}, Metas: {len(metaspe)}")
+            valoresmetas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
+            print(f"Objetivos: {len(objetivospe)}, Metas: {len(metaspe)}, Valores de Metas: {len(valoresmetas)}")
+            for meta in metaspe:
+                print(f"Meta: {meta.nome}")
+                for valor in valoresmetas:
+                    if valor.metape_id == meta.id:
+                        print(f"  Valor - Ano: {valor.ano}, Semestre: {valor.semestre}, Valor: {valor.valor}")
 
-        return render_template('relatoriometas.html', planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado, objetivos=objetivospe, metas=metaspe)
+        return render_template('relatoriometas.html', planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado, objetivos=objetivospe, metas=metaspe, valoresmetas=valoresmetas)
     
     else:
         flash('Você não tem permissão para acessar esta página.', 'danger')
         return redirect(url_for('login.login_page'))
-##############################################################################################################################
+
+@relatoriometas_route.route('/editar_meta/<int:meta_id>', methods=['GET'])
+@login_required
+def editar_meta(meta_id):
+    meta = MetaPE.query.get_or_404(meta_id)
+    valores_meta = Valormeta.query.filter_by(metape_id=meta_id).all()
+    lista_pdis = PlanejamentoEstrategico.query.all()
+    objetivos = ObjetivoPE.query.all()
+    return render_template('alterar_meta.html', meta=meta, valores_meta=valores_meta, lista_pdis=lista_pdis, objetivos=objetivos)
+#######################################################################################################################3
 @relatoriometas_route.route('/salvar_alteracao_meta/<int:meta_id>', methods=['POST'])
+@login_required
 def salvar_alteracao_meta(meta_id):
-    if request.method == 'POST':
-        meta = MetaPE.query.get_or_404(meta_id)
-        nome = request.form.get('nome')
-        porcentagem_execucao = request.form.get('porcentagem_execucao')
-        if nome:
-            meta.nome = nome
-        if porcentagem_execucao:
-            meta.porcentagem_execucao = porcentagem_execucao
-        db.session.commit()
-        flash('Meta alterada com sucesso!', 'success')
-        return redirect(url_for('relatoriometas.exibir_relatoriometas', planejamento_selecionado=meta.objetivo_pe.planejamento_estrategico_id))
-    else:
-        return jsonify({'error': 'Método não permitido'}), 405
-    
+    meta = MetaPE.query.get_or_404(meta_id)
+    nome = request.form.get('nome')
+    if nome:
+        meta.nome = nome
+
+    # Atualizar ou adicionar valores da meta
+    anos = request.form.getlist('anos[]')
+    semestres = request.form.getlist('semestres[]')
+    valores = request.form.getlist('valores[]')
+
+    for ano, semestre, valor in zip(anos, semestres, valores):
+        valor_meta = Valormeta.query.filter_by(metape_id=meta_id, ano=ano, semestre=semestre).first()
+        if valor_meta:
+            valor_meta.valor = valor
+        else:
+            novo_valor_meta = Valormeta(metape_id=meta_id, ano=ano, semestre=semestre, valor=valor)
+            db.session.add(novo_valor_meta)
+
+    db.session.commit()
+    flash('Meta alterada com sucesso!', 'success')
+    return redirect(url_for('relatoriometas.exibir_relatoriometas', planejamento_selecionado=meta.objetivo_pe.planejamento_estrategico_id))
+############################################################################################################################33
 @relatoriometas_route.route('/sucesso')
 def sucesso():
     return render_template('sucesso.html')
-###############################################################################
-##############################################################################################################################33
+
 @relatoriometas_route.route('/graficometas', methods=['GET'])
 @login_required
 def exibir_graficometas():
@@ -89,6 +110,7 @@ def exibir_graficometas():
         planejamento_selecionado = None
         objetivospe = []
         metaspe = []
+        valoresmetas = []  # Inicialize valoresmetas aqui
 
         if planejamento_selecionado_id:
             print(f"Planejamento selecionado ID: {planejamento_selecionado_id}")
@@ -100,19 +122,20 @@ def exibir_graficometas():
             print(f"Planejamento selecionado: {planejamento_selecionado.nome}")
             objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
             metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
+            valoresmetas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
 
         # Gerar o gráfico
         plt.figure(figsize=(14, 7))  # Aumentar o tamanho da figura
         nomes_metas = [meta.nome for meta in metaspe]
-        porcentagens_execucao = [meta.porcentagem_execucao for meta in metaspe]
+        valores_execucao = [sum(valor.valor for valor in valoresmetas if valor.metape_id == meta.id) for meta in metaspe]
 
         # Usar um colormap para diferentes cores
         colors = cm.get_cmap('tab20', len(metaspe))
 
-        bars = plt.bar(range(len(metaspe)), porcentagens_execucao, color=[colors(i / len(metaspe)) for i in range(len(metaspe))])
-        plt.title('Porcentagem de Execução das Metas')
+        bars = plt.bar(range(len(metaspe)), valores_execucao, color=[colors(i / len(metaspe)) for i in range(len(metaspe))])
+        plt.title('Valores das Metas')
         plt.xlabel('Meta')
-        plt.ylabel('Porcentagem de Execução (%)')
+        plt.ylabel('Valor')
         plt.xticks(range(len(metaspe)), [f'Meta {i+1}' for i in range(len(metaspe))], rotation=45, ha='right', fontsize=9)  # Rotacionar, alinhar e diminuir o tamanho da fonte dos nomes das metas
 
         # Adicionar a legenda
@@ -130,7 +153,7 @@ def exibir_graficometas():
         graph_base64 = base64.b64encode(img.getvalue()).decode()
         plt.close()
 
-        return render_template('graficometas.html', objetivos=objetivospe, metas=metaspe, graph_base64=graph_base64, planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado)
+        return render_template('graficometas.html', objetivos=objetivospe, metas=metaspe, valoresmetas=valoresmetas, graph_base64=graph_base64, planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado)
     
     else:
         flash('Você não tem permissão para acessar esta página.', 'danger')
