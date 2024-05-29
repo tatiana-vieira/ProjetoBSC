@@ -104,11 +104,18 @@
         </table>
     </div>
     
-    <div style="text-align: center;">
-        <form action="{{ url_for('associar_metaspe') }}" method="GET" style="display: inline;">
-            <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
-        </form>
-        <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; display: inline;">Fechar</button>
+    <div style="text-align: center; margin-top: 20px;">
+        {% if planejamento_selecionado %}
+            <form action="{{ url_for('relatoriometas.export_csv_metas') }}" method="GET" style="display: inline;">
+                <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
+                <button type="submit" class="btn btn-secondary">Exportar CSV</button>
+            </form>
+            <form action="{{ url_for('relatoriometas.export_pdf_metas') }}" method="GET" style="display: inline;">
+                <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
+                <button type="submit" class="btn btn-secondary">Exportar PDF</button>
+            </form>
+        {% endif %}
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
     </div>
 
     <script>

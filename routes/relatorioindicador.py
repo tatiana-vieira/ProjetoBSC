@@ -12,6 +12,9 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib import colors
 import matplotlib.pyplot as plt
+from reportlab.lib.enums import TA_JUSTIFY
+
+
 
 relatorioindicador_route = Blueprint('relatorioindicador', __name__)
 
@@ -99,7 +102,7 @@ def export_csv():
     response.headers['Content-Disposition'] = 'attachment; filename=indicadores.csv'
     response.headers['Content-type'] = 'text/csv'
     return response
-
+#####################################################################################################################3
 @relatorioindicador_route.route('/export/pdf')
 @login_required
 def export_pdf():
@@ -121,10 +124,10 @@ def export_pdf():
     metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
 
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
     styles = getSampleStyleSheet()
     styleN = styles['BodyText']
-    styleN.alignment = 4  # Justify
+    styleN.alignment = TA_JUSTIFY
 
     elements = []
     elements.append(Paragraph("Relatório de Indicadores", styles['Title']))
@@ -133,15 +136,24 @@ def export_pdf():
         elements.append(Paragraph(f"Meta: {meta.nome}", styles['Heading2']))
         
         indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id == meta.id).all()
+        data = [["Indicador", "Descrição", "Ano", "Semestre", "Valor"]]
         for indicador in indicadores:
-            elements.append(Paragraph(f"Indicador: {indicador.nome}", styles['Heading3']))
-            elements.append(Paragraph(f"Descrição: {indicador.descricao}", styleN))
-            
             valores_indicadores = Valorindicador.query.filter(Valorindicador.indicadorpe_id == indicador.id).all()
             for valor in valores_indicadores:
-                elements.append(Paragraph(f"Ano: {valor.ano} Semestre: {valor.semestre} Valor: {valor.valor}", styleN))
-            
-            elements.append(Paragraph("", styleN))  # Linha em branco
+                data.append([indicador.nome, indicador.descricao, valor.ano, valor.semestre, valor.valor])
+        
+        t = Table(data, colWidths=[100, 200, 50, 50, 50])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ]))
+        elements.append(t)
+        elements.append(Paragraph("", styleN))  # Linha em branco
 
     doc.build(elements)
 

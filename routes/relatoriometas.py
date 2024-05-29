@@ -1,12 +1,19 @@
-from flask import render_template, request, redirect, url_for, jsonify, flash, session
+from flask import render_template, request, redirect, url_for, jsonify, flash, session, make_response
 from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, Valormeta, db, Programa
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
 import base64
-from io import BytesIO
+from io import BytesIO  # Adicione esta linha para importar o módulo io
+import csv
+import io
 import matplotlib.pyplot as plt
 from flask_login import login_required
 import matplotlib.cm as cm
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_JUSTIFY
 
 relatoriometas_route = Blueprint('relatoriometas', __name__)
 
@@ -64,7 +71,7 @@ def editar_meta(meta_id):
     lista_pdis = PlanejamentoEstrategico.query.all()
     objetivos = ObjetivoPE.query.all()
     return render_template('alterar_meta.html', meta=meta, valores_meta=valores_meta, lista_pdis=lista_pdis, objetivos=objetivos)
-#######################################################################################################################3
+#############################################################################################################################
 @relatoriometas_route.route('/salvar_alteracao_meta/<int:meta_id>', methods=['POST'])
 @login_required
 def salvar_alteracao_meta(meta_id):
@@ -79,6 +86,9 @@ def salvar_alteracao_meta(meta_id):
     valores = request.form.getlist('valores[]')
 
     for ano, semestre, valor in zip(anos, semestres, valores):
+        # Substitui vírgula por ponto para garantir o formato correto
+        valor = valor.replace(',', '.')
+        
         valor_meta = Valormeta.query.filter_by(metape_id=meta_id, ano=ano, semestre=semestre).first()
         if valor_meta:
             valor_meta.valor = valor
@@ -89,11 +99,11 @@ def salvar_alteracao_meta(meta_id):
     db.session.commit()
     flash('Meta alterada com sucesso!', 'success')
     return redirect(url_for('relatoriometas.exibir_relatoriometas', planejamento_selecionado=meta.objetivo_pe.planejamento_estrategico_id))
-############################################################################################################################33
+
 @relatoriometas_route.route('/sucesso')
 def sucesso():
     return render_template('sucesso.html')
-
+###################################################################################################################################3
 @relatoriometas_route.route('/graficometas', methods=['GET'])
 @login_required
 def exibir_graficometas():
@@ -158,3 +168,97 @@ def exibir_graficometas():
     else:
         flash('Você não tem permissão para acessar esta página.', 'danger')
         return redirect(url_for('login.login_page'))
+
+@relatoriometas_route.route('/export/csv_metas')
+@login_required
+def export_csv_metas():
+    if session.get('role') != 'Coordenador':
+        flash('Você não tem permissão para acessar esta página.', 'danger')
+        return redirect(url_for('login.login_page'))
+
+    planejamento_selecionado_id = request.args.get('planejamento_selecionado')
+    if not planejamento_selecionado_id:
+        flash('Nenhum planejamento selecionado.', 'warning')
+        return redirect(url_for('relatoriometas.exibir_relatoriometas'))
+
+    planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
+    if not planejamento_selecionado:
+        flash('Planejamento não encontrado.', 'warning')
+        return redirect(url_for('relatoriometas.exibir_relatoriometas'))
+
+    objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
+    metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
+    valoresmetas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Meta', 'Ano', 'Semestre', 'Valor'])
+
+    for meta in metaspe:
+        for valor in valoresmetas:
+            if valor.metape_id == meta.id:
+                writer.writerow([meta.nome, valor.ano, valor.semestre, valor.valor])
+
+    output.seek(0)
+    response = make_response(output.getvalue())
+    response.headers['Content-Disposition'] = 'attachment; filename=metas.csv'
+    response.headers['Content-type'] = 'text/csv'
+    return response
+
+@relatoriometas_route.route('/export/pdf_metas')
+@login_required
+def export_pdf_metas():
+    if session.get('role') != 'Coordenador':
+        flash('Você não tem permissão para acessar esta página.', 'danger')
+        return redirect(url_for('login.login_page'))
+
+    planejamento_selecionado_id = request.args.get('planejamento_selecionado')
+    if not planejamento_selecionado_id:
+        flash('Nenhum planejamento selecionado.', 'warning')
+        return redirect(url_for('relatoriometas.exibir_relatoriometas'))
+
+    planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
+    if not planejamento_selecionado:
+        flash('Planejamento não encontrado.', 'warning')
+        return redirect(url_for('relatoriometas.exibir_relatoriometas'))
+
+    objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
+    metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
+    valoresmetas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
+    styles = getSampleStyleSheet()
+    styleN = styles['BodyText']
+    styleN.alignment = TA_JUSTIFY
+
+    elements = []
+    elements.append(Paragraph("Relatório de Metas", styles['Title']))
+
+    for meta in metaspe:
+        elements.append(Paragraph(f"Meta: {meta.nome}", styles['Heading2']))
+        data = [["Ano", "Semestre", "Valor"]]
+        for valor in valoresmetas:
+            if valor.metape_id == meta.id:
+                data.append([valor.ano, valor.semestre, valor.valor])
+        
+        t = Table(data, colWidths=[50, 50, 50])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ]))
+        elements.append(t)
+        elements.append(Paragraph("", styleN))  # Linha em branco
+
+    doc.build(elements)
+
+    buffer.seek(0)
+    response = make_response(buffer.getvalue())
+    response.headers['Content-Disposition'] = 'attachment; filename=metas.pdf'
+    response.headers['Content-Type'] = 'application/pdf'
+    return response

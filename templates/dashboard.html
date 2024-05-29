@@ -1,7 +1,7 @@
 {% extends 'basecord.html' %}
 
 {% block titulo %}
-  Planejamento Estratégico (Indicadores)
+  Planejamento Estratégico - 2024:2028 (Indicadores)
 {% endblock %}
 
 {% block conteudo %}
@@ -21,47 +21,78 @@
         </form>
     </div>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Meta</th>
-                <th>Indicador</th>
-                <th>Descrição</th>
-                <th>Ano</th>
-                <th>Semestre</th>
-                <th>Valor</th>
-                <th>Alterar</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for meta_id, indicadores in indicadores_por_meta.items() %}
-                {% for indicador in indicadores %}
-                    {% for valor in valores_indicadores[indicador.id] %}
-                        <tr>
-                            <td>{{ indicadores_por_meta[meta_id][0].meta_pe.nome }}</td>
-                            <td>{{ indicador.nome }}</td>
-                            <td>{{ indicador.descricao }}</td>
-                            <td>{{ valor.ano }}</td>
-                            <td>{{ valor.semestre }}</td>
-                            <td>{{ valor.valor }}</td>
-                            <td><a href="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}" class="btn btn-success">Alterar</a></td>
-                        </tr>
+    <style>
+        table {
+            width: 90%;
+            border-collapse: collapse;
+            margin: 0 auto;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #dddddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            color: #003366;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+    </style>
+
+    <div id="tabela-indicadores" style="display: {% if planejamento_selecionado %}block{% else %}none{% endif %}; margin-top: 20px;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Meta</th>           
+                    <th>Indicador</th>
+                    <th>Descrição</th>
+                    <th>Ano</th>
+                    <th>Semestre</th>
+                    <th>Valor</th>
+                    <th>Alterar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for meta in metas %}
+                    {% for indicador in indicadores_por_meta[meta.id] %}
+                        {% for valorindicador in valores_indicadores[indicador.id] %}
+                            <tr>
+                                <td>{{ meta.nome if meta.nome else '' }}</td>
+                                <td>{{ indicador.nome if indicador.nome else '' }}</td>
+                                <td>{{ indicador.descricao | default('') }}</td>
+                                <td>{{ valorindicador.ano if valorindicador.ano else '' }}</td>
+                                <td>{{ valorindicador.semestre if valorindicador.semestre else '' }}</td>
+                                <td>{{ valorindicador.valor if valorindicador.valor else '' }}</td>
+                                <td><a href="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}"><button style="background-color: green; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">Alterar</button></a></td>
+                            </tr>
+                        {% endfor %}
                     {% endfor %}
                 {% endfor %}
-            {% endfor %}
-        </tbody>
-    </table>
-
+            </tbody>
+        </table>
+    </div>
+    
     <div style="text-align: center; margin-top: 20px;">
-        <form method="GET" action="{{ url_for('relatorioindicador.exibir_graficoindicador') }}" style="display: inline;">
-            <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
-            <button type="submit" class="btn btn-primary">Gerar Gráficos</button>
-        </form>
-        <button type="button" onclick="cancelar()" class="btn btn-danger">Cancelar</button>
+        {% if planejamento_selecionado %}
+            <form action="{{ url_for('relatorioindicador.export_csv') }}" method="GET" style="display: inline;">
+                <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
+                <button type="submit" class="btn btn-secondary">Exportar CSV</button>
+            </form>
+            <form action="{{ url_for('relatorioindicador.export_pdf') }}" method="GET" style="display: inline;">
+                <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
+                <button type="submit" class="btn btn-secondary">Exportar PDF</button>
+            </form>
+        {% endif %}
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
     </div>
 
     <script>
-        function cancelar() {
+        function fechar() {
             window.location.href = "{{ url_for('login.get_coordenador') }}";
         }
     </script>

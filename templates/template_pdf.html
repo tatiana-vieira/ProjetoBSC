@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Relatório de Planejamento</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        h1, h2, h3 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Relatório de Planejamento Estratégico 2024-2028</h1>
+    {% for objetivo in dados %}
+        <h2>Objetivo: {{ objetivo.nome }}</h2>
+        {% for meta in objetivo.metas %}
+            <h3>Meta: {{ meta.nome }}</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Indicador</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for indicador in meta.indicadores %}
+                        <tr>
+                            <td>{{ indicador.nome }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+    {% endfor %}
+</body>
+</html>

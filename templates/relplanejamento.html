@@ -32,6 +32,8 @@
 </div>
 
 <div style="text-align: center;">
+    <a id="gerar-pdf" href="#" class="btn btn-primary" style="display: none; margin-top: 20px;">Download PDF</a>
+    <a id="gerar-excel" href="#" class="btn btn-success" style="display: none; margin-top: 20px;">Download Excel</a>
     <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-top: 20px;">Fechar</button>
 </div>
 
@@ -67,6 +69,10 @@
                             });
                         });
                         $('#tabela-planejamento').show(); // Show the table container
+
+                        // Update download links
+                        $('#gerar-pdf').attr('href', '/gerar_pdf/' + planejamento_id).show();
+                        $('#gerar-excel').attr('href', '/gerar_excel/' + planejamento_id).show();
                     },
                     error: function(xhr, status, error) {
                         console.error(xhr.responseText); // Log any errors
@@ -76,6 +82,8 @@
                 alert('Por favor, selecione um planejamento.');
                 $('#tabela-planejamento').hide();
                 $('#tabela-planejamento tbody').empty(); // Clear the table if no selection
+                $('#gerar-pdf').hide();
+                $('#gerar-excel').hide();
             }
         });
     });

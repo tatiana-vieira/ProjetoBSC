@@ -88,11 +88,11 @@
                 <button type="submit" class="btn btn-secondary">Exportar PDF</button>
             </form>
         {% endif %}
-        <button type="button" onclick="cancelar()" class="btn btn-danger" style="margin-left: 10px;">Cancelar</button>
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
     </div>
 
     <script>
-        function cancelar() {
+        function fechar() {
             window.location.href = "{{ url_for('login.get_coordenador') }}";
         }
     </script>
