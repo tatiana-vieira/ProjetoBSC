@@ -5,43 +5,52 @@
 {% endblock %}
 
 {% block conteudo %}
-<form method="POST" action="{{ url_for('associar_objetivospe') }}">
-    <label for="planejamento">Selecione o Planejamento Estratégico:</label>
-    <select name="planejamento_id" required>
-        {% for pe, objetivos in objetivos_por_planejamento %}
-            <option value="{{ pe.id }}">{{ pe.nome }}</option>
-        {% endfor %}
-    </select>
-    <br>
+<div class="container">
+    <h2 style="text-align: center; color: #003366; margin-top: 20px;">Cadastro do Planejamento Estratégico</h2>
+    <form method="POST" action="{{ url_for('associar_objetivospe') }}" style="margin-top: 20px;">
+        <div class="form-group">
+            <label for="planejamento" style="color: #000408;">Selecione o Planejamento Estratégico:</label>
+            <select name="planejamento_id" required style="width: 100%; margin-bottom: 20px; padding: 10px;">
+                <option value="">-- Selecione --</option>
+                {% for pe, objetivos in objetivos_por_planejamento.items() %}
+                    <option value="{{ pe.id }}">{{ pe.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="objetivos" style="color: #000408;">Selecione os objetivos do PDI:</label>
+            <select name="objetivo_id" required style="width: 100%; margin-bottom: 20px; padding: 10px;">
+                <option value="">-- Selecione --</option>
+                {% for pe, objetivos in objetivos_por_planejamento.items() %}
+                    {% for objetivo in objetivos %}
+                        <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
+                    {% endfor %}
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="nome" style="color: #000408;">Nome do Objetivo:</label>
+            <input type="text" id="nome" name="nome" required style="width: 100%; margin-bottom: 20px; padding: 10px;">
+        </div>
+        <div class="form-group" style="text-align: center;">
+            <button type="submit" class="btn btn-primary" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Cadastrar</button>
+            <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+        </div>
+    </form>
 
-    <!-- Campo para selecionar objetivos associados a este planejamento estratégico -->
-    <label for="objetivos">Objetivos do PDI:</label>
-    <select name="objetivo_id" required>
-        {% for pe, objetivos in objetivos_por_planejamento %}
-            {% for objetivo in objetivos %}
-                <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes" style="list-style-type: none; padding: 0;">
+            {% for category, message in messages %}
+                <li class="{{ category }}" style="color: {{ 'red' if category == 'danger' else 'green' }};">{{ message }}</li>
             {% endfor %}
-        {% endfor %}
-    </select>
-
-    <label for="nome">Nome do Objetivo:</label>
-    <input type="text" id="nome" name="nome" required style="width: 100%; margin-bottom: 10px;"><br>
-    <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
-    <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button><br>
-</form>
-
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <ul class="flashes">
-        {% for category, message in messages %}
-            <li class="{{ category }}">{{ message }}</li>
-        {% endfor %}
-        </ul>
-    {% endif %}
-{% endwith %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+</div>
 
 <script>
-    function cancelar() {
+    function fechar() {
         // Redireciona para a página do coordenador após o login
         window.location.href = "{{ url_for('login.get_coordenador') }}";
     }

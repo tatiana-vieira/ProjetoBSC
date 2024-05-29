@@ -3,9 +3,10 @@
 {% block titulo %}
   Planejamento Estratégico - Alterar Valor do Indicador
 {% endblock %}
+
 {% block conteudo %}
 <body>
-  <h1 style="text-align: center;">Alterar Indicador</h1>
+  <h1 style="text-align: center; color: darkblue;">Alterar Indicador</h1>
   
   <!-- Exibir mensagens flash -->
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -22,24 +23,56 @@
   {% endwith %}
 
   <form action="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}" method="POST" style="text-align: center;">
-     {% for valorindicador in valores_indicadores %}
-     <label for="semestre">Semestre:</label><br>
-     <input type="number" id="semestre{{ loop.index }}" name="semestres[]" value="{{ valorindicador.semestre }}" required style="width: 80%; margin-bottom: 10px;"><br>
-      
-     <label for="ano">Ano:</label><br>
-     <input type="number" id="ano{{ loop.index }}" name="anos[]" value="{{ valorindicador.ano }}" required style="width: 80%; margin-bottom: 10px;"><br>
-      
-     <label for="valor">Valor:</label><br>
-     <input type="text" id="valor{{ loop.index }}" name="valores[]" value="{{ valorindicador.valor }}" required style="width: 80%; margin-bottom: 10px;"><br>
-     {% endfor %}
-      
-     <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar</button>
-     <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>            
-     <script>
-       function fechar() {
-           window.location.href = "{{ url_for('login.get_coordenador') }}";
-       }
-     </script>
-    </form>
+    <div class="form-group">
+      <label for="nome">Nome do Indicador:</label><br>
+      <input type="text" id="nome" name="nome" value="{{ indicador.nome }}" required style="width: 80%; margin-bottom: 10px;"><br>
+    </div>
+
+    {% for valorindicador in valores_indicadores %}
+    <div class="form-group" style="display: flex; justify-content: center; gap: 10px;">
+      <div>
+        <label for="semestre{{ loop.index }}">Semestre:</label><br>
+        <input type="number" id="semestre{{ loop.index }}" name="semestres[]" value="{{ valorindicador.semestre }}" required class="no-arrow" style="width: 100px; margin-bottom: 10px;">
+      </div>
+      <div>
+        <label for="ano{{ loop.index }}">Ano:</label><br>
+        <input type="number" id="ano{{ loop.index }}" name="anos[]" value="{{ valorindicador.ano }}" required class="no-arrow" style="width: 100px; margin-bottom: 10px;">
+      </div>
+      <div>
+        <label for="valor{{ loop.index }}">Valor:</label><br>
+        <input type="text" id="valor{{ loop.index }}" name="valores[]" value="{{ valorindicador.valor }}" required style="width: 100px; margin-bottom: 10px;">
+      </div>
+    </div>
+    {% endfor %}
+    
+    <div>
+      <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar</button>
+      <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
+      <button type="button" onclick="voltar()" style="background-color: grey; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Voltar</button>
+    </div>
+  </form>
+
+  <style>
+    /* Remover setas dos campos de número */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+  </style>
+
+  <script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
+
+    function voltar() {
+        window.history.back();
+    }
+  </script>
 </body>
-{% endblock conteudo %}
+{% endblock %}

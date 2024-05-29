@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, jsonify, flash, session, make_response
+from flask import render_template, request, redirect, url_for, jsonify, flash, session, make_response,send_file
 from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, Valormeta, db, Programa
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
@@ -14,6 +14,12 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_JUSTIFY
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.utils import ImageReader
+
+LOGO_PATH = 'static/PPG.png'  # Atualize para o caminho correto do logo
+PAGE_WIDTH, PAGE_HEIGHT = letter
 
 relatoriometas_route = Blueprint('relatoriometas', __name__)
 
@@ -103,7 +109,8 @@ def salvar_alteracao_meta(meta_id):
 @relatoriometas_route.route('/sucesso')
 def sucesso():
     return render_template('sucesso.html')
-###################################################################################################################################3
+##############################################################################################################################
+###################################################################################################################################
 @relatoriometas_route.route('/graficometas', methods=['GET'])
 @login_required
 def exibir_graficometas():
@@ -120,48 +127,44 @@ def exibir_graficometas():
         planejamento_selecionado = None
         objetivospe = []
         metaspe = []
-        valoresmetas = []  # Inicialize valoresmetas aqui
+        valoresmetas = []
 
         if planejamento_selecionado_id:
-            print(f"Planejamento selecionado ID: {planejamento_selecionado_id}")
             planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
             if not planejamento_selecionado:
                 flash('Planejamento não encontrado.', 'warning')
                 return redirect(url_for('relatoriometas.exibir_graficometas'))
 
-            print(f"Planejamento selecionado: {planejamento_selecionado.nome}")
             objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
             metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
             valoresmetas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
 
         # Gerar o gráfico
-        plt.figure(figsize=(14, 7))  # Aumentar o tamanho da figura
+        plt.figure(figsize=(14, 8))  # Aumentar o tamanho da figura
         nomes_metas = [meta.nome for meta in metaspe]
         valores_execucao = [sum(valor.valor for valor in valoresmetas if valor.metape_id == meta.id) for meta in metaspe]
 
-        # Usar um colormap para diferentes cores
         colors = cm.get_cmap('tab20', len(metaspe))
-
         bars = plt.bar(range(len(metaspe)), valores_execucao, color=[colors(i / len(metaspe)) for i in range(len(metaspe))])
         plt.title('Valores das Metas')
         plt.xlabel('Meta')
         plt.ylabel('Valor')
-        plt.xticks(range(len(metaspe)), [f'Meta {i+1}' for i in range(len(metaspe))], rotation=45, ha='right', fontsize=9)  # Rotacionar, alinhar e diminuir o tamanho da fonte dos nomes das metas
+        plt.xticks(range(len(metaspe)), [f'Meta {i+1}' for i in range(len(metaspe))], rotation=45, ha='right', fontsize=9)
 
-        # Adicionar a legenda
-        plt.legend(bars, nomes_metas, bbox_to_anchor=(1.03, 1), loc='upper left', fontsize=8)
+        for bar, valor in zip(bars, valores_execucao):
+            yval = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width()/2, yval, round(yval, 2), ha='center', va='bottom', fontsize=8)
 
-        # Adicionar margem para os rótulos
-        plt.subplots_adjust(right=0.6, bottom=0.3)
+        plt.legend(bars, nomes_metas, bbox_to_anchor=(0.5, -0.3), loc='upper center', ncol=1, fontsize=8)
+        plt.subplots_adjust(bottom=0.4, top=0.9)
 
-        # Salvar o gráfico em memória
         img = BytesIO()
         plt.savefig(img, format='png')
         img.seek(0)
+        plt.close()
 
         # Codificar o gráfico em base64 para incorporação no HTML
         graph_base64 = base64.b64encode(img.getvalue()).decode()
-        plt.close()
 
         return render_template('graficometas.html', objetivos=objetivospe, metas=metaspe, valoresmetas=valoresmetas, graph_base64=graph_base64, planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado)
     
@@ -169,6 +172,75 @@ def exibir_graficometas():
         flash('Você não tem permissão para acessar esta página.', 'danger')
         return redirect(url_for('login.login_page'))
 
+@relatoriometas_route.route('/gerar_pdf', methods=['GET'])
+@login_required
+def gerar_pdf():
+    coordenador_programa_id = session.get('programa_id')
+    programa = Programa.query.get(coordenador_programa_id)
+
+    if not programa:
+        flash('Não foi possível encontrar o programa associado ao coordenador.', 'warning')
+        return redirect(url_for('login.get_coordenador'))
+
+    planejamento_selecionado_id = request.args.get('planejamento_selecionado')
+    planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
+
+    if not planejamento_selecionado:
+        flash('Planejamento não encontrado.', 'warning')
+        return redirect(url_for('relatoriometas.exibir_graficometas'))
+
+    objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
+    metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
+    valoresmetas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
+
+    # Gerar o gráfico novamente
+    plt.figure(figsize=(14, 8))  # Aumentar o tamanho da figura
+    nomes_metas = [meta.nome for meta in metaspe]
+    valores_execucao = [sum(valor.valor for valor in valoresmetas if valor.metape_id == meta.id) for meta in metaspe]
+
+    colors = cm.get_cmap('tab20', len(metaspe))
+    bars = plt.bar(range(len(metaspe)), valores_execucao, color=[colors(i / len(metaspe)) for i in range(len(metaspe))])
+    plt.title('Valores das Metas')
+    plt.xlabel('Meta')
+    plt.ylabel('Valor')
+    plt.xticks(range(len(metaspe)), [f'Meta {i+1}' for i in range(len(metaspe))], rotation=45, ha='right', fontsize=9)
+
+    for bar, valor in zip(bars, valores_execucao):
+        yval = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2, yval, round(yval, 2), ha='center', va='bottom', fontsize=8)
+
+    plt.legend(bars, nomes_metas, bbox_to_anchor=(0.5, -0.3), loc='upper center', ncol=1, fontsize=8)
+    plt.subplots_adjust(bottom=0.4, top=0.9)
+
+    img = BytesIO()
+    plt.savefig(img, format='png')
+    img.seek(0)
+    plt.close()
+
+    # Criar PDF
+    pdf_buffer = BytesIO()
+    c = canvas.Canvas(pdf_buffer, pagesize=letter)
+    
+    # Adicionar logo centralizado
+    logo_width = 100
+    logo_height = 50
+    c.drawImage(LOGO_PATH, (PAGE_WIDTH - logo_width) / 2, PAGE_HEIGHT - 100, width=logo_width, height=logo_height)
+    
+    # Adicionar gráfico centralizado
+    graph_width = 500
+    graph_height = 300
+    c.drawImage(ImageReader(img), (PAGE_WIDTH - graph_width) / 2, 350, width=graph_width, height=graph_height)
+    
+    c.showPage()
+    c.save()
+    pdf_buffer.seek(0)
+
+    return send_file(pdf_buffer, download_name='grafico_metas.pdf', as_attachment=True)
+
+  
+############################################################################################################################
+###########################################################################################################################
+###############################################################################################################
 @relatoriometas_route.route('/export/csv_metas')
 @login_required
 def export_csv_metas():

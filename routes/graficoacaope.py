@@ -27,6 +27,7 @@ def exibir_graficoacaope():
         metaspe = []
         acoespe = []
         graficos = []
+        meta_tem_acoes = False
 
         if planejamento_selecionado_id:
             planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
@@ -39,6 +40,7 @@ def exibir_graficoacaope():
 
             if meta_selecionada_id:
                 acoespe = AcaoPE.query.filter_by(meta_pe_id=meta_selecionada_id).all()
+                meta_tem_acoes = len(acoespe) > 0
                 if acoespe:
                     nomes_acoes = [acao.nome for acao in acoespe]
                     porcentagens_execucao = [acao.porcentagem_execucao for acao in acoespe]
@@ -65,7 +67,7 @@ def exibir_graficoacaope():
                         } for acao in acoespe]
                     })
 
-        return render_template('graficoacaope.html', planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado, metas=metaspe, meta_selecionada_id=meta_selecionada_id, graficos=graficos)
+        return render_template('graficoacaope.html', planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado, metas=metaspe, meta_selecionada_id=meta_selecionada_id, graficos=graficos, meta_tem_acoes=meta_tem_acoes)
     
     else:
         flash('Você não tem permissão para acessar esta página.', 'danger')

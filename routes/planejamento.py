@@ -52,11 +52,16 @@ def cadastro_planejamentope():
         # Verifique se o usuário está autenticado e tem um programa associado
         if current_user and hasattr(current_user, 'programa_id') and current_user.programa_id:
             programa_do_usuario = Programa.query.get(current_user.programa_id)
+            planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_do_usuario.id).all()
+            objetivos_por_planejamento = {}
+            for planejamento in planejamentos:
+                objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+                objetivos_por_planejamento[planejamento] = objetivos
         else:
             flash('Nenhum programa associado encontrado para este usuário.', 'danger')
             return redirect(url_for('login.login_page'))
 
-        return render_template('planejamento.html', pdis=pdis, programa_do_usuario=programa_do_usuario)
+        return render_template('planejamento.html', pdis=pdis, objetivos_por_planejamento=objetivos_por_planejamento)
      
 @planejamento_route.route('/sucesso_cadastro')
 def sucesso_cadastro():
@@ -277,57 +282,31 @@ def associar_indicadorespe():
 @planejamento_route.route('/alterar_indicadorpe/<int:indicador_id>', methods=['GET', 'POST'])
 @login_required
 def alterar_indicadorpe(indicador_id):
-    # Busca o indicador a ser alterado pelo ID
     indicador = IndicadorPlan.query.get_or_404(indicador_id)
-    
-    if request.method == 'POST':
-        # Filtra os valores indicadores pelo ID do indicador
-        valores_indicadores = Valorindicador.query.filter_by(indicadorpe_id=indicador_id).all()
+    valores_indicadores = Valorindicador.query.filter_by(indicadorpe_id=indicador.id).all()
 
-        # Coleta os valores do formulário
-        anos = request.form.getlist('anos[]')
+    if request.method == 'POST':
+        nome = request.form.get('nome')
         semestres = request.form.getlist('semestres[]')
+        anos = request.form.getlist('anos[]')
         valores = request.form.getlist('valores[]')
 
-        print(f'Form Data: Anos={anos}, Semestres={semestres}, Valores={valores}')  # Log para depuração
+        # Atualiza o nome do indicador
+        if nome:
+            indicador.nome = nome
 
-        # Atualiza os valores existentes
-        for index, valor_indicador in enumerate(valores_indicadores):
-            if index < len(anos):
-                semestre = semestres[index]
-                ano = anos[index]
-                valor_valor = valores[index]
+        # Atualiza os valores dos indicadores
+        for i, valorindicador in enumerate(valores_indicadores):
+            valorindicador.semestre = semestres[i]
+            valorindicador.ano = anos[i]
+            valorindicador.valor = valores[i]
 
-                if semestre and ano and valor_valor:
-                    valor_indicador.semestre = semestre
-                    valor_indicador.ano = ano
-                    valor_indicador.valor = valor_valor
-                    print(f'Atualizando valor {valor_indicador.id}: ano={ano}, semestre={semestre}, valor={valor_valor}')
-                else:
-                    db.session.delete(valor_indicador)
-            else:
-                db.session.delete(valor_indicador)
-
-        # Adicionar novos valores
-        for i in range(len(valores_indicadores), len(anos)):
-            novo_valor_indicador = Valorindicador(indicadorpe_id=indicador_id, ano=anos[i], semestre=semestres[i], valor=valores[i])
-            db.session.add(novo_valor_indicador)
-            print(f'Adicionando novo valor: ano={anos[i]}, semestre={semestres[i]}, valor={valores[i]}')
-
+        # Salva as alterações no banco de dados
         db.session.commit()
-        flash('Valores do indicador atualizados com sucesso!', 'success')
-        
-        # Filtra novamente os valores indicadores atualizados
-        valores_indicadores = Valorindicador.query.filter_by(indicadorpe_id=indicador_id).all()
-        return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
+        flash('Indicador e valores atualizados com sucesso.', 'success')
+        return redirect(url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id))
 
-    else:
-        # Filtra os valores indicadores pelo ID do indicador
-        valores_indicadores = Valorindicador.query.filter_by(indicadorpe_id=indicador_id).all()
-        
-        # Retorna o formulário de alteração preenchido com os dados do indicador e valores indicadores
-        return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
-
+    return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
 ##############################################################################################################################
 @planejamento_route.route('/associar_metaspe', methods=['GET', 'POST'])
 @login_required

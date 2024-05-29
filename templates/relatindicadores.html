@@ -6,12 +6,13 @@
 
 {% block conteudo %}
 <body>
-    <h4 style="text-align: center; color: #003366;">Planejamento Estratégico (Indicadores)</h4>
+    <h3 style="text-align: center; color: #003366;">Planejamento Estratégico - (Indicadores)</h3><br><br>
 
     <div style="text-align: center;">
         <h4 style="color: #003366;">Selecione um Planejamento Estratégico:</h4>
-        <form method="GET" action="{{ url_for('relatorioindicador.exibir_relatorioindicador') }}">
-            <select id="planejamento_estrategico" name="planejamento_selecionado" required style="width: 300px; margin-bottom: 20px;">
+        <form method="GET" action="{{ url_for('relatorioindicador.exibir_relatorioindicador') }}" style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+            <label for="planejamento_estrategico" style="color: #003366;">Selecione um Planejamento Estratégico:</label>
+            <select id="planejamento_estrategico" name="planejamento_selecionado" required style="width: 300px;">
                 <option value="">-- Selecione --</option>
                 {% for planejamento in planejamentos %}
                     <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento_selecionado.id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
