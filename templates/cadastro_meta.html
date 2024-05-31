@@ -1,7 +1,7 @@
 {% extends 'basepro.html' %}
 
 {% block titulo %}
-    Cadastro de Metas - PRPPG
+    <h2 style="color: #003366;">CADASTRAR META - PRPPG</h2>
 {% endblock %}
 
 {% block conteudo %}
@@ -31,7 +31,7 @@
             </form>
             <script>
                 function alterarMeta() {
-                    window.location.href = "{{ url_for('selecionar_pdi_para_alteracao') }}";
+                    window.location.href = "{{ url_for('alterar_meta') }}";
                 }
                 function fechar() {
                     window.location.href = "{{ url_for('login.get_proreitor') }}";

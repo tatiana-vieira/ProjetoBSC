@@ -28,7 +28,7 @@ def get_metas(objetivo_id):
     metas_data = [{'id': meta.id, 'nome': meta.nome} for meta in metas]
     return jsonify({'metas': metas_data})
 
-def processar_formulario_indicador():
+def processar_formulario_indicador(indicador_id=None):
     if 'email' not in session:
         return 'Acesso não autorizado'
 
@@ -40,12 +40,37 @@ def processar_formulario_indicador():
     meta_id = request.form.get('meta_id')
 
     if not nome or not meta_id:
-        flash('Dados incompletos', 'error')
-        return redirect(url_for('indicador.cadastro_indicador'))
+        return 'Dados incompletos'
 
-    novo_indicador = Indicador(nome=nome, meta_pdi_id=meta_id)
-    db.session.add(novo_indicador)
-    db.session.commit()
+    if indicador_id:
+        indicador = Indicador.query.get(indicador_id)
+        if indicador:
+            indicador.nome = nome
+            indicador.meta_id = meta_id
+            db.session.commit()
+            return 'Indicador alterado com sucesso!'
+        else:
+            return 'Indicador não encontrado'
+    else:
+        novo_indicador = Indicador(nome=nome, meta_pdi_id=meta_id)
+        db.session.add(novo_indicador)
+        db.session.commit()
+        return 'Indicador cadastrado com sucesso!'
+#####################################################################################################
+@indicador_route.route('/editar_indicador/<int:indicador_id>', methods=['GET', 'POST'])
+def editar_indicador(indicador_id):
+    indicador = Indicador.query.get_or_404(indicador_id)
+    success_message = None
+    
+    if request.method == 'POST':
+        success_message = processar_formulario_indicador(indicador_id)
+        indicador = Indicador.query.get_or_404(indicador_id)  # Recarrega o indicador atualizado
+    
+    pdis = PDI.query.all()
+    return render_template('editar_indicadorpdi.html', indicador=indicador, pdis=pdis, success_message=success_message)
 
-    flash('Indicador cadastrado com sucesso!', 'success')
-    return redirect(url_for('indicador.cadastro_indicador'))
+
+@indicador_route.route('/lista_indicadores', methods=['GET'])
+def lista_indicadores():
+    indicadores = Indicador.query.all()
+    return render_template('listaindicadorpdi.html', indicadores=indicadores)

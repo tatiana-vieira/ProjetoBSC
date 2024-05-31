@@ -1,0 +1,40 @@
+{% extends 'basepro.html' %}
+
+{% block titulo %}
+   Lista de Indicadores -PRPPG
+{% endblock %}
+
+{% block conteudo %}
+    <div style="margin: auto; width: 90%; text-align: center;">
+        <div class="form-block"><br>
+            <h2>LISTA DE INDICADORES</h2><br>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Meta</th>
+                        <th>Objetivo</th>
+                        <th>PDI</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for indicador in indicadores %}
+                        <tr>
+                            <td>{{ indicador.nome }}</td>
+                            <td>{{ indicador.meta.nome }}</td>
+                            <td>{{ indicador.meta.objetivo.nome }}</td>
+                            <td>{{ indicador.meta.objetivo.pdi.nome }}</td>
+                            <td>
+                                <a href="{{ url_for('indicador.editar_indicador', indicador_id=indicador.id) }}" style="color: blue; text-decoration: none;">Alterar</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div style="margin-top: 20px;">
+                <a href="{{ url_for('indicador.cadastro_indicador') }}" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; text-decoration: none;">Cadastrar Novo Indicador</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

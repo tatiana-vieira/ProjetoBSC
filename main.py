@@ -324,38 +324,28 @@ def register_page():
     return render_template('register.html', programas=programas)
 #############Cadastro de PDI ##################################
 def processar_formulario_pdi(pdi_id=None):
-    # Verifica se o usuário está logado e é um Pró-reitor
-    if 'email' not in session:
-        return 'Acesso não autorizado'
-    
-    user = Users.query.filter_by(email=session['email']).first()
-    if user.role != 'Pro-reitor':
-        return 'Acesso não autorizado'
-
-    # Processa os dados do formulário
     nome = request.form.get('nome')
     datainicio = request.form.get('datainicio')
     datafim = request.form.get('datafim')
-    id_meta = request.form.get('id_meta')  # Usando get para capturar o id_meta
 
-    if not nome or not datainicio or not datafim or not id_meta:
-        return 'Todos os campos são obrigatórios'
+    if not nome or not datainicio or not datafim:
+        return 'Dados incompletos'
 
     if pdi_id:
-        # Atualiza um PDI existente
         pdi = PDI.query.get(pdi_id)
-        pdi.nome = nome
-        pdi.datainicio = datainicio
-        pdi.datafim = datafim
-        pdi.id_meta = id_meta  # Atualizando id_meta
+        if pdi:
+            pdi.nome = nome
+            pdi.datainicio = datainicio
+            pdi.datafim = datafim
+            db.session.commit()
+            return 'PDI alterado com sucesso!'
+        else:
+            return 'PDI não encontrado'
     else:
-        # Insere os dados no banco de dados
-        pdi = PDI(nome=nome, datainicio=datainicio, datafim=datafim, id_meta=id_meta)
-        db.session.add(pdi)
-    
-    db.session.commit()
-    
-    return redirect(url_for('sucesso_cadastro'))
+        novo_pdi = PDI(nome=nome, datainicio=datainicio, datafim=datafim)
+        db.session.add(novo_pdi)
+        db.session.commit()
+        return 'PDI cadastrado com sucesso!'
 
 @app.route('/cadastro_pdi', methods=['GET', 'POST'])
 def cadastro_pdi():
@@ -366,8 +356,11 @@ def cadastro_pdi():
 
 @app.route('/editar_pdi/<int:pdi_id>', methods=['GET', 'POST'])
 def editar_pdi(pdi_id):
+    success_message = None
     if request.method == 'POST':
-        return processar_formulario_pdi(pdi_id)
+        success_message = processar_formulario_pdi(pdi_id)
+        pdi = PDI.query.get(pdi_id)
+        return render_template('cadastropdi.html', pdi=pdi, success_message=success_message)
     
     pdi = PDI.query.get(pdi_id)
     return render_template('cadastropdi.html', pdi=pdi)
@@ -389,21 +382,25 @@ def lista_objetivos():
 
 @app.route('/cadastro_objetivo', methods=['GET', 'POST'])
 def cadastro_objetivo():
+    success_message = None
     if request.method == 'POST':
-        return processar_formulario_objetivo()
+        success_message = processar_formulario_objetivo()
     
     lista_pdis = PDI.query.all()
-    return render_template('cadastro_objetivo.html', lista_pdis=lista_pdis, objetivo=None)
+    return render_template('cadastro_objetivo.html', lista_pdis=lista_pdis, objetivo=None, success_message=success_message)
+
 
 @app.route('/editar_objetivo/<int:objetivo_id>', methods=['GET', 'POST'])
 def editar_objetivo(objetivo_id):
+    success_message = None
     objetivo = Objetivo.query.get_or_404(objetivo_id)
     
     if request.method == 'POST':
-        return processar_formulario_objetivo(objetivo_id)
+        success_message = processar_formulario_objetivo(objetivo_id)
     
     lista_pdis = PDI.query.all()
-    return render_template('cadastro_objetivo.html', objetivo=objetivo, lista_pdis=lista_pdis)
+    return render_template('cadastro_objetivo.html', objetivo=objetivo, lista_pdis=lista_pdis, success_message=success_message)
+
 
 def processar_formulario_objetivo(objetivo_id=None):
     if 'email' not in session:
@@ -422,14 +419,13 @@ def processar_formulario_objetivo(objetivo_id=None):
         objetivo.pdi_id = pdi_id
         objetivo.nome = nome
         objetivo.bsc = bsc
+        db.session.commit()
+        return "Objetivo alterado com sucesso"
     else:
         novo_objetivo = Objetivo(pdi_id=pdi_id, nome=nome, bsc=bsc)
         db.session.add(novo_objetivo)
-    
-    db.session.commit()
-    
-    return redirect(url_for('sucesso_cadastro'))
-
+        db.session.commit()
+        return "Objetivo cadastrado com sucesso"
 ##############################################################################################################################
 ###########################################################################################################################
 @app.route('/cadastro_meta', methods=['GET', 'POST'])
@@ -489,29 +485,30 @@ def objetivos_relacionados_pdi(pdi_id):
     # Retorna os objetivos relacionados como dados JSON
     objetivos_data = [{'id': objetivo.id, 'nome': objetivo.nome} for objetivo in objetivos]
     return jsonify(objetivos_data)
-
+#####################################################################3
 @app.route('/alterar_meta', methods=['GET', 'POST'])
 def alterar_meta():
-    objetivo_id = request.args.get('objetivo_id')
-    if not objetivo_id:
-        return redirect(url_for('selecionar_pdi_para_alteracao'))
-
+    success_message = None
     if request.method == 'POST':
-        return processar_formulario_alterar_meta(objetivo_id)
-
-    # Obtém a meta a ser alterada do banco de dados
-    meta = Meta.query.filter_by(objetivo_id=objetivo_id).first()
-    if not meta:
-        return 'Meta não encontrada', 404
-
-    # Obtém a lista de PDI e objetivos relacionados
+        meta_id = request.form.get('meta_id')
+        if meta_id:
+            success_message = processar_formulario_alterar_meta(meta_id)
+    
     lista_pdis = PDI.query.all()
-    objetivos = buscar_objetivos_relacionados_pdi(meta.objetivo.pdi_id)
+    pdi_id = request.args.get('pdi_id')
+    objetivos = []
+    meta = None
+    
+    if pdi_id:
+        objetivos = buscar_objetivos_relacionados_pdi(int(pdi_id))
+        
+    objetivo_id = request.args.get('objetivo_id')
+    if objetivo_id:
+        meta = Meta.query.filter_by(objetivo_id=int(objetivo_id)).first()
 
-    return render_template('alterar_meta.html', meta=meta, lista_pdis=lista_pdis, objetivos=objetivos)
-  
+    return render_template('alterarmetapdi.html', lista_pdis=lista_pdis, objetivos=objetivos, meta=meta, success_message=success_message)
+
 def processar_formulario_alterar_meta(meta_id):
-    # Verifica se o usuário está logado e é um Pró-reitor
     if 'email' not in session:
         return 'Acesso não autorizado'
 
@@ -527,13 +524,15 @@ def processar_formulario_alterar_meta(meta_id):
     nome = request.form['nome']
     porcentagem_execucao = request.form['porcentagem_execucao']
 
-    # Atualiza os dados no banco de dados
     meta.objetivo_id = objetivo_id
     meta.nome = nome
     meta.porcentagem_execucao = porcentagem_execucao
     db.session.commit()
 
-    return redirect(url_for('sucesso_cadastro'))
+    return "Meta alterada com sucesso"
+
+
+#################################33333
 
 @app.route('/selecionar_pdi_para_alteracao', methods=['GET'])
 def selecionar_pdi_para_alteracao():
@@ -550,6 +549,8 @@ def escolher_objetivo_para_alteracao():
     # Busca os objetivos relacionados ao PDI
     objetivos = buscar_objetivos_relacionados_pdi(int(pdi_id))
     return render_template('escolher_objetivo_para_alteracao.html', pdi_id=pdi_id, objetivos=objetivos)
+
+    
 ################################################################################################################################
 ######################################################################
 ###############################################################

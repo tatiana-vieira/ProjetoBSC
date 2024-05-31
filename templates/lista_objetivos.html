@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 
 {% block titulo %}
-    Lista de Objetivos - PRPPG
+    lista de Objetivos - PRPPG
 {% endblock %}
 
 {% block conteudo %}
 <body>
-    <h4 style="text-align: center; color: #003366;">Plano de Desenvolvimento Institucional</h4>
+    <h4 style="text-align: center; color: #003366;">PDI - LISTA DE OBJETIVOS</h4>
 
     <style>
         table {
@@ -42,6 +42,7 @@
             cursor: pointer;
             text-decoration: none;
             margin-left: 10px;
+            display: inline-block;
         }
         .button-container button.cancel {
             background-color: #f44336;
@@ -69,7 +70,14 @@
             {% endfor %}
         </tbody>
     </table>
-    <a href="{{ url_for('cadastro_objetivo') }}" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; margin-top: 20px; display: inline-block;">Cadastrar Novo Objetivo</a>
-</div>
+    <div class="button-container">
+        <a href="{{ url_for('cadastro_objetivo') }}">Cadastrar Novo Objetivo</a>
+        <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>
+    </div>
+    <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_proreitor') }}";
+        }
+    </script>
 </body>
 {% endblock %}

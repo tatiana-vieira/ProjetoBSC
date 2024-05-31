@@ -1,13 +1,16 @@
 {% extends 'basepro.html' %}
 
 {% block titulo %}
-    Cadastro de Indicador - PRPPG
+    <h2 style="color: #003366;">CADASTRAR INDICADOR - PRPPG</h2>
 {% endblock %}
 
 {% block conteudo %}
     <div style="margin: auto; width: 90%; text-align: center;">
         <div class="form-block"><br>
-            <h2>Cadastro de Indicador</h2><br>
+            <h2>CADASTRO DE INDICADOR</h2><br>
+            {% if success_message %}
+                <div style="color: green; margin-bottom: 20px;">{{ success_message }}</div>
+            {% endif %}
             <form id="IndicadorForm" method="POST" action="{{ url_for('indicador.cadastro_indicador') }}">
                 <label for="pdi_id">PDI:</label>
                 <select id="pdi_id" name="pdi_id" required style="width: 100%; margin-bottom: 10px;">
@@ -31,6 +34,7 @@
                 <input type="text" id="nome" name="nome" required style="width: 100%; margin-bottom: 10px;"><br>
                 
                 <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
+                <button type="button" onclick="alterarIndicador()" style="background-color: #065110; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Alterar</button>
                 <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>            
             </form>
         </div>
@@ -76,22 +80,13 @@
                 }
             });
         });
-      
+
+        function alterarIndicador() {
+            window.location.href = "{{ url_for('indicador.lista_indicadores') }}";
+        }
+
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_proreitor') }}";
+        }
     </script>
-      {%with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-          <ul class="flashes">
-              {% for category, message in messages %}
-                  <li class="{{ category }}">{{ message }}</li>
-              {% endfor %}
-          </ul>
-      {% endif %}
-  {% endwith %}
-  <script>
-    function fechar() {
-        window.location.href = "{{ url_for('login.get_proreitor') }}";
-    }
-  </script>
-
-
 {% endblock %}

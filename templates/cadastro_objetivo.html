@@ -7,7 +7,10 @@
 {% block conteudo %}
 <div style="margin: auto; width: 50%; text-align: center;">
     <div class="form-block"><br>
-        <h2>{{ 'Editar Objetivo' if objetivo else 'Cadastro de Objetivo' }}</h2><br>
+        <h2 style="color: #003366;">{{ 'Editar Objetivo' if objetivo else 'Cadastro de Objetivo' }}</h2><br>
+        {% if success_message %}
+            <div style="color: green; margin-bottom: 20px;">{{ success_message }}</div>
+        {% endif %}
         <form id="Objetivo" method="POST">
             <label for="nome">Nome do Objetivo:</label>
             <input type="text" id="nome" name="nome" value="{{ objetivo.nome if objetivo else '' }}" required style="width: 100%; margin-bottom: 10px;"><br>
