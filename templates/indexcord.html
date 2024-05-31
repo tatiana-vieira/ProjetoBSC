@@ -8,25 +8,22 @@
   <h2 style="text-align: center;"> PPGEXPLORER </h2>
   <hr>
   <style>
-    .content-wrapper {
-      text-align: center;
-    }
-
-    .content-wrapper img {
-      width: 100%;
-      height: auto;
-      max-width: 150px; /* Defina a largura máxima desejada para as imagens */
-    }
-
-    .content-wrapper .image-button-wrapper {
+    /* Adiciona estilos para centralizar as imagens */
+    .image-button-wrapper {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100%; /* Garante que a altura da div seja igual à altura da imagem */
+      height: 300px; /* Ajuste a altura conforme necessário */
     }
 
-    .content-wrapper .image-button-wrapper button {
+    .image-button-wrapper img {
+      width: 100%;
+      max-width: 150px; /* Defina a largura máxima desejada para as imagens */
+      height: auto;
+    }
+
+    .image-button-wrapper button {
       width: 100%;
       max-width: 150px; /* Defina a largura máxima desejada para os botões */
       text-align: center; /* Alinha o texto ao centro */
@@ -34,36 +31,41 @@
   </style>
   <div class="container">
     <div class="row">
-        <div class="col-md-4">
-        <div class="content-wrapper">
-          <div class="image-button-wrapper">
-            <img src="{{ url_for('static', filename='comparar.png') }}" alt="Imagem 1" class="img-fluid">
-            <button type="button" class="btn btn-primary btn-block">Visualização PDI</button>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="content-wrapper">
-            <div class="image-button-wrapper">
-                <img src="{{ url_for('static', filename='multi.png') }}" alt="Imagem 2" class="img-fluid">
-                <button type="button" class="btn btn-primary btn-block" onclick="redirecionarParaPlanejamentoEstrategico()">Planejamento Estratégico</button>
-            </div>
-        </div>
-    </div>
-    
-    <script>
-        function redirecionarParaPlanejamentoEstrategico() {
-            window.location.href = "{{ url_for('cadastro_planejamentope') }}";
-        }
-    </script>
       <div class="col-md-4">
         <div class="content-wrapper">
           <div class="image-button-wrapper">
-            <img src="{{ url_for('static', filename='ideia.png') }}" alt="Imagem 3" class="img-fluid">
-            <button type="button" class="btn btn-primary btn-block">Relatório</button>
+            <img src="{{ url_for('static', filename='comparar.png') }}" alt="Imagem 1">
+            <button type="button" class="btn btn-primary btn-block" onclick="visualizarpdi()">PDI</button>
           </div>
         </div>
       </div>
+ 
+      <div class="col-md-4">
+        <div class="content-wrapper">
+          <div class="image-button-wrapper">
+            <img src="{{ url_for('static', filename='PDI.png') }}" alt="Imagem 2">
+            <button type="button" class="btn btn-primary btn-block">Cadastros</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="content-wrapper">
+          <div class="image-button-wrapper">
+            <img src="{{ url_for('static', filename='ideia.png') }}" alt="Imagem 3">
+            <button type="button" class="btn btn-primary btn-block" onclick="visualizarelatorio()">Relatório</button>
+          </div>
+        </div>
+      </div>
+      <script>
+        function visualizarpdi() {
+          window.location.href = "{{ url_for('exibir_altpdi') }}";
+       }
+       
+       function visualizarelatorio() {
+          window.location.href = "{{ url_for('relatoriocompleto.relatorio_completo') }}";
+       }
+      </script>
     </div>
   </div>
 {% endblock %}

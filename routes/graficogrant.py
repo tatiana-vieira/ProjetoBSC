@@ -31,7 +31,7 @@ def exibir_gantt():
             planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
             if not planejamento_selecionado:
                 flash('Planejamento não encontrado.', 'warning')
-                return redirect(url_for('gantt_chart.exibir_gantt'))
+                return redirect(url_for('graficogrant.exibir_gantt'))
 
             objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
             metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
@@ -39,21 +39,24 @@ def exibir_gantt():
 
             if acoespe:
                 # Gerar gráfico de Gantt
-                df = pd.DataFrame([(acao.nome, acao.data_inicio, acao.data_termino) for acao in acoespe], columns=['Ação', 'Início', 'Término'])
-                fig, ax = plt.subplots(figsize=(10, 6))
+                try:
+                    df = pd.DataFrame([(acao.nome, acao.data_inicio, acao.data_termino) for acao in acoespe], columns=['Ação', 'Início', 'Término'])
+                    fig, ax = plt.subplots(figsize=(10, 6))
 
-                for i, (acao, inicio, termino) in enumerate(zip(df['Ação'], df['Início'], df['Término'])):
-                    ax.barh(acao, (termino - inicio).days, left=inicio, height=0.4)
+                    for i, (acao, inicio, termino) in enumerate(zip(df['Ação'], df['Início'], df['Término'])):
+                        ax.barh(acao, (termino - inicio).days, left=inicio, height=0.4)
 
-                ax.set_xlabel('Data')
-                ax.set_ylabel('Ação')
-                ax.set_title('Gráfico de Gantt das Ações')
+                    ax.set_xlabel('Data')
+                    ax.set_ylabel('Ação')
+                    ax.set_title('Gráfico de Gantt das Ações')
 
-                img = io.BytesIO()
-                plt.savefig(img, format='png', bbox_inches='tight')
-                img.seek(0)
-                plot_url = base64.b64encode(img.getvalue()).decode('utf8')
-                plt.close(fig)
+                    img = io.BytesIO()
+                    plt.savefig(img, format='png', bbox_inches='tight')
+                    img.seek(0)
+                    plot_url = base64.b64encode(img.getvalue()).decode('utf8')
+                    plt.close(fig)
+                except Exception as e:
+                    flash(f'Erro ao gerar o gráfico: {str(e)}', 'danger')
 
         return render_template('gantt.html', planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado, acoes=acoespe, plot_url=plot_url)
     

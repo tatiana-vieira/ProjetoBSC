@@ -69,10 +69,13 @@
     function fechar() {
         window.location.href = "{{ url_for('login.get_coordenador') }}";
     }
-
-    function voltar() {
-        window.history.back();
-    }
+  </script>
+  <script>
+        function voltar() {
+              // Redireciona para a página do relatório de ações
+              window.location.href = "{{ url_for('relatorioindicador.exibir_relatorioindicador') }}";
+          }
+     
   </script>
 </body>
 {% endblock %}

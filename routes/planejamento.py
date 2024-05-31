@@ -176,12 +176,12 @@ def alterar_acaope(acao_id):
         if 'porcentagem_execucao' in request.form:
             acao.porcentagem_execucao = request.form['porcentagem_execucao']
         
-        
         # Salva as alterações no banco de dados
         db.session.commit()
 
         flash('Ação alterada com sucesso!', 'success')
-        return redirect(url_for('login.get_coordenador'))
+        # Redireciona de volta para a página de alteração de ação para permanecer na mesma tela
+        return redirect(url_for('planejamento.alterar_acaope', acao_id=acao_id))
     else:
         # Retorna o formulário de alteração preenchido com os dados da ação
         return render_template('alterar_acaope.html', acao=acao)

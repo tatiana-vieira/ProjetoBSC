@@ -87,7 +87,7 @@ def export_csv_acoes():
     response.headers['Content-Disposition'] = 'attachment; filename=acoes.csv'
     response.headers['Content-type'] = 'text/csv'
     return response
-
+#######################################################################################################################3
 @relatorioacao_route.route('/export/pdf_acoes')
 @login_required
 def export_pdf_acoes():

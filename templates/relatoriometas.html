@@ -40,10 +40,11 @@
             width: 90%;
             border-collapse: collapse;
             margin: 0 auto;
+            text-align: left;
         }
         th, td {
             padding: 10px;
-            text-align: center;
+            text-align: left;
             border: 1px solid #dddddd;
         }
         th {
@@ -55,6 +56,20 @@
         }
         tr:nth-child(odd) {
             background-color: #ffffff;
+        }
+        .meta-info {
+            text-align: left;
+            text-justify: inter-word;
+        }
+        .no-arrows {
+            -moz-appearance: textfield;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .no-arrows::-webkit-outer-spin-button,
+        .no-arrows::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
     </style>
 
@@ -76,10 +91,10 @@
                         {% if valores_meta %}
                             {% for valor in valores_meta %}
                                 <tr>
-                                    <td>{{ meta.nome }}</td>
+                                    <td class="meta-info">{{ meta.nome }}</td>
                                     <td>{{ valor.ano }}</td>
                                     <td>{{ valor.semestre }}</td>
-                                    <td>{{ valor.valor }}</td>
+                                    <td>{{ valor.valor }}%</td>
                                     <td>
                                         <a href="{{ url_for('relatoriometas.editar_meta', meta_id=meta.id) }}">
                                             <button style="background-color: green; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">Alterar</button>
@@ -89,7 +104,7 @@
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td>{{ meta.nome }}</td>
+                                <td class="meta-info">{{ meta.nome }}</td>
                                 <td colspan="3">Nenhum valor encontrado</td>
                                 <td>
                                     <a href="{{ url_for('relatoriometas.editar_meta', meta_id=meta.id) }}">
