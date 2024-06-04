@@ -1,0 +1,25 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+  Gráficos dos Indicadores de Desempenho
+{% endblock %}
+
+{% block conteudo %}
+<body>
+    <h4 style="text-align: center; color: #003366;">Gráficos dos Indicadores de Desempenho</h4>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <img src="data:image/png;base64,{{ graph_url }}" alt="Gráficos dos Indicadores">
+    </div>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+    </div>
+
+    <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
+        }
+    </script>
+</body>
+{% endblock conteudo %}

@@ -15,7 +15,7 @@ from routes.relatoriometas import relatoriometas_route
 from routes.altpdi import altpdi_route
 from routes.graficogrant import graficogrant_route
 from routes.graficoacaope import graficoacaope_route
-from routes.calculoindicadores import calculoindicador_route
+from routes.calculoindicadores import calculoindicadores_route
 from routes.graficoindicador import graficoindicador_route
 from routes.relatoriocompletos import relatoriocompleto_route
 from routes.db import db,init_db
@@ -86,7 +86,7 @@ app.register_blueprint(relatoriometas_route)
 app.register_blueprint(altpdi_route)
 app.register_blueprint(graficogrant_route)
 app.register_blueprint(graficoacaope_route)
-app.register_blueprint(calculoindicador_route)
+app.register_blueprint(calculoindicadores_route)
 app.register_blueprint(graficoindicador_route)
 app.register_blueprint(relatoriocompleto_route)
 

@@ -15,7 +15,7 @@
         }
         th, td {
             padding: 10px;
-            text-align: center;
+            text-align: left; /* Alinha os dados à esquerda */
             border: 1px solid #dddddd;
         }
         th {
@@ -35,53 +35,99 @@
             <tr>
                 <th>Objetivo</th>         
                 <th>Meta</th> 
-                <th>Porcentagem de Execução</th>       
+                <th>Valor da Meta</th>
                 <th>Indicador</th>
+                <th>Ação</th>
+                <th>Status da Ação</th>
             </tr>
         </thead>
         <tbody>
-            {% for objetivo in objetivos %}
-                {% for meta in metas if meta.objetivo_pe_id == objetivo.id %}
-                    {% if loop.first %}
+            {% if not objetivos %}
+                <tr>
+                    <td colspan="6">Nenhum dado disponível</td>
+                </tr>
+            {% else %}
+                {% for objetivo in objetivos %}
+                    <tr>
+                        <td>{{ objetivo.nome }}</td>
+                        <td colspan="5"></td>
+                    </tr>
+                    {% set has_metas = false %}
+                    {% for meta in metas if meta.objetivo_pe_id == objetivo.id %}
+                        {% set has_metas = true %}
                         <tr>
-                            <td rowspan="{{ loop.length }}">{{ objetivo.nome }}</td>
+                            <td></td>
                             <td>{{ meta.nome }}</td>
-                            <td>{{ meta.porcentagem_execucao }}</td>
-                            <td>
-                                {% for indicador in indicadores if indicador.meta_pe_id == meta.id %}
-                                    {{ indicador.nome }}
-                                {% else %}
-                                    -
-                                {% endfor %}
-                            </td>
+                            <td colspan="4"></td>
                         </tr>
-                    {% else %}
-                        <tr>
-                            <td>{{ meta.nome }}</td>
-                            <td>{{ meta.porcentagem_execucao }}</td>
-                            <td>
-                                {% for indicador in indicadores if indicador.meta_pe_id == meta.id %}
-                                    {{ indicador.nome }}
-                                {% else %}
-                                    -
+                        {% set has_valores = false %}
+                        {% for valor_meta in valores_metas if valor_meta.metape_id == meta.id %}
+                            {% set has_valores = true %}
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td>{{ valor_meta.valor }}%</td>
+                                <td colspan="3"></td>
+                            </tr>
+                            {% set has_indicadores = false %}
+                            {% for indicador in indicadores if indicador.meta_pe_id == meta.id %}
+                                {% set has_indicadores = true %}
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>{{ indicador.nome }}</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                                {% set has_acoes = false %}
+                                {% for acao in acoes if acao.meta_pe_id == meta.id %}
+                                    {% set has_acoes = true %}
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td>{{ acao.nome }}</td>
+                                        <td>{{ acao.status }}</td>
+                                    </tr>
                                 {% endfor %}
-                            </td>
+                                {% if not has_acoes %}
+                                    <tr>
+                                        <td colspan="6">Nenhuma ação disponível</td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                            {% if not has_indicadores %}
+                                <tr>
+                                    <td colspan="6">Nenhum indicador disponível</td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {% if not has_valores %}
+                            <tr>
+                                <td colspan="6">Nenhum valor de meta disponível</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                    {% if not has_metas %}
+                        <tr>
+                            <td colspan="6">Nenhuma meta disponível</td>
                         </tr>
                     {% endif %}
                 {% endfor %}
-            {% endfor %}
+            {% endif %}
         </tbody>
     </table>
     
     <div style="text-align: center; margin-top: 20px;">
-        <a href="{{ url_for('planejamento.export_programa_excel', programa_id=programa.id) }}" class="btn" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">Gerar Planilha</a>
-        <a href="{{ url_for('planejamento.export_programa_pdf', programa_id=programa.id) }}" class="btn" style="background-color: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">Gerar PDF</a>
+        <a href="{{ url_for('planejamento.export_programa_excel', planejamento_id=planejamento.id, programa_id=planejamento.id_programa) }}" class="btn" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">Gerar Planilha</a>
+        <a href="{{ url_for('planejamento.export_programa_pdf', planejamento_id=planejamento.id, programa_id=planejamento.id_programa) }}" class="btn" style="background-color: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">Gerar PDF</a>
         <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
     </div>
 
     <script>
         function fechar() {
-            window.location.href = "{{ url_for('login.get_proreitor') }}";
+            window.location.href = "{{ url_for('planejamento.visualizar_programaspe') }}";
         }
     </script>
 </body>

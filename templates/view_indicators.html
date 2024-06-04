@@ -1,32 +1,57 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Ver Indicadores</title>
-</head>
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+  Indicadores de Desempenho
+{% endblock %}
+
+{% block conteudo %}
 <body>
-    <h1>Indicadores</h1>
-    <table border="1">
-        <tr>
-            <th>Indicador</th>
-            <th>Descrição</th>
-            <th>Fórmula</th>
-            <th>Formato</th>
-            <th>Ações</th>
-        </tr>
-        {% for indicator in indicators %}
-        <tr>
-            <td>{{ indicator.name }}</td>
-            <td>{{ indicator.description }}</td>
-            <td>{{ indicator.formula }}</td>
-            <td>{{ indicator.format }}</td>
-            <td>
-                <a href="{{ url_for('calculoindicador.add_data', indicator_name=indicator.name) }}">Adicionar Dados</a>
-                <a href="{{ url_for('calculoindicador.calculate', indicator_name=indicator.name) }}">Calcular</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-    <a href="{{ url_for('calculoindicador.indexindicator') }}">Voltar</a>
+    <h4 style="text-align: center; color: #003366;">Indicadores de Desempenho</h4>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Ano de Coleta</th>
+                    <th>Indicador</th>
+                    <th>Valor (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ano, taxa in taxas_conclusao.items() %}
+                <tr>
+                    <td>{{ ano }}</td>
+                    <td>Taxa de Conclusão</td>
+                    <td>{{ taxa }}%</td>
+                </tr>
+                {% endfor %}
+                {% for ano, taxa in taxas_abandono.items() %}
+                <tr>
+                    <td>{{ ano }}</td>
+                    <td>Taxa de Abandono</td>
+                    <td>{{ taxa }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <div style="display: inline-block;">
+            <a href="{{ url_for('calculoindicadores.visualizar_graficos', programa_id=programa_id) }}" class="btn btn-info" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Gerar Gráficos</a>
+        </div>
+        <div style="display: inline-block;">
+            <a href="{{ url_for('calculoindicadores.exportar_graficos_pdf', programa_id=programa_id) }}" class="btn btn-secondary" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Exportar PDF</a>
+        </div>
+        <div style="display: inline-block;">
+            <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
+        }
+    </script>
 </body>
-</html>
+{% endblock %}

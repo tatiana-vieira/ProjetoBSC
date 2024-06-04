@@ -1,0 +1,31 @@
+{% extends 'basepro.html' %}
+
+{% block titulo %}
+  Resultados dos Indicadores
+{% endblock %}
+
+{% block conteudo %}
+<body>
+    <div class="container">
+        <h3 style="text-align: center; color: #003366;">Resultados dos Indicadores</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Indicador</th>
+                    <th>Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Taxa de Conclusão</td>
+                    <td>{{ taxa_conclusao }}%</td>
+                </tr>
+                <tr>
+                    <td>Taxa de Abandono</td>
+                    <td>{{ taxa_abandono }}%</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+{% endblock conteudo %}

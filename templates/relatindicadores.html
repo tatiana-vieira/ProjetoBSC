@@ -86,11 +86,12 @@
                 <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
                 <button type="submit" class="btn btn-secondary">Exportar PDF</button>
             </form>
+            <form method="GET" action="{{ url_for('graficoindicador.exibir_graficoindicador') }}" style="display: inline;">
+                <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
+                <button type="submit" class="btn btn-primary">Gerar Gráfico</button>
+            </form>
+            
         {% endif %}
-        <form method="GET" action="{{ url_for('graficoindicador.exibir_graficoindicador') }}" style="display: inline;">
-            <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
-            <button type="submit" class="btn btn-primary">Gerar Gráfico</button>
-        </form>
         <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
     </div>
 

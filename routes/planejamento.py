@@ -26,6 +26,7 @@ def coordenador_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
 @planejamento_route.route('/cadastro_planejamentope', methods=['GET', 'POST'])
 @coordenador_required
 def cadastro_planejamentope():
@@ -44,7 +45,7 @@ def cadastro_planejamentope():
         db.session.commit()
 
         flash('Planejamento cadastrado com sucesso!', 'success')
-        return redirect(url_for('login.get_coordenador'))
+        return redirect(url_for('planejamento.cadastro_planejamentope'))
     else:
         # Se o método for GET, renderize o formulário de cadastro
         pdis = PDI.query.all()
@@ -52,20 +53,12 @@ def cadastro_planejamentope():
         # Verifique se o usuário está autenticado e tem um programa associado
         if current_user and hasattr(current_user, 'programa_id') and current_user.programa_id:
             programa_do_usuario = Programa.query.get(current_user.programa_id)
-            planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_do_usuario.id).all()
-            objetivos_por_planejamento = {}
-            for planejamento in planejamentos:
-                objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
-                objetivos_por_planejamento[planejamento] = objetivos
         else:
             flash('Nenhum programa associado encontrado para este usuário.', 'danger')
             return redirect(url_for('login.login_page'))
 
-        return render_template('planejamento.html', pdis=pdis, objetivos_por_planejamento=objetivos_por_planejamento)
-     
-@planejamento_route.route('/sucesso_cadastro')
-def sucesso_cadastro():
-    return 'Indicador cadastrado com sucesso!'
+        return render_template('planejamento.html', pdis=pdis, programa_do_usuario=programa_do_usuario)
+
 
 #################################################################################################################################
 @planejamento_route.route('/associar_objetivospe', methods=['GET', 'POST'])
@@ -187,21 +180,28 @@ def alterar_acaope(acao_id):
         return render_template('alterar_acaope.html', acao=acao)
 ################################################################################################
 ################################################# Pro -reitor ###################################
-@planejamento_route.route('/visualizar_programaspe')
+@planejamento_route.route('/visualizar_programaspe', methods=['GET', 'POST'])
 def visualizar_programaspe():
-    programas = Programa.query.all()
-    return render_template('visualizar_programas.html', programas=programas)
+    if request.method == 'POST':
+        programa_id = request.form['programa']
+        programa = Programa.query.get(programa_id)
+        print(f"Programa selecionado: {programa}")
+        
+        planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+        print(f"Planejamentos Estratégicos: {planejamentos}")
+        
+        return render_template('visualizar_programas.html', programas=Programa.query.all(), planejamentos=planejamentos, programa_selecionado=programa)
+    
+    return render_template('visualizar_programas.html', programas=Programa.query.all(), planejamentos=None, programa_selecionado=None)
+
 
 @planejamento_route.route('/visualizar_dados_programa', methods=['POST'])
 def visualizar_dados_programa():
-    programa_id = request.form['programa']
-    programa = Programa.query.get(programa_id)
-    print(f"Programa selecionado: {programa}")
+    planejamento_id = request.form['planejamento']
+    planejamento = PlanejamentoEstrategico.query.get(planejamento_id)
+    print(f"Planejamento selecionado: {planejamento}")
     
-    planejamentope = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-    print(f"Planejamento Estratégico: {planejamentope}")
-    
-    objetivospe = ObjetivoPE.query.filter(ObjetivoPE.planejamento_estrategico_id.in_([pe.id for pe in planejamentope])).all()
+    objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
     print(f"Objetivos: {objetivospe}")
     
     metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
@@ -210,7 +210,14 @@ def visualizar_dados_programa():
     indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metaspe])).all()
     print(f"Indicadores: {indicadores}")
     
-    return render_template('dados_programa.html', programa=programa, planejamentos=planejamentope, objetivos=objetivospe, metas=metaspe, indicadores=indicadores)
+    valores_metas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
+    print(f"Valores das Metas: {valores_metas}")
+    
+    acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()
+    print(f"Ações: {acoes}")
+    
+    return render_template('dados_programa.html', planejamento=planejamento, objetivos=objetivospe, metas=metaspe, indicadores=indicadores, acoes=acoes, valores_metas=valores_metas)
+###################################################################################################################################
 ###########################################################################################################################
 @planejamento_route.route('/associar_indicadorespe', methods=['GET', 'POST'])
 def associar_indicadorespe():
@@ -420,24 +427,35 @@ def export_programa_excel(programa_id):
     objetivospe = ObjetivoPE.query.filter(ObjetivoPE.planejamento_estrategico_id.in_([pe.id for pe in planejamentope])).all()
     metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
     indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metaspe])).all()
+    valores_metas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
+    acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()
     
     data = []
     for objetivo in objetivospe:
         for meta in metaspe:
             if meta.objetivo_pe_id == objetivo.id:
+                valor_meta = next((v.valor for v in valores_metas if v.metape_id == meta.id), 'N/A')
                 meta_indicadores = [indicador.nome for indicador in indicadores if indicador.meta_pe_id == meta.id]
                 if meta_indicadores:
                     for indicador_nome in meta_indicadores:
-                        data.append({
-                            'Objetivo': objetivo.nome,
-                            'Meta': meta.nome,
-                            'Indicador': indicador_nome
-                        })
+                        for acao in acoes:
+                            if acao.meta_pe_id == meta.id:
+                                data.append({
+                                    'Objetivo': objetivo.nome,
+                                    'Meta': meta.nome,
+                                    'Valor da Meta': f"{valor_meta}%",
+                                    'Indicador': indicador_nome,
+                                    'Ação': acao.nome,
+                                    'Status da Ação': acao.status
+                                })
                 else:
                     data.append({
                         'Objetivo': objetivo.nome,
                         'Meta': meta.nome,
-                        'Indicador': '-'
+                        'Valor da Meta': f"{valor_meta}%",
+                        'Indicador': '-',
+                        'Ação': '-',
+                        'Status da Ação': '-'
                     })
 
     df = pd.DataFrame(data)
@@ -455,6 +473,8 @@ def export_programa_pdf(programa_id):
     objetivospe = ObjetivoPE.query.filter(ObjetivoPE.planejamento_estrategico_id.in_([pe.id for pe in planejamentope])).all()
     metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
     indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metaspe])).all()
+    valores_metas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
+    acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()
 
     # Debug: Verificar se os dados estão sendo recuperados corretamente
     print(f"Planejamento Estratégico: {planejamentope}")
@@ -471,37 +491,46 @@ def export_programa_pdf(programa_id):
     elements = []
     elements.append(Paragraph("Planejamento Estratégico", styles['Title']))
 
-    data = [['Objetivo', 'Meta', 'Porcentagem de Execução', 'Indicador']]
+    data = [['Objetivo', 'Meta', 'Valor da Meta', 'Indicador', 'Ação', 'Status da Ação']]
     
     for objetivo in objetivospe:
         for meta in metaspe:
             if meta.objetivo_pe_id == objetivo.id:
+                valor_meta = next((v.valor for v in valores_metas if v.metape_id == meta.id), 'N/A')
                 meta_indicadores = [indicador.nome for indicador in indicadores if indicador.meta_pe_id == meta.id]
                 if meta_indicadores:
                     for indicador_nome in meta_indicadores:
-                        data.append([
-                            Paragraph(objetivo.nome, styleN),
-                            Paragraph(meta.nome, styleN),
-                            Paragraph(indicador_nome, styleN)
-                        ])
+                        for acao in acoes:
+                            if acao.meta_pe_id == meta.id:
+                                data.append([
+                                    Paragraph(objetivo.nome, styleN),
+                                    Paragraph(meta.nome, styleN),
+                                    Paragraph(f"{valor_meta}%", styleN),
+                                    Paragraph(indicador_nome, styleN),
+                                    Paragraph(acao.nome, styleN),
+                                    Paragraph(acao.status, styleN)
+                                ])
                 else:
                     data.append([
                         Paragraph(objetivo.nome, styleN),
                         Paragraph(meta.nome, styleN),
+                        Paragraph(f"{valor_meta}%", styleN),
+                        Paragraph('-', styleN),
+                        Paragraph('-', styleN),
                         Paragraph('-', styleN)
                     ])
 
     # Debug: Print the data to check if it is being captured correctly
     print(f"Data to be included in PDF: {data}")
 
-    table = Table(data, colWidths=[150, 150, 100, 150])
+    table = Table(data, colWidths=[100, 100, 100, 100, 100, 100])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 14),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 11),
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
     ]))

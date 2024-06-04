@@ -9,28 +9,39 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-6">
-                <form action="{{ url_for('planejamento.visualizar_dados_programa') }}" method="POST">
+                <form action="{{ url_for('planejamento.visualizar_programaspe') }}" method="POST">
                     <div class="form-group">
                         <label for="programa">Selecione um programa:</label><br>
-                        <select class="form-control" id="programa" name="programa">
+                        <select class="form-control" id="programa" name="programa" onchange="this.form.submit()">
                             {% for programa in programas %}
-                                <option value="{{ programa.id }}">{{ programa.nome }}</option>
+                                <option value="{{ programa.id }}" {% if programa_selecionado and programa.id == programa_selecionado.id %}selected{% endif %}>{{ programa.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+
+                {% if planejamentos %}
+                <form action="{{ url_for('planejamento.visualizar_dados_programa') }}" method="POST">
+                    <div class="form-group">
+                        <label for="planejamento">Selecione um planejamento:</label><br>
+                        <select class="form-control" id="planejamento" name="planejamento">
+                            {% for planejamento in planejamentos %}
+                                <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <br>
                     <div style="text-align: center;">
-                        <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Visualizar dados</button>
+                        <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Visualizar Dados</button>
                         <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
-                        
                     </div>
-                        <script>
-                            function cancelar() {
-                                window.location.href = "{{ url_for('login.get_proreitor') }}";
-                            }
-                        </script>                   
+                    <script>
+                        function cancelar() {
+                            window.location.href = "{{ url_for('login.get_proreitor') }}";
+                        }
+                    </script>
                 </form>
-                
+                {% endif %}
             </div>
         </div>
     </div>
