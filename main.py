@@ -36,7 +36,7 @@ app.secret_key = "super secret key"
 bcrypt = Bcrypt(app)
 
 # Configuração do banco de dados
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost/DB_PRPPG'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inicialize o objeto db com o aplicativo
