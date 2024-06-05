@@ -1,8 +1,8 @@
 import os
-from flask import Flask,jsonify, request, render_template, redirect, url_for,session,flash,current_app
+from flask import Flask, jsonify, request, render_template, redirect, url_for, session, flash, current_app
 from sqlalchemy import select
-from routes.models import Ensino, Engajamento, Transfconhecimento, Pesquisar, Orientacao, PDI, Meta, Objetivo, Indicador, Producaointelectual, Users, Programa,BSC
-from routes.models import MetaPE,IndicadorPlan,AcaoPE,ObjetivoPE,PlanejamentoEstrategico
+from routes.models import Ensino, Engajamento, Transfconhecimento, Pesquisar, Orientacao, PDI, Meta, Objetivo, Indicador, Producaointelectual, Users, Programa, BSC
+from routes.models import MetaPE, IndicadorPlan, AcaoPE, ObjetivoPE, PlanejamentoEstrategico
 from routes.multidimensional import multidimensional_route
 from routes.pdiprppg import pdiprppg_route
 from routes.producao import producao_route
@@ -19,7 +19,7 @@ from routes.graficoacaope import graficoacaope_route
 from routes.calculoindicadores import calculoindicadores_route
 from routes.graficoindicador import graficoindicador_route
 from routes.relatoriocompletos import relatoriocompleto_route
-from routes.db import db,init_db
+from routes.db import db, init_db
 from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
 from wtforms import SelectField, StringField, SubmitField
@@ -91,7 +91,6 @@ app.register_blueprint(calculoindicadores_route)
 app.register_blueprint(graficoindicador_route)
 app.register_blueprint(relatoriocompleto_route)
 
-#########################################################################################33
 @app.route('/')
 def index():
     return redirect('/login')
@@ -775,5 +774,6 @@ def exibir_altpdi():
 
 ##################################################################################33
 #######################################################
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    # O modo de depuração só deve ser ativado quando a aplicação é executada diretamente
+    app.run(debug=os.getenv("FLASK_DEBUG", "false").lower() == "true")
