@@ -1,3 +1,4 @@
+import os
 from flask import Flask,jsonify, request, render_template, redirect, url_for,session,flash,current_app
 from sqlalchemy import select
 from routes.models import Ensino, Engajamento, Transfconhecimento, Pesquisar, Orientacao, PDI, Meta, Objetivo, Indicador, Producaointelectual, Users, Programa,BSC
@@ -35,7 +36,7 @@ app.secret_key = "super secret key"
 bcrypt = Bcrypt(app)
 
 # Configuração do banco de dados
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost/DB_PRPPG'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inicialize o objeto db com o aplicativo
