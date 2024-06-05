@@ -64,5 +64,3 @@ wheel              0.41.2
 WTForms            3.1.2
 zopfli             0.2.3
 gunicorn           20.1.0
-FLASK_ENV          production
-FLASK_DEBUG        false
