@@ -775,4 +775,4 @@ def exibir_altpdi():
 #######################################################
 if __name__ == "__main__":
     # O modo de depuração só deve ser ativado quando a aplicação é executada diretamente
-    app.run(debug=os.getenv("FLASK_DEBUG", "false").lower() == "true")
+    app.run(debug=False)
