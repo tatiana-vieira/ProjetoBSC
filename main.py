@@ -44,7 +44,6 @@ db.init_app(app)
 
 # Inicialize o objeto Bcrypt
 bcrypt = Bcrypt(app)
-#init_db(app)
 
 # Inicialize o objeto LoginManager
 login_manager = LoginManager()

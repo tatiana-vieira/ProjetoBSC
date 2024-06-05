@@ -694,5 +694,6 @@ def associar_acaope():
 #######################################################################################################################################
 
 ################################################################################################################################
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    # O modo de depuração só deve ser ativado quando a aplicação é executada diretamente
+    app.run(debug=os.getenv("FLASK_DEBUG", "false").lower() == "true")
