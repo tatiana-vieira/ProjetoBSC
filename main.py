@@ -29,23 +29,32 @@ from flask_login import login_required, current_user, UserMixin, LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import joinedload
 
-
 app = Flask(__name__)
 
-logging.info('Starting application...')
-logging.info('Flask app created')
+# Configuração dos logs
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+logger.info('Starting application...')
+logger.info('Flask app created')
 
 app.secret_key = "super secret key"
 bcrypt = Bcrypt(app)
 
 # Configuração do banco de dados
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:plYrJhKoYunNJZZRDQDOOzfiFSTJkFxd@monorail.proxy.rlwy.net:47902/railway'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:plYrJhKoYunNJZZRDQDOOzfiFSTJkFxd@monorail.proxy.rlwy.net:47902/railway')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inicialize o objeto db com o aplicativo
 db.init_app(app)
+
+# Teste de conexão com o banco de dados
+with app.app_context():
+    try:
+        db.engine.execute('SELECT 1')
+        logger.info('Database connection successful')
+    except Exception as e:
+        logger.error(f'Database connection failed: {e}')
 
 # Inicialize o objeto Bcrypt
 bcrypt = Bcrypt(app)
@@ -795,19 +804,23 @@ def log_request_info():
 
 @app.errorhandler(Exception)
 def handle_exception(e):
-    logging.error(f"An error occurred: {e}")
+    logger.error(f"An error occurred: {e}")
     return "An internal error occurred.", 500
 
+@app.route('/')
+def index():
+    return redirect('/login')
+
+# Rotas de teste
 @app.route('/test')
 def test_route():
-    app.logger.info("Rota /test acessada")
+    logger.info("Rota /test acessada")
     return "Test route is working!"
 
 @app.route('/check')
 def check_route():
     return "Check route is working!"
 
-
+# Inicie a aplicação apenas se este arquivo for executado diretamente
 if __name__ == "__main__":
-    # O modo de depuração só deve ser ativado quando a aplicação é executada diretamente
     app.run(debug=False)
