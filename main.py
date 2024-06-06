@@ -29,9 +29,14 @@ from flask_login import login_required, current_user, UserMixin, LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import joinedload
 
-logging.info('Starting application...')
+
 app = Flask(__name__)
+
+logging.info('Starting application...')
 logging.info('Flask app created')
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 app.secret_key = "super secret key"
 bcrypt = Bcrypt(app)
 
@@ -771,10 +776,6 @@ def exibir_altpdi():
     return render_template('altpdi.html', pdi=pdi_data, objetivos=objetivos, metas=metas, indicadores=indicadores)
 
 
-@app.errorhandler(Exception)
-def handle_exception(e):
-    logging.error(f"An error occurred: {e}")
-    return "An internal error occurred.", 500
 ##################################################################################33
 #######################################################
 #@app.route('/test')
@@ -787,14 +788,24 @@ def handle_exception(e):
 #def check_route():
  #   return "Check route is working!"
 
+@app.before_request
+def log_request_info():
+    logger.debug('Headers: %s', request.headers)
+    logger.debug('Body: %s', request.get_data())
+
 @app.errorhandler(Exception)
 def handle_exception(e):
     logging.error(f"An error occurred: {e}")
     return "An internal error occurred.", 500
 
-@app.route('/health')
-def health_check():
-    return "OK", 200
+@app.route('/test')
+def test_route():
+    app.logger.info("Rota /test acessada")
+    return "Test route is working!"
+
+@app.route('/check')
+def check_route():
+    return "Check route is working!"
 
 
 if __name__ == "__main__":
