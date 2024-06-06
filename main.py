@@ -792,6 +792,10 @@ def handle_exception(e):
     logging.error(f"An error occurred: {e}")
     return "An internal error occurred.", 500
 
+@app.route('/health')
+def health_check():
+    return "OK", 200
+
 
 if __name__ == "__main__":
     # O modo de depuração só deve ser ativado quando a aplicação é executada diretamente
