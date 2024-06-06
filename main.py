@@ -32,7 +32,6 @@ from flask_login import login_required, current_user, UserMixin, LoginManager
 app = Flask(__name__)
 #################################################
 
-# Configuração dos logs
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -780,6 +779,8 @@ def exibir_altpdi():
 #def check_route():
  #   return "Check route is working!"
 
+# Rotas de teste
+# Rotas de teste
 @app.route('/test')
 def test_route():
     app.logger.info("Rota /test acessada")
