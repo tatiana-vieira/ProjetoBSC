@@ -1,8 +1,9 @@
+import logging
 import os
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session, flash, current_app
 from sqlalchemy import select
-from routes.models import Ensino, Engajamento, Transfconhecimento, Pesquisar, Orientacao, PDI, Meta, Objetivo, Indicador, Producaointelectual, Users, Programa, BSC
-from routes.models import MetaPE, IndicadorPlan, AcaoPE, ObjetivoPE, PlanejamentoEstrategico
+from routes.models import (Ensino, Engajamento, Transfconhecimento, Pesquisar, Orientacao, PDI, Meta, Objetivo, Indicador, Producaointelectual, Users, Programa, BSC,
+                           MetaPE, IndicadorPlan, AcaoPE, ObjetivoPE, PlanejamentoEstrategico)
 from routes.multidimensional import multidimensional_route
 from routes.pdiprppg import pdiprppg_route
 from routes.producao import producao_route
@@ -23,20 +24,19 @@ from routes.db import db, init_db
 from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
 from wtforms import SelectField, StringField, SubmitField
-import logging
 from wtforms.validators import DataRequired
-from flask_login import login_required
-from flask_login import current_user
-from flask_login import UserMixin, LoginManager
+from flask_login import login_required, current_user, UserMixin, LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import joinedload
 
+logging.info('Starting application...')
 app = Flask(__name__)
+logging.info('Flask app created')
 app.secret_key = "super secret key"
 bcrypt = Bcrypt(app)
 
 # Configuração do banco de dados
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost/DB_PRPPG'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:1234@localhost/DB_PRPPG')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inicialize o objeto db com o aplicativo
@@ -93,7 +93,11 @@ app.register_blueprint(relatoriocompleto_route)
 @app.route('/')
 def index():
     return redirect('/login')
-   
+
+@app.route('/test')
+def test_route():
+    return "Test route is working!"
+ 
 ######################################################################################################################################
 @app.route('/multidimensional')
 def get_multidimensional_data():
@@ -770,6 +774,15 @@ def exibir_altpdi():
 
     return render_template('altpdi.html', pdi=pdi_data, objetivos=objetivos, metas=metas, indicadores=indicadores)
 
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    logging.error(f"An error occurred: {e}")
+    return "An internal error occurred.", 500
+
+@app.route('/test')
+def test_route():
+    return "Test route is working!"
 
 ##################################################################################33
 #######################################################
