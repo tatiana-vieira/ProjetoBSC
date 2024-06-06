@@ -94,10 +94,6 @@ app.register_blueprint(relatoriocompleto_route)
 def index():
     return redirect('/login')
 
-@app.route('/test')
-def test_route():
-    return "Test route is working!"
- 
 ######################################################################################################################################
 @app.route('/multidimensional')
 def get_multidimensional_data():
@@ -779,13 +775,14 @@ def exibir_altpdi():
 def handle_exception(e):
     logging.error(f"An error occurred: {e}")
     return "An internal error occurred.", 500
-
+##################################################################################33
+#######################################################
+# Test route for health check
 @app.route('/test')
 def test_route():
     return "Test route is working!"
 
-##################################################################################33
-#######################################################
-#if __name__ == "__main__":
+
+if __name__ == "__main__":
     # O modo de depuração só deve ser ativado quando a aplicação é executada diretamente
     #app.run(debug=False)
