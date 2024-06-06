@@ -1,4 +1,5 @@
 import logging
+from logging.handlers import RotatingFileHandler
 import os
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session, flash, current_app
 from sqlalchemy import select
@@ -36,6 +37,11 @@ logger = logging.getLogger(__name__)
 
 logger.info('Starting application...')
 logger.info('Flask app created')
+
+
+handler = RotatingFileHandler('error.log', maxBytes=10000, backupCount=1)
+handler.setLevel(logging.ERROR)
+app.logger.addHandler(handler)
 
 app.secret_key = "super secret key"
 bcrypt = Bcrypt(app)
@@ -771,10 +777,14 @@ def exibir_altpdi():
 #def check_route():
  #   return "Check route is working!"
 
-@app.route('/test')
-def test_route():
-    app.logger.info("Rota /test acessada")
-    return "Test route is working!"
+@app.route('/dbtest')
+def db_test():
+    try:
+        result = db.session.execute("SELECT 1")
+        return "Database connection successful!"
+    except Exception as e:
+        app.logger.error(f"Database connection failed: {e}")
+        return f"Database connection failed: {e}"
 
 @app.route('/check')
 def check_route():
