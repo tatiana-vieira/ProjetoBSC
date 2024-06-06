@@ -807,10 +807,6 @@ def handle_exception(e):
     logger.error(f"An error occurred: {e}")
     return "An internal error occurred.", 500
 
-@app.route('/')
-def index():
-    return redirect('/login')
-
 # Rotas de teste
 @app.route('/test')
 def test_route():
@@ -820,6 +816,8 @@ def test_route():
 @app.route('/check')
 def check_route():
     return "Check route is working!"
+
+#############################################################################3
 
 # Inicie a aplicação apenas se este arquivo for executado diretamente
 if __name__ == "__main__":
