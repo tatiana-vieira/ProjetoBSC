@@ -36,7 +36,7 @@ app.secret_key = "super secret key"
 bcrypt = Bcrypt(app)
 
 # Configuração do banco de dados
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:1234@localhost/DB_PRPPG')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:plYrJhKoYunNJZZRDQDOOzfiFSTJkFxd@monorail.proxy.rlwy.net:47902/railway'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inicialize o objeto db com o aplicativo
@@ -777,10 +777,21 @@ def handle_exception(e):
     return "An internal error occurred.", 500
 ##################################################################################33
 #######################################################
-@app.route('/test')
-def test_route():
-    app.logger.info("Rota /test acessada")
-    return "Test route is working!"
+#@app.route('/test')
+#def test_route():
+  #  app.logger.info("Rota /test acessada")
+   # return "Test route is working!"
+
+
+#@app.route('/check')
+#def check_route():
+ #   return "Check route is working!"
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    logging.error(f"An error occurred: {e}")
+    return "An internal error occurred.", 500
+
 
 if __name__ == "__main__":
     # O modo de depuração só deve ser ativado quando a aplicação é executada diretamente
