@@ -30,18 +30,21 @@ from wtforms.validators import DataRequired
 from flask_login import login_required, current_user, UserMixin, LoginManager
 
 app = Flask(__name__)
+#################################################
 
 # Configuração dos logs
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+# Adiciona um handler de arquivo para registrar erros
+handler = RotatingFileHandler('error.log', maxBytes=10000, backupCount=1)
+handler.setLevel(logging.ERROR)
+logger.addHandler(handler)
+
 logger.info('Starting application...')
 logger.info('Flask app created')
 
-
-handler = RotatingFileHandler('error.log', maxBytes=10000, backupCount=1)
-handler.setLevel(logging.ERROR)
-app.logger.addHandler(handler)
+######################################################333
 
 app.secret_key = "super secret key"
 bcrypt = Bcrypt(app)
@@ -777,6 +780,15 @@ def exibir_altpdi():
 #def check_route():
  #   return "Check route is working!"
 
+@app.route('/test')
+def test_route():
+    app.logger.info("Rota /test acessada")
+    return "Test route is working!"
+
+@app.route('/check')
+def check_route():
+    return "Check route is working!"
+
 @app.route('/dbtest')
 def db_test():
     try:
@@ -786,11 +798,12 @@ def db_test():
         app.logger.error(f"Database connection failed: {e}")
         return f"Database connection failed: {e}"
 
-@app.route('/check')
-def check_route():
-    return "Check route is working!"
+@app.route('/logtest')
+def log_test():
+    app.logger.info("Log test route accessed")
+    return "Logging is working!"
 
-
+#######################################################
 if __name__ == "__main__":
     app.run(debug=False)
 
