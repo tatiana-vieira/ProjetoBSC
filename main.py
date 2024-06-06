@@ -315,7 +315,7 @@ def processar_formulario_pdi(pdi_id=None):
     datainicio = request.form.get('datainicio')
     datafim = request.form.get('datafim')
 
-    if not nome or not datainicio ou not datafim:
+    if not nome or not datainicio or not datafim:
         return 'Dados incompletos'
 
     if pdi_id:
