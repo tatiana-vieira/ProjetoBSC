@@ -2,6 +2,7 @@ import logging
 import os
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session, flash, current_app
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from routes.models import (Ensino, Engajamento, Transfconhecimento, Pesquisar, Orientacao, PDI, Meta, Objetivo, Indicador, Producaointelectual, Users, Programa, BSC,
                            MetaPE, IndicadorPlan, AcaoPE, ObjetivoPE, PlanejamentoEstrategico)
 from routes.multidimensional import multidimensional_route
@@ -26,8 +27,6 @@ from flask_wtf import FlaskForm
 from wtforms import SelectField, StringField, SubmitField
 from wtforms.validators import DataRequired
 from flask_login import login_required, current_user, UserMixin, LoginManager
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import joinedload
 
 app = Flask(__name__)
 
@@ -47,14 +46,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inicialize o objeto db com o aplicativo
 db.init_app(app)
-
-# Teste de conexão com o banco de dados
-with app.app_context():
-    try:
-        db.engine.execute('SELECT 1')
-        logger.info('Database connection successful')
-    except Exception as e:
-        logger.error(f'Database connection failed: {e}')
 
 # Inicialize o objeto Bcrypt
 bcrypt = Bcrypt(app)
@@ -112,27 +103,27 @@ def index():
 @app.route('/multidimensional')
 def get_multidimensional_data():
     try:
-        consulta_ensinoaprendiz1 = select([Ensino]).where(Ensino.c.areatematica == 'Ciência da Computação')
+        consulta_ensinoaprendiz1 = db.session.execute(select([Ensino]).where(Ensino.areatematica == 'Ciência da Computação'))
         resultados_ensinoaprendiz1 = [{'nome': row.nome, 'mestradotempocerto': row.mestradotempocerto, 
                                        'equilibriogenero': row.equilibriogenero, 'pessoalacaddoutorado': row.pessoalacaddoutorado,
                                        'contatoambientetrabalho': row.contatoambientetrabalho,'proporcao': row.proporcao,'mestratempocertoletra': row.mestratempocertoletra,
                                        'equilibriogeneroletra': row.equilibriogeneroletra, 'pessoalacademicoletra': row.pessoalacademicoletra,
                                        'contaambienteletra': row.contaambienteletra,'proporcaoletra': row.proporcaoletra,'codigo': row.codigo,'sigla': row.sigla,
-                                       'pais': row.pais,'programa': row.programa,'areatematica': row.areatematica,'regiao': row.regiao} for row in consulta_ensinoaprendiz1.execute()]
+                                       'pais': row.pais,'programa': row.programa,'areatematica': row.areatematica,'regiao': row.regiao} for row in consulta_ensinoaprendiz1]
 
-        consulta_engajreg = select([Engajamento]).where(Engajamento.c.areatematica == 'Ciência da Computação')  
+        consulta_engajreg = db.session.execute(select([Engajamento]).where(Engajamento.areatematica == 'Ciência da Computação'))  
         resultados_engajreg = [{'nome': row.nome,'estagio': row.estagio,'publiconjuntareg': row.publiconjuntareg,
                                 'rendasfontesreg': row.rendasfontesreg,'codigo':row.codigo,'nome':row.nome,'sigla':row.sigla,'pais':row.pais,
                                 'programa': row.programa,'areatematica':row.areatematica,'estagioletra':row.estagioletra,
-                                'publiconjuntaregletra':row.publiconjuntaregletra,'rendasfontesregletra':row.rendasfontesregletra,'regiao':row.regiao} for row in consulta_engajreg.execute()]
+                                'publiconjuntaregletra':row.publiconjuntaregletra,'rendasfontesregletra':row.rendasfontesregletra,'regiao':row.regiao} for row in consulta_engajreg]
 
-        consulta_transfconhecimento = select([Transfconhecimento]).where(Transfconhecimento.c.areatematica == 'Ciência da Computação')
+        consulta_transfconhecimento = db.session.execute(select([Transfconhecimento]).where(Transfconhecimento.areatematica == 'Ciência da Computação'))
         resultados_transfconhecimento = [{'nome':row.nome,'rendafonteprivada':row.rendafonteprivada,'copublicparcind': row.copublicparcind,
                                           'publcitadaspatentes':row.publcitadaspatentes,'codigo':row.codigo,'sigla':row.sigla,'pais':row.pais,'programa':row.programa,
-                                          'areatematica':row.areatematica,'rendaletra':row.rendaletra,' copubletra':row. copubletra,'publicitadasletra':row.publicitadasletra,
-                                          'regiao':row.regiao} for row in consulta_transfconhecimento.execute()]
+                                          'areatematica':row.areatematica,'rendaletra':row.rendaletra,'copubletra':row.copubletra,'publicitadasletra':row.publicitadasletra,
+                                          'regiao':row.regiao} for row in consulta_transfconhecimento]
 
-        consulta_pesquisar = select([Pesquisar]).where(Pesquisar.c.areatematica== 'Ciência da Computação')
+        consulta_pesquisar = db.session.execute(select([Pesquisar]).where(Pesquisar.areatematica== 'Ciência da Computação'))
         resultados_pesquisar = [{'nome':row.nome,'receitapesquisaexterna':row.receitapesquisaexterna,'produtividadedoutorado': row.produtividadedoutorado,
                                  'publpesqabsoluto':row.publpesqabsoluto,'taxacitacao':row.taxacitacao,'publicacaomaicitada':row.publicacaomaicitada,
                                  'publicacaointerdisciplinar': row.publicacaointerdisciplinar,'publicacaoacessoaberto': row.publicacaoacessoaberto,'orientacaoopesqensino':row.orientacaoopesqensino,
@@ -140,23 +131,23 @@ def get_multidimensional_data():
                                  'receitapesquisaexternaletra': row.receitapesquisaexternaletra,'produtividadedoutoradoletra': row.produtividadedoutoradoletra,'publpesqabsolutoletra':row.publpesqabsolutoletra,'taxacitacaoletra': row.taxacitacaoletra,
                                  'publicacaomaicitadaletra':row.publicacaomaicitadaletra,'publicacaointerdisciplinarletra':row.publicacaointerdisciplinarletra,
                                  'publicacaoacessoabertoletra':row.publicacaoacessoabertoletra,'orientacaoopesqensinoletra':row.orientacaoopesqensinoletra,
-                                 'autorasletra':row.autorasletra,'regiao':row.regiao} for row in consulta_pesquisar.execute()]
+                                 'autorasletra':row.autorasletra,'regiao':row.regiao} for row in consulta_pesquisar]
 
-        consulta_orientacaointern = select([Orientacao]).where(Orientacao.c.areatematica == 'Ciência da Computação')
+        consulta_orientacaointern = db.session.execute(select([Orientacao]).where(Orientacao.areatematica == 'Ciência da Computação'))
         resultados_orientacaointern = [{'nome': row.nome,'professortitular':row.professortitular,'alunosenvolvidosorient':row.alunosenvolvidosorient,
                                          'prodoutcomorient':row.prodoutcomorient,'publicacoescoautoriaorient':row.publicacoescoautoriaorient,
                                          'publicpubcteorient':row.publicpubcteorient,'prodoutcomorientletra':row.prodoutcomorientletra,
                                          'publicacoescoautoriaorientletra':row.publicacoescoautoriaorientletra,
                                          'publicpubcteorientletra':row.publicpubcteorientletra,'codigo':row.codigo,'sigla':row.sigla,'pais':row.pais,'programa':row.programa,
                                          'areatematica':row.areatematica,'professortitularletra':row.professortitularletra,
-                                         'regiao':row.regiao} for row in consulta_orientacaointern.execute()]
+                                         'regiao':row.regiao} for row in consulta_orientacaointern]
 
         return render_template('multidimensional.html', ensino=resultados_ensinoaprendiz1, engajamento=resultados_engajreg,
                                 transfconhecimento=resultados_transfconhecimento, pesquisar=resultados_pesquisar,
                                 orientacao=resultados_orientacaointern)
     
     except Exception as e:
-        print(e)
+        logger.error(f"Erro ao buscar dados multidimensionais: {e}")
         db.session.rollback()
         return "Erro ao buscar dados multidimensionais"
 
@@ -164,14 +155,14 @@ def get_multidimensional_data():
 @app.route('/producao')
 def get_producao():
     try:
-       producao = select([Producaointelectual]).where(Producaointelectual.codigoprograma =='32003013008P4')
+       producao = db.session.execute(select([Producaointelectual]).where(Producaointelectual.codigoprograma =='32003013008P4'))
        resutado = [{'titulo':row.titulo,'autor': row.autor,'categoria': row.categoria,
         'tipoproducao': row.tipoproducao,'subtipo': row.subtipo,'areaconcentracao': row.areaconcentracao, 
-        'linhapesquisa': row.linhapesquisa,'projetopesquisa': row.projetopesquisa,'anaopublicacao':row.anaopublicacao } for row in producao.execute()]
+        'linhapesquisa': row.linhapesquisa,'projetopesquisa': row.projetopesquisa,'anaopublicacao':row.anaopublicacao } for row in producao]
     except Exception as e:
-        print(e)
+        logger.error(f"Erro ao buscar dados de Produção Intelectual: {e}")
         db.session.rollback()
-        return "Erro ao buscar dados de Produção Intelectaul"    
+        return "Erro ao buscar dados de Produção Intelectual"    
     
     return render_template('producao.html',producao=resutado)
 ##########################################################################################################################################
@@ -179,131 +170,114 @@ def get_producao():
 @app.route('/programas')
 def get_programas():
     try:
-       programas =  db.session.query(Programa).all()
-       resultados = [{'id':row.id,'codigo': row.codigo,'nome': row.nome} for row in programas.execute()]
+       programas = db.session.query(Programa).all()
+       resultados = [{'id':row.id,'codigo': row.codigo,'nome': row.nome} for row in programas]
        return jsonify(resultados)
 
     except Exception as e:
-        print(e)
+        logger.error(f"Erro ao buscar dados de Programas: {e}")
         db.session.rollback()
-
-    return "Erro ao buscar dados de Programas"    
+        return "Erro ao buscar dados de Programas"    
    
 ############################################################## PDI ##############################################
-app.route('/pdi')
-def get_indicador():
+@app.route('/pdi')
+def get_pdi():
    try:
        pdi = db.session.query(PDI).all()
-       resultados_pdi = [{'id':row.id,'nome': row.nome,'datainicio': row.datainicio,'datafim': row.datafim,} for row in pdi.execute()]
+       resultados_pdi = [{'id':row.id,'nome': row.nome,'datainicio': row.datainicio,'datafim': row.datafim} for row in pdi]
        return jsonify(resultados_pdi)
    except Exception as e:
-        print(e)
+        logger.error(f"Erro ao buscar dados do PDI: {e}")
         db.session.rollback()
-
-   return "Erro ao buscar dados do PDI"  
+        return "Erro ao buscar dados do PDI"  
 ##############################
-app.route('/objetivo')
+@app.route('/objetivo')
 def get_objetivo():
    try:
        objetivo = db.session.query(Objetivo).all()
-       resultados_objetivo = [{'id':row.id,'pdi_id': row.pdi_id,'nome': row.nome,'bsc':row.bsc} for row in objetivo.execute()]
+       resultados_objetivo = [{'id':row.id,'pdi_id': row.pdi_id,'nome': row.nome,'bsc':row.bsc} for row in objetivo]
        return jsonify(resultados_objetivo) 
    except Exception as e:
-        print(e)
+        logger.error(f"Erro ao buscar dados de Objetivo: {e}")
         db.session.rollback()
-
-   return "Erro ao buscar dados de Objetivo"
+        return "Erro ao buscar dados de Objetivo"
 ####################################
-app.route('/meta')
+@app.route('/meta')
 def get_meta():
    try:
        meta = db.session.query(Meta).all()
-       resultados_meta = [{'id':row.id,'objetivo_id': row.objetivo_id,'nome': row.nome,'porcentagem_execucao':row.porcentagem_execucao} for row in meta.execute()]
+       resultados_meta = [{'id':row.id,'objetivo_id': row.objetivo_id,'nome': row.nome,'porcentagem_execucao':row.porcentagem_execucao} for row in meta]
        return jsonify(resultados_meta)
    except Exception as e:
-        print(e)
+        logger.error(f"Erro ao buscar dados de Meta: {e}")
         db.session.rollback()
-
-   return "Erro ao buscar dados de Meta"    
+        return "Erro ao buscar dados de Meta"    
 #############################################################################################################
-app.route('/indicador')
+@app.route('/indicador')
 def get_indicador():
    try:
        indicador = db.session.query(Indicador).all()
-       resultados_indicador = [{'id':row.id,'nome': row.nome,' meta_id': row. meta_pe_id} for row in indicador.execute()]
+       resultados_indicador = [{'id':row.id,'nome': row.nome,'meta_id': row.meta_pe_id} for row in indicador]
        return jsonify(resultados_indicador)
    except Exception as e:
-        print(e)
+        logger.error(f"Erro ao buscar dados do Indicador: {e}")
         db.session.rollback()
-
-   return "Erro ao buscar dados do Indicador"
-
+        return "Erro ao buscar dados do Indicador"
 #############################################################################################################
-
-app.route('/metape')
+@app.route('/metape')
 def get_metape():
    try:
        metape = db.session.query(MetaPE).all()
-       resultados_meta = [{'id':row.id,'objetivo_pe_id': row.objetivo_pe_id,'nome': row.nome,'porcentagem_execucao':row.porcentagem_execucao} for row in metape.execute()]
+       resultados_meta = [{'id':row.id,'objetivo_pe_id': row.objetivo_pe_id,'nome': row.nome,'porcentagem_execucao':row.porcentagem_execucao} for row in metape]
        return jsonify(resultados_meta)
    except Exception as e:
-        print(e)
+        logger.error(f"Erro ao buscar dados de Meta: {e}")
         db.session.rollback()
-
-   return "Erro ao buscar dados de Meta" 
-
+        return "Erro ao buscar dados de Meta" 
 ##################################################################################################
-app.route('/objetivope')
+@app.route('/objetivope')
 def get_objetivope():
    try:
        objetivope = db.session.query(ObjetivoPE).all()
-       resultados_objetivo = [{'id':row.id,'planejamento_estrategico_id': row.planejamento_estrategico_id,'nome': row.nome,'objetivo_pdi_id':row.objetivo_pdi_id} for row in objetivope.execute()]
+       resultados_objetivo = [{'id':row.id,'planejamento_estrategico_id': row.planejamento_estrategico_id,'nome': row.nome,'objetivo_pdi_id':row.objetivo_pdi_id} for row in objetivope]
        return jsonify(resultados_objetivo) 
    except Exception as e:
-        print(e)
+        logger.error(f"Erro ao buscar dados de Objetivo: {e}")
         db.session.rollback()
-
-   return "Erro ao buscar dados de Objetivo"
-
-
+        return "Erro ao buscar dados de Objetivo"
 ##################################################################################################
-app.route('/indicadorpe')
+@app.route('/indicadorpe')
 def get_indicadorpe():
    try:
        indicador_pe = db.session.query(IndicadorPlan).all()
-       resultados_indicador_pe = [{'id':row.id,'nome': row.nome,' meta_pe_id': row. meta_pe_id} for row in indicador_pe.execute()]
+       resultados_indicador_pe = [{'id':row.id,'nome': row.nome,'meta_pe_id': row.meta_pe_id} for row in indicador_pe]
        return jsonify(resultados_indicador_pe)
    except Exception as e:
-        print(e)
+        logger.error(f"Erro ao buscar dados do Indicador: {e}")
         db.session.rollback()
-
-   return "Erro ao buscar dados do Indicador"
+        return "Erro ao buscar dados do Indicador"
 ##########################################################################################
-app.route('/planejamentorel')
+@app.route('/planejamentorel')
 def get_planejamentorelpe():
    try:
        planejamento_estrategico = db.session.query(PlanejamentoEstrategico).all()
-       resultados_planejamento = [{'id':row.id,'nome': row.nome,' pdi_id': row. pdi_id,'id_programa':row.id_programa} for row in  planejamento_estrategico.execute()]
+       resultados_planejamento = [{'id':row.id,'nome': row.nome,'pdi_id': row.pdi_id,'id_programa':row.id_programa} for row in planejamento_estrategico]
        return jsonify(resultados_planejamento)
    except Exception as e:
-        print(e)
+        logger.error(f"Erro ao buscar dados do Planejamento: {e}")
         db.session.rollback()
-
-   return "Erro ao buscar dados do Planejamento"
-
+        return "Erro ao buscar dados do Planejamento"
 ##################################################################################################
-app.route('/acaope')
+@app.route('/acaope')
 def get_acaope():
    try:
        acao_pe = db.session.query(AcaoPE).all()
-       resultados_acao_pe = [{'id':row.id,'nome': row.nome,'meta_pe_id': row. meta_pe_id,'porcentagem_execucao':row.porcentagem_execucao,'data_inicio':row.data_inicio} for row in acao_pe.execute()]
-       return jsonify( resultados_acao_pe)
+       resultados_acao_pe = [{'id':row.id,'nome': row.nome,'meta_pe_id': row.meta_pe_id,'porcentagem_execucao':row.porcentagem_execucao,'data_inicio':row.data_inicio} for row in acao_pe]
+       return jsonify(resultados_acao_pe)
    except Exception as e:
-        print(e)
+        logger.error(f"Erro ao buscar dados de Ação: {e}")
         db.session.rollback()
-
-   return "Erro ao buscar dados de Ação"
-
+        return "Erro ao buscar dados de Ação"
 ######################################################################################################################
 @app.route('/login/register', methods=['GET', 'POST'])
 def register_page():
@@ -329,7 +303,7 @@ def register_page():
             flash('Usuário cadastrado com sucesso!', 'success')
             return redirect('/login')
         except Exception as e:
-            print(e)
+            logger.error(f"Erro ao cadastrar usuário: {e}")
             db.session.rollback()
             flash('Erro ao cadastrar usuário. Por favor, tente novamente.', 'danger')
 
@@ -341,7 +315,7 @@ def processar_formulario_pdi(pdi_id=None):
     datainicio = request.form.get('datainicio')
     datafim = request.form.get('datafim')
 
-    if not nome or not datainicio or not datafim:
+    if not nome or not datainicio ou not datafim:
         return 'Dados incompletos'
 
     if pdi_id:
@@ -577,9 +551,9 @@ def register():
 
 @app.route('/logout')
 def logout():
-    logging.info('Rota de logout acessada')  # Registra quando a rota é acessada
+    logger.info('Rota de logout acessada')  # Registra quando a rota é acessada
     session.pop('email', None)  # Remove a chave de e-mail da sessão
-    logging.info('Chave de sessão removida')  # Registra quando a chave de sessão é removida
+    logger.info('Chave de sessão removida')  # Registra quando a chave de sessão é removida
     return render_template('logout.html')
 
 ##########################################################################################################################
@@ -618,7 +592,7 @@ def cadastro_planejamentope():
         flash('Planejamento cadastrado com sucesso!', 'success')
         return redirect(url_for('get_coordenador')) 
     except Exception as e:
-        print("Ocorreu um erro ao cadastrar o planejamento:", e)
+        logger.error(f"Erro ao cadastrar planejamento: {e}")
         db.session.rollback()
         flash('Erro ao cadastrar planejamento. Por favor, tente novamente.', 'danger')
         return redirect(url_for('get_coordenador'))
@@ -797,28 +771,15 @@ def exibir_altpdi():
 #def check_route():
  #   return "Check route is working!"
 
-@app.before_request
-def log_request_info():
-    logger.debug('Headers: %s', request.headers)
-    logger.debug('Body: %s', request.get_data())
-
-@app.errorhandler(Exception)
-def handle_exception(e):
-    logger.error(f"An error occurred: {e}")
-    return "An internal error occurred.", 500
-
-# Rotas de teste
 @app.route('/test')
 def test_route():
-    logger.info("Rota /test acessada")
+    app.logger.info("Rota /test acessada")
     return "Test route is working!"
 
 @app.route('/check')
 def check_route():
     return "Check route is working!"
 
-#############################################################################3
-
-# Inicie a aplicação apenas se este arquivo for executado diretamente
 if __name__ == "__main__":
     app.run(debug=False)
+
