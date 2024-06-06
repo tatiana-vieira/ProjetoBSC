@@ -785,4 +785,4 @@ def test_route():
 
 if __name__ == "__main__":
     # O modo de depuração só deve ser ativado quando a aplicação é executada diretamente
-    #app.run(debug=False)
+    app.run(debug=False)
