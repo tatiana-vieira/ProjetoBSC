@@ -777,11 +777,10 @@ def handle_exception(e):
     return "An internal error occurred.", 500
 ##################################################################################33
 #######################################################
-# Test route for health check
 @app.route('/test')
 def test_route():
+    app.logger.info("Rota /test acessada")
     return "Test route is working!"
-
 
 if __name__ == "__main__":
     # O modo de depuração só deve ser ativado quando a aplicação é executada diretamente
