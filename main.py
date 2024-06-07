@@ -790,7 +790,6 @@ def dbtest():
         logger.error('Database connection failed: %s', str(e))
         return f'Database connection failed: {e}', 500
 
-
 @app.route('/test')
 def test_route():
     try:
@@ -814,3 +813,8 @@ if __name__ == "__main__":
         serve(app, host="0.0.0.0", port=8000)
     except Exception as e:
         logger.error('Failed to start the server: %s', str(e))
+
+    # Imprime o conteúdo do arquivo de log de erro
+    if os.path.exists('error.log'):
+        with open('error.log', 'r') as f:
+            print(f.read())
