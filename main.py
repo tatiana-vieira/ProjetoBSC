@@ -85,7 +85,6 @@ def add_session_config():
         'PERMANENT_SESSION_LIFETIME_MS': permanent_session_lifetime_ms,
     }
 
-
 app.register_blueprint(login_route)
 app.register_blueprint(multidimensional_route)
 app.register_blueprint(pdiprppg_route)
@@ -102,7 +101,6 @@ app.register_blueprint(graficoacaope_route)
 app.register_blueprint(calculoindicadores_route)
 app.register_blueprint(graficoindicador_route)
 app.register_blueprint(relatoriocompleto_route)
-
 @app.route('/')
 def index():
     return redirect('/login')
