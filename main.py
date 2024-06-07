@@ -52,8 +52,17 @@ bcrypt = Bcrypt(app)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:plYrJhKoYunNJZZRDQDOOzfiFSTJkFxd@monorail.proxy.rlwy.net:47902/railway'
 
+
 # Inicialize o objeto db com o aplicativo
-db.init_app(app)
+try:
+    db.init_app(app)
+    logger.info('Database initialized successfully')
+
+except Exception as e:
+    logger.error('Database initialization failed: %s', str(e))
+
+# Inicialize o objeto db com o aplicativo
+#db.init_app(app)
 
 # Inicialize o objeto Bcrypt
 bcrypt = Bcrypt(app)
@@ -781,15 +790,6 @@ def exibir_altpdi():
 
 # Rotas de teste
 # Rotas de teste
-@app.route('/test')
-def test_route():
-    app.logger.info("Rota /test acessada")
-    return "Test route is working!"
-
-@app.route('/check')
-def check_route():
-    return "Check route is working!"
-
 @app.route('/dbtest')
 def dbtest():
     try:
@@ -798,14 +798,30 @@ def dbtest():
         return 'Database connection successful!'
     except Exception as e:
         logger.error('Database connection failed: %s', str(e))
-        return f'Database connection failed: {e}'
-    
-@app.route('/logtest')
-def log_test():
-    app.logger.info("Log test route accessed")
-    return "Logging is working!"
+        return f'Database connection failed: {e}', 500
+
+@app.route('/test')
+def test_route():
+    try:
+        app.logger.info("Rota /test acessada")
+        return "Test route is working!"
+    except Exception as e:
+        logger.error('Test route failed: %s', str(e))
+        return f'Error occurred: {e}', 500
+
+@app.route('/check')
+def check_route():
+    try:
+        return "Check route is working!"
+    except Exception as e:
+        logger.error('Check route failed: %s', str(e))
+        return f'Error occurred: {e}', 500
+
 
 #######################################################
 if __name__ == "__main__":
-    from waitress import serve
-    serve(app, host="0.0.0.0", port=8000)
+    try:
+        from waitress import serve
+        serve(app, host="0.0.0.0", port=8000)
+    except Exception as e:
+        logger.error('Failed to start the server: %s', str(e))
