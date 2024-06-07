@@ -49,11 +49,8 @@ app.secret_key = "super secret key"
 bcrypt = Bcrypt(app)
 
 # Configuração do banco de dados
-database_url = os.getenv('DATABASE_URL')
-if not database_url:
-    logger.error("DATABASE_URL not found in environment variables")
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+database_url = os.getenv('DATABASE_URL', 'postgresql://postgres:plYrJhKoYunNJZZRDQDOOzfiFSTJkFxd@monorail.proxy.rlwy.net:47902/railway')
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -795,7 +792,6 @@ def dbtest():
 
 @app.route('/test')
 def test_route():
-    app.logger.info("Rota /test acessada")
     return "Test route is working!"
 
 @app.route('/check')
@@ -803,5 +799,5 @@ def check_route():
     return "Check route is working!"
 
 if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 8000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=port)
