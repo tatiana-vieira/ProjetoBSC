@@ -49,8 +49,8 @@ app.secret_key = "super secret key"
 bcrypt = Bcrypt(app)
 
 # Configuração do banco de dados
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:plYrJhKoYunNJZZRDQDOOzfiFSTJkFxd@monorail.proxy.rlwy.net:47902/railway')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:plYrJhKoYunNJZZRDQDOOzfiFSTJkFxd@monorail.proxy.rlwy.net:47902/railway'
 
 # Inicialize o objeto db com o aplicativo
 db.init_app(app)
@@ -791,14 +791,15 @@ def check_route():
     return "Check route is working!"
 
 @app.route('/dbtest')
-def db_test():
+def dbtest():
     try:
-        result = db.session.execute("SELECT 1")
-        return "Database connection successful!"
+        # Testar a conexão com o banco de dados
+        result = db.session.execute('SELECT 1').scalar()
+        return 'Database connection successful!'
     except Exception as e:
-        app.logger.error(f"Database connection failed: {e}")
-        return f"Database connection failed: {e}"
-
+        logger.error('Database connection failed: %s', str(e))
+        return f'Database connection failed: {e}'
+    
 @app.route('/logtest')
 def log_test():
     app.logger.info("Log test route accessed")
