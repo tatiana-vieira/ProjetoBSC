@@ -807,6 +807,7 @@ def check_route():
         logger.error('Check route failed: %s', str(e))
         return f'Error occurred: {e}', 500
 
+# Adiciona uma rota para visualizar o conteúdo do arquivo de log
 @app.route('/logs')
 def view_logs():
     try:
@@ -822,7 +823,8 @@ def view_logs():
 if __name__ == "__main__":
     try:
         from waitress import serve
-        serve(app, host="0.0.0.0", port=8000)
+        port = int(os.environ.get("PORT", 8000))
+        serve(app, host="0.0.0.0", port=port)
     except Exception as e:
         logger.error('Failed to start the server: %s', str(e))
         print(e)
