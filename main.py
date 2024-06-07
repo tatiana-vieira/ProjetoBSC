@@ -49,26 +49,18 @@ app.secret_key = "super secret key"
 bcrypt = Bcrypt(app)
 
 # Configuração do banco de dados
-database_url = os.getenv('DATABASE_URL', 'postgresql://postgres:plYrJhKoYunNJZZRDQDOOzfiFSTJkFxd@monorail.proxy.rlwy.net:47902/railway')
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:plYrJhKoYunNJZZRDQDOOzfiFSTJkFxd@monorail.proxy.rlwy.net:47902/railway'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inicialize o objeto db com o aplicativo
-db = SQLAlchemy(app)
+db.init_app(app)
 
-# Inicialize o objeto db com o aplicativo
 try:
-    db.init_app(app)
     with app.app_context():
         db.create_all()  # Isso garantirá que todas as tabelas sejam criadas
     logger.info('Database initialized successfully')
 except Exception as e:
     logger.error('Database initialization failed: %s', str(e))
-
-
-# Inicialize o objeto Bcrypt
-bcrypt = Bcrypt(app)
 
 # Inicialize o objeto LoginManager
 login_manager = LoginManager()
@@ -83,11 +75,6 @@ app.permanent_session_lifetime = 3600  # Por exemplo, 1 hora
 
 @app.context_processor
 def add_session_config():
-    """Add current_app.permanent_session_lifetime converted to milliseconds
-    to context. The config variable PERMANENT_SESSION_LIFETIME is not
-    used because it could be either a timedelta object or an integer
-    representing seconds.
-    """
     permanent_session_lifetime = current_app.permanent_session_lifetime
     if isinstance(permanent_session_lifetime, int):
         permanent_session_lifetime_ms = permanent_session_lifetime * 1000
