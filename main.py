@@ -48,8 +48,17 @@ logger.info('Flask app created')
 app.secret_key = "super secret key"
 bcrypt = Bcrypt(app)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL') 
+# Configuração do banco de dados
+database_url = os.getenv('DATABASE_URL')
+if not database_url:
+    logger.error("DATABASE_URL not found in environment variables")
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Inicialize o objeto db com o aplicativo
+db = SQLAlchemy(app)
 
 # Inicialize o objeto db com o aplicativo
 try:
@@ -778,7 +787,6 @@ def exibir_altpdi():
 @app.route('/dbtest')
 def dbtest():
     try:
-        # Testar a conexão com o banco de dados
         result = db.session.execute(text('SELECT 1')).scalar()
         return 'Database connection successful!'
     except Exception as e:
