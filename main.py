@@ -821,10 +821,6 @@ def view_logs():
         return f'Error reading log file: {e}', 500
 
 if __name__ == "__main__":
-    try:
-        from waitress import serve
-        port = int(os.environ.get("PORT", 8000))
-        serve(app, host="0.0.0.0", port=port)
-    except Exception as e:
-        logger.error('Failed to start the server: %s', str(e))
-        print(e)
+    from waitress import serve
+    port = int(os.environ.get("PORT", 8000))  # Usar a porta fornecida pela variável de ambiente
+    serve(app, host="0.0.0.0", port=port)
