@@ -98,6 +98,7 @@ def add_session_config():
         'PERMANENT_SESSION_LIFETIME_MS': permanent_session_lifetime_ms,
     }
 
+
 app.register_blueprint(login_route)
 app.register_blueprint(multidimensional_route)
 app.register_blueprint(pdiprppg_route)
@@ -784,12 +785,12 @@ def exibir_altpdi():
 @app.route('/dbtest')
 def dbtest():
     try:
-        result = db.session.execute(text('SELECT 1')).scalar()
+        result = db.session.execute(db.text('SELECT 1')).scalar()
         return 'Database connection successful!'
     except Exception as e:
-        logger.error('Database connection failed: %s', str(e))
+        logger.error(f'Database connection failed: {e}')
         return f'Database connection failed: {e}'
-
+    
 @app.route('/test')
 def test_route():
     return "Test route is working!"
@@ -797,6 +798,8 @@ def test_route():
 @app.route('/check')
 def check_route():
     return "Check route is working!"
+
+logger.info('Flask app created')
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))

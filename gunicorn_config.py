@@ -1,2 +1,5 @@
-bind = "0.0.0.0:" + os.getenv("PORT", "8000")
-workers = 3
+import os
+
+bind = "0.0.0.0:8000"
+workers = 2
+reload = os.getenv("FLASK_DEBUG", "false").lower() == "true"
