@@ -1,9 +1,8 @@
+import os
 import logging
 from logging.handlers import RotatingFileHandler
-import os
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session, flash, current_app
-from sqlalchemy import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy import select, text
 from routes.models import (Ensino, Engajamento, Transfconhecimento, Pesquisar, Orientacao, PDI, Meta, Objetivo, Indicador, Producaointelectual, Users, Programa, BSC,
                            MetaPE, IndicadorPlan, AcaoPE, ObjetivoPE, PlanejamentoEstrategico)
 from routes.multidimensional import multidimensional_route
@@ -28,22 +27,19 @@ from flask_wtf import FlaskForm
 from wtforms import SelectField, StringField, SubmitField
 from wtforms.validators import DataRequired
 from flask_login import login_required, current_user, UserMixin, LoginManager
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import joinedload
 
 app = Flask(__name__)
 #################################################
-
-# Configuração dos logs
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Adiciona um handler de arquivo para registrar erros
 handler = RotatingFileHandler('error.log', maxBytes=10000, backupCount=1)
 handler.setLevel(logging.ERROR)
-
-# Cria um formato de log personalizado
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
-
 logger.addHandler(handler)
 
 logger.info('Starting application...')
@@ -784,7 +780,7 @@ def exibir_altpdi():
 def dbtest():
     try:
         # Testar a conexão com o banco de dados
-        result = db.session.execute('SELECT 1').scalar()
+        result = db.session.execute(text('SELECT 1')).scalar()
         return 'Database connection successful!'
     except Exception as e:
         logger.error('Database connection failed: %s', str(e))
@@ -792,30 +788,13 @@ def dbtest():
 
 @app.route('/test')
 def test_route():
+    app.logger.info("Rota /test acessada")
     return "Test route is working!"
 
 @app.route('/check')
 def check_route():
-    try:
-        return "Check route is working!"
-    except Exception as e:
-        logger.error('Check route failed: %s', str(e))
-        return f'Error occurred: {e}', 500
-
-# Adiciona uma rota para visualizar o conteúdo do arquivo de log
-@app.route('/logs')
-def view_logs():
-    try:
-        if os.path.exists('error.log'):
-            with open('error.log', 'r') as f:
-                content = f.read()
-            return f'<pre>{content}</pre>'
-        else:
-            return 'Log file does not exist.'
-    except Exception as e:
-        return f'Error reading log file: {e}', 500
+    return "Check route is working!"
 
 if __name__ == "__main__":
-    from waitress import serve
-    port = int(os.environ.get("PORT", 8000))  # Usar a porta fornecida pela variável de ambiente
-    serve(app, host="0.0.0.0", port=port)
+    port = int(os.environ.get('PORT', 8000))
+    app.run(host="0.0.0.0", port=port, debug=False)
