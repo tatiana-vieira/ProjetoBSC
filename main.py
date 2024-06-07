@@ -45,15 +45,18 @@ logger.addHandler(handler)
 logger.info('Starting application...')
 logger.info('Flask app created')
 
-app.secret_key = "super secret key"
+app.secret_key = os.getenv("SECRET_KEY", "super secret key")  # Use variável de ambiente para secret key
 bcrypt = Bcrypt(app)
 
 # Configuração do banco de dados
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:plYrJhKoYunNJZZRDQDOOzfiFSTJkFxd@monorail.proxy.rlwy.net:47902/railway'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", 'postgresql://postgres:plYrJhKoYunNJZZRDQDOOzfiFSTJkFxd@monorail.proxy.rlwy.net:47902/railway')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+logger.info('Configurações do banco de dados definidas')
 
 # Inicialize o objeto db com o aplicativo
 db.init_app(app)
+logger.info('db.init_app(app) executado')
 
 try:
     with app.app_context():
@@ -65,9 +68,11 @@ except Exception as e:
 # Inicialize o objeto LoginManager
 login_manager = LoginManager()
 login_manager.init_app(app)
+logger.info('LoginManager inicializado')
 
 @login_manager.user_loader
 def load_user(user_id):
+    logger.info(f'Carregando usuário com ID: {user_id}')
     return Users.query.get(int(user_id))
 
 # Defina o tempo de vida da sessão permanente em segundos
@@ -84,6 +89,9 @@ def add_session_config():
     return {
         'PERMANENT_SESSION_LIFETIME_MS': permanent_session_lifetime_ms,
     }
+
+logger.info('Configurações de sessão definidas')
+
 
 app.register_blueprint(login_route)
 app.register_blueprint(multidimensional_route)
@@ -771,20 +779,23 @@ def exibir_altpdi():
 def dbtest():
     try:
         result = db.session.execute(db.text('SELECT 1')).scalar()
+        logger.info('Teste de conexão com o banco de dados bem-sucedido')
         return 'Database connection successful!'
     except Exception as e:
-        logger.error(f'Database connection failed: {e}')
+        logger.error(f'Teste de conexão com o banco de dados falhou: {e}')
         return f'Database connection failed: {e}'
     
 @app.route('/test')
 def test_route():
+    logger.info('Rota "/test" acessada')
     return "Test route is working!"
 
 @app.route('/check')
 def check_route():
+    logger.info('Rota "/check" acessada')
     return "Check route is working!"
 
-logger.info('Flask app created')
+logger.info('Flask app criada')
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
