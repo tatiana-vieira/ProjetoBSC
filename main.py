@@ -32,37 +32,37 @@ from flask_login import login_required, current_user, UserMixin, LoginManager
 app = Flask(__name__)
 #################################################
 
+# Configuração dos logs
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Adiciona um handler de arquivo para registrar erros
 handler = RotatingFileHandler('error.log', maxBytes=10000, backupCount=1)
 handler.setLevel(logging.ERROR)
+
+# Cria um formato de log personalizado
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
 logger.addHandler(handler)
 
 logger.info('Starting application...')
 logger.info('Flask app created')
 
-######################################################333
-
 app.secret_key = "super secret key"
 bcrypt = Bcrypt(app)
 
 # Configuração do banco de dados
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:plYrJhKoYunNJZZRDQDOOzfiFSTJkFxd@monorail.proxy.rlwy.net:47902/railway')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:plYrJhKoYunNJZZRDQDOOzfiFSTJkFxd@monorail.proxy.rlwy.net:47902/railway'
-
 
 # Inicialize o objeto db com o aplicativo
 try:
     db.init_app(app)
     logger.info('Database initialized successfully')
-
 except Exception as e:
     logger.error('Database initialization failed: %s', str(e))
 
-# Inicialize o objeto db com o aplicativo
-#db.init_app(app)
 
 # Inicialize o objeto Bcrypt
 bcrypt = Bcrypt(app)
@@ -778,18 +778,6 @@ def exibir_altpdi():
 
 ##################################################################################33
 #######################################################
-#@app.route('/test')
-#def test_route():
-  #  app.logger.info("Rota /test acessada")
-   # return "Test route is working!"
-
-
-#@app.route('/check')
-#def check_route():
- #   return "Check route is working!"
-
-# Rotas de teste
-# Rotas de teste
 @app.route('/dbtest')
 def dbtest():
     try:
@@ -817,8 +805,6 @@ def check_route():
         logger.error('Check route failed: %s', str(e))
         return f'Error occurred: {e}', 500
 
-
-#######################################################
 if __name__ == "__main__":
     try:
         from waitress import serve
