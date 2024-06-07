@@ -45,6 +45,7 @@ logger.addHandler(handler)
 logger.info('Starting application...')
 logger.info('Flask app created')
 
+# Use variáveis de ambiente para configurar a aplicação
 app.secret_key = os.getenv("SECRET_KEY", "super secret key")  # Use variável de ambiente para secret key
 bcrypt = Bcrypt(app)
 
@@ -92,7 +93,6 @@ def add_session_config():
 
 logger.info('Configurações de sessão definidas')
 
-
 app.register_blueprint(login_route)
 app.register_blueprint(multidimensional_route)
 app.register_blueprint(pdiprppg_route)
@@ -109,6 +109,7 @@ app.register_blueprint(graficoacaope_route)
 app.register_blueprint(calculoindicadores_route)
 app.register_blueprint(graficoindicador_route)
 app.register_blueprint(relatoriocompleto_route)
+
 @app.route('/')
 def index():
     return redirect('/login')
@@ -775,6 +776,11 @@ def exibir_altpdi():
 
 ##################################################################################33
 #######################################################
+@app.route('/health')
+def health_check():
+    logger.info('Rota "/health" acessada')
+    return "Application is healthy!"
+
 @app.route('/dbtest')
 def dbtest():
     try:
