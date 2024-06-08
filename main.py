@@ -31,11 +31,10 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import joinedload
 
 app = Flask(__name__)
-#################################################
+
+# Configuração de logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-# Adiciona um handler de arquivo para registrar erros
 handler = RotatingFileHandler('error.log', maxBytes=10000, backupCount=1)
 handler.setLevel(logging.ERROR)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -50,7 +49,12 @@ app.secret_key = os.getenv("SECRET_KEY", "super secret key")  # Use variável de
 bcrypt = Bcrypt(app)
 
 # Configuração do banco de dados
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+os.environ["DATABASE_URL"] = "postgresql://bancodbpprg_user:1KDFiPuohIDURbgqpthOAyw73OwZdArn@dpg-cphr11a1hbls73b85ut0-a.oregon-postgres.render.com/bancodbpprg"
+database_url = os.getenv("DATABASE_URL")
+if not database_url:
+    raise RuntimeError("DATABASE_URL is not set. Please configure the environment variable.")
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 logger.info('Configurações do banco de dados definidas')
@@ -776,32 +780,15 @@ def exibir_altpdi():
 
 ##################################################################################33
 #######################################################
-@app.route('/health')
-def health_check():
-    logger.info('Rota "/health" acessada')
-    return "Application is healthy!"
-
 @app.route('/dbtest')
 def dbtest():
     try:
-        result = db.session.execute(db.text('SELECT 1')).scalar()
+        result = db.session.execute(text('SELECT 1')).scalar()
         logger.info('Teste de conexão com o banco de dados bem-sucedido')
         return 'Database connection successful!'
     except Exception as e:
         logger.error(f'Teste de conexão com o banco de dados falhou: {e}')
         return f'Database connection failed: {e}'
-    
-@app.route('/test')
-def test_route():
-    logger.info('Rota "/test" acessada')
-    return "Test route is working!"
-
-@app.route('/check')
-def check_route():
-    logger.info('Rota "/check" acessada')
-    return "Check route is working!"
-
-logger.info('Flask app criada')
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))

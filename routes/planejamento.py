@@ -27,6 +27,7 @@ def coordenador_required(f):
     return decorated_function
 
 
+##################################
 @planejamento_route.route('/cadastro_planejamentope', methods=['GET', 'POST'])
 @coordenador_required
 def cadastro_planejamentope():
@@ -58,8 +59,6 @@ def cadastro_planejamentope():
             return redirect(url_for('login.login_page'))
 
         return render_template('planejamento.html', pdis=pdis, programa_do_usuario=programa_do_usuario)
-
-
 #################################################################################################################################
 @planejamento_route.route('/associar_objetivospe', methods=['GET', 'POST'])
 def associar_objetivospe():
