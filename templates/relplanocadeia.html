@@ -1,0 +1,131 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+    Planejamento Estratégico - 2024:2028
+{% endblock %}
+
+{% block conteudo %}
+<div style="text-align: center; margin-top: 20px;">
+    <h4 style="color: #003366;">Selecione um Planejamento Estratégico:</h4>
+    <form id="selecionar-planejamento" method="POST">
+        <select id="planejamento_estrategico" name="planejamento_selecionado" required style="width: 300px; margin-bottom: 20px;">
+            <option value="">-- Selecione --</option>
+            {% for planejamento in planejamentos %}
+                <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary">Buscar</button>
+    </form>
+</div>
+
+<div id="tabela-planejamento" style="display: none; margin-top: 20px;">
+    <h3>Cadeias de Valor</h3>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Macroprocesso Gerencial</th>
+                <th>Macroprocesso Finalístico</th>
+                <th>Valor Público</th>
+                <th>Macroprocesso Suporte</th>
+            </tr>
+        </thead>
+        <tbody id="cadeias-valor">
+            <!-- Conteúdo será preenchido via AJAX -->
+        </tbody>
+    </table>
+
+    <h3>Objetivos, Metas e Indicadores</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Objetivo</th>
+                <th>Meta</th>
+                <th>Indicador</th>
+            </tr>
+        </thead>
+        <tbody id="objetivos-metas">
+            <!-- Conteúdo será preenchido via AJAX -->
+        </tbody>
+    </table>
+</div>
+
+<div style="text-align: center;">
+    <a id="gerar-pdf" href="#" class="btn btn-primary" style="display: none; margin-top: 20px;">Download PDF</a>
+    <a id="gerar-excel" href="#" class="btn btn-success" style="display: none; margin-top: 20px;">Download Excel</a>
+    <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-top: 20px;">Fechar</button>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#selecionar-planejamento').submit(function(event) {
+            event.preventDefault(); // Prevent the form from submitting the traditional way
+            var planejamento_id = $('#planejamento_estrategico').val();
+            if (planejamento_id) {
+                $.ajax({
+                    url: '/relcadeia',
+                    type: 'POST',
+                    data: { planejamento_selecionado: planejamento_id },
+                    success: function(response) {
+                        if (response.error) {
+                            alert(response.error);
+                            return;
+                        }
+                        
+                        // Preencher Cadeias de Valor
+                        var cadeiasValorTbody = $('#cadeias-valor');
+                        cadeiasValorTbody.empty();
+                        response.cadeias_valor.forEach(function(cadeia) {
+                            var row = '<tr>' +
+                                '<td>' + cadeia.macroprocessogerencial + '</td>' +
+                                '<td>' + cadeia.macroprocessofinalistico + '</td>' +
+                                '<td>' + cadeia.valorpublico + '</td>' +
+                                '<td>' + cadeia.macroprocessosuporte + '</td>' +
+                                '</tr>';
+                            cadeiasValorTbody.append(row);
+                        });
+
+                        // Preencher Objetivos, Metas e Indicadores
+                        var objetivosMetasTbody = $('#objetivos-metas');
+                        objetivosMetasTbody.empty();
+                        response.objetivos.forEach(function(objetivo) {
+                            var objetivoNome = objetivo.nome;
+                            objetivo.metas.forEach(function(meta) {
+                                var metaNome = meta.nome;
+                                meta.indicadores.forEach(function(indicador) {
+                                    var row = '<tr>' +
+                                        '<td>' + objetivoNome + '</td>' +
+                                        '<td>' + metaNome + '</td>' +
+                                        '<td>' + indicador.nome + '</td>' +
+                                        '</tr>';
+                                    objetivosMetasTbody.append(row);
+                                });
+                            });
+                        });
+
+                        $('#tabela-planejamento').show(); // Show the table container
+
+                        // Update download links
+                        $('#gerar-pdf').attr('href', '/gerar_pdf/' + planejamento_id).show();
+                        $('#gerar-excel').attr('href', '/gerar_excel/' + planejamento_id).show();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText); // Log any errors
+                    }
+                });
+            } else {
+                alert('Por favor, selecione um planejamento.');
+                $('#tabela-planejamento').hide();
+                $('#cadeias-valor').empty(); // Clear the cadeias de valor table if no selection
+                $('#objetivos-metas').empty(); // Clear the objetivos table if no selection
+                $('#gerar-pdf').hide();
+                $('#gerar-excel').hide();
+            }
+        });
+    });
+
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
+</script>
+{% endblock %}

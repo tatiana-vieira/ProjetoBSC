@@ -1,0 +1,58 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+    Cadastro de Cadeia de Valor - PRPPG
+{% endblock %}
+
+{% block conteudo %}
+<div class="container">
+   <h2 style="text-align: center; color: #003366; margin-top: 20px;">Cadastro de Cadeia de Valor</h2>
+   <form method="POST" action="{{ url_for('planejamento.associar_cadeiavalor') }}" style="margin-top: 20px; font-size: 1.1em;">
+      <div class="form-group" style="margin-bottom: 20px;">
+         <label for="planejamento" style="color: #00060c;">Selecione o Planejamento Estratégico:</label>
+         <select name="planejamento_id" required style="width: 100%; margin-bottom: 20px; padding: 10px;">
+            <option value="">-- Selecione --</option>
+            {% for planejamento in planejamentos %}
+                <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
+            {% endfor %}
+         </select>
+      </div>
+      <div class="form-group" style="margin-bottom: 20px;">
+         <label for="macroprocessogerencial" style="color: #00060c;">Macroprocesso Gerencial:</label>
+         <input type="text" id="macroprocessogerencial" name="macroprocessogerencial" required class="form-control" style="width: 100%; padding: 10px;">
+      </div>
+      <div class="form-group" style="margin-bottom: 20px;">
+         <label for="macroprocessofinalistico" style="color: #00060c;">Macroprocesso Finalístico:</label>
+         <input type="text" id="macroprocessofinalistico" name="macroprocessofinalistico" required class="form-control" style="width: 100%; padding: 10px;">
+      </div>
+      <div class="form-group" style="margin-bottom: 20px;">
+         <label for="valorpublico" style="color: #00060c;">Valor Público:</label>
+         <input type="text" id="valorpublico" name="valorpublico" required class="form-control" style="width: 100%; padding: 10px;">
+      </div>
+      <div class="form-group" style="margin-bottom: 20px;">
+         <label for="macroprocessosuporte" style="color: #00060c;">Macroprocesso Suporte:</label>
+         <input type="text" id="macroprocessosuporte" name="macroprocessosuporte" required class="form-control" style="width: 100%; padding: 10px;">
+      </div>
+      <div class="form-group" style="text-align: center;">
+         <button type="submit" class="btn btn-primary" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Cadastrar</button>
+         <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+      </div>
+   </form>
+
+   {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+         <ul class="flashes" style="list-style-type: none; padding: 0;">
+            {% for category, message in messages %}
+               <li class="{{ category }}" style="color: {{ 'red' if category == 'danger' else 'green' }};">{{ message }}</li>
+            {% endfor %}
+         </ul>
+      {% endif %}
+   {% endwith %}
+</div>
+
+<script>
+   function fechar() {
+      window.location.href = "{{ url_for('login.get_coordenador') }}";
+   }
+</script> 
+{% endblock %}

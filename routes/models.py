@@ -267,6 +267,16 @@ class PlanejamentoEstrategico(db.Model):
     id_programa = db.Column(db.Integer, db.ForeignKey('programas.id'))  # Corrigindo o nome da tabela referenciada
 
     programa = relationship("Programa", back_populates="planejamentos")  # Definindo o relacionamento inverso
+
+class CadeiaValor(db.Model):
+    __tablename__ = 'cadeiavalor'
+    id = db.Column(db.Integer, primary_key=True)
+    macroprocessogerencial = db.Column(db.String(200))
+    macroprocessofinalistico =db.Column(db.String(200))
+    valorpublico =db.Column(db.String(200))
+    macroprocessosuporte =db.Column(db.String(200))
+    planejamento_estrategico_id = db.Column(db.Integer, db.ForeignKey('planejamento_estrategico.id'))
+ 
 ################################################## PDI###################################################################################3
 class PDI(db.Model):
     __tablename__ = 'pdi'

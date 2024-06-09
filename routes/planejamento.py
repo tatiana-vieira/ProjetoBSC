@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session,jsonify,send_file
-from .models import Users, Programa, PlanejamentoEstrategico, PDI,ObjetivoPE,Objetivo,MetaPE,AcaoPE,IndicadorPlan,Valorindicador,Valormeta # Certifique-se de importar seus modelos corretamente
+from .models import Users, Programa,CadeiaValor, PlanejamentoEstrategico, PDI,ObjetivoPE,Objetivo,MetaPE,AcaoPE,IndicadorPlan,Valorindicador,Valormeta # Certifique-se de importar seus modelos corretamente
 from routes.db import db
 from flask_bcrypt import Bcrypt
 import io
@@ -540,3 +540,42 @@ def export_programa_pdf(programa_id):
     buffer.seek(0)
 
     return send_file(buffer, as_attachment=True, download_name='planejamento_estrategico.pdf', mimetype='application/pdf')
+
+######################################################################################################################
+@planejamento_route.route('/associar_cadeiavalor', methods=['GET', 'POST'])
+def associar_cadeiavalor():
+    if request.method == 'POST':
+        macroprocessogerencial = request.form['macroprocessogerencial']
+        macroprocessofinalistico = request.form['macroprocessofinalistico']
+        valorpublico = request.form['valorpublico']
+        macroprocessosuporte = request.form['macroprocessosuporte']
+        planejamento_estrategico_id = request.form['planejamento_id']
+
+        if not macroprocessogerencial or not macroprocessofinalistico or not valorpublico or not macroprocessosuporte or not planejamento_estrategico_id:
+            flash('All fields are required!')
+            return redirect(url_for('planejamento.associar_cadeiavalor'))
+
+        nova_cadeia_valor = CadeiaValor(
+            macroprocessogerencial=macroprocessogerencial,
+            macroprocessofinalistico=macroprocessofinalistico,
+            valorpublico=valorpublico,
+            macroprocessosuporte=macroprocessosuporte,
+            planejamento_estrategico_id=planejamento_estrategico_id
+        )
+
+        db.session.add(nova_cadeia_valor)
+        db.session.commit()
+        flash('Cadeia de Valor cadastrada com sucesso!', 'success')
+        return redirect(url_for('planejamento.associar_cadeiavalor'))
+
+    else:
+        programa_id = current_user.programa_id
+        planejamento_estrategico = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+
+        if programa_id:
+            programa = Programa.query.get(programa_id)
+            planejamentos = programa.planejamentos
+        else:
+            planejamentos = []
+
+        return render_template('cadeia_valor.html', planejamentos=planejamentos)

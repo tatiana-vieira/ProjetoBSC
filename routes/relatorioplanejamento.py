@@ -1,5 +1,5 @@
 from flask import render_template, request, flash, redirect, url_for, session, make_response, jsonify
-from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, IndicadorPlan, Programa
+from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, IndicadorPlan, Programa,CadeiaValor
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
 from flask_login import login_required
@@ -51,7 +51,7 @@ def exibir_detalhes_planejamento():
     else:
         flash('Você não tem permissão para acessar esta página.', 'danger')
         return redirect(url_for('login.login_page'))
-
+########################################################################################################################
 @relatorioplanejamento_route.route('/gerar_pdf/<int:planejamento_id>', methods=['GET'])
 @login_required
 def gerar_pdf(planejamento_id):
@@ -129,3 +129,52 @@ def gerar_excel(planejamento_id):
     output.seek(0)
 
     return send_file(output, attachment_filename='planejamento.xlsx', as_attachment=True)
+
+
+##################################################################################################################
+@relatorioplanejamento_route.route('/relcadeia', methods=['GET', 'POST'])
+@login_required
+def exibir_detalhes_planejamentocadeia():
+    if session.get('role') == 'Coordenador':
+        coordenador_programa_id = session.get('programa_id')
+        programa = Programa.query.get(coordenador_programa_id)
+
+        if not programa:
+            flash('Não foi possível encontrar o programa associado ao coordenador.', 'warning')
+            return redirect(url_for('login.get_coordenador'))
+
+        planejamentos = programa.planejamentos
+
+        if request.method == 'POST':
+            planejamento_selecionado_id = request.form.get('planejamento_selecionado')
+            if not planejamento_selecionado_id:
+                return jsonify({'error': 'Planejamento não selecionado'})
+
+            planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
+            if not planejamento_selecionado:
+                return jsonify({'error': 'Planejamento não encontrado'})
+
+            cadeias_valor = CadeiaValor.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
+            objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
+            metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+            indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas])).all()
+
+            dados_objetivos = []
+            for objetivo in objetivos:
+                metas_dados = []
+                for meta in [m for m in metas if m.objetivo_pe_id == objetivo.id]:
+                    indicadores_dados = [{'nome': indicador.nome} for indicador in indicadores if indicador.meta_pe_id == meta.id]
+                    metas_dados.append({'nome': meta.nome, 'indicadores': indicadores_dados})
+                dados_objetivos.append({'nome': objetivo.nome, 'metas': metas_dados})
+
+            cadeias_valor_json = [{'macroprocessogerencial': cadeia.macroprocessogerencial,
+                                   'macroprocessofinalistico': cadeia.macroprocessofinalistico,
+                                   'valorpublico': cadeia.valorpublico,
+                                   'macroprocessosuporte': cadeia.macroprocessosuporte} for cadeia in cadeias_valor]
+
+            return jsonify({'cadeias_valor': cadeias_valor_json, 'objetivos': dados_objetivos})
+
+        return render_template('relplanocadeia.html', planejamentos=planejamentos)
+    
+    flash('Você não tem permissão para acessar esta página.', 'danger')
+    return redirect(url_for('login.login_page'))
