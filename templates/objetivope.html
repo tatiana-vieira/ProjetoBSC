@@ -19,11 +19,11 @@
       </div>
       <div class="form-group" style="margin-bottom: 20px;">
          <label for="objetivos" style="color: #00060c;">Selecione os Objetivos do PDI:</label>
-         <select name="objetivo_id" required style="width: 100%; margin-bottom: 20px; padding: 10px;">
+         <select name="objetivo_id" required style="width: 100%; margin-bottom: 20px; padding: 10px; white-space: normal;">
             <option value="">-- Selecione --</option>
             {% for pe, objetivos in objetivos_por_planejamento %}
                 {% for objetivo in objetivos %}
-                    <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
+                    <option value="{{ objetivo.id }}" title="{{ objetivo.nome }}">{{ objetivo.nome }}</option>
                 {% endfor %}
             {% endfor %}
          </select>

@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, jsonify, flash, session, make_response,send_file
+from flask import render_template, request, redirect, url_for, jsonify, flash, session, make_response, send_file
 from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, Valormeta, db, Programa
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
@@ -77,40 +77,53 @@ def editar_meta(meta_id):
     lista_pdis = PlanejamentoEstrategico.query.all()
     objetivos = ObjetivoPE.query.all()
     return render_template('alterar_meta.html', meta=meta, valores_meta=valores_meta, lista_pdis=lista_pdis, objetivos=objetivos)
-#############################################################################################################################
+
 @relatoriometas_route.route('/salvar_alteracao_meta/<int:meta_id>', methods=['POST'])
 @login_required
 def salvar_alteracao_meta(meta_id):
     meta = MetaPE.query.get_or_404(meta_id)
-    nome = request.form.get('nome')
-    if nome:
-        meta.nome = nome
-
-    # Atualizar ou adicionar valores da meta
+    
+    # Atualizar campos da meta
+    meta.nome = request.form.get('nome')
+    meta.descricao = request.form.get('descricao')
+    meta.responsavel = request.form.get('responsavel')
+    meta.recursos_necessarios = request.form.get('recursos')
+    meta.data_inicio = request.form.get('data_inicio')
+    meta.data_termino = request.form.get('data_termino')
+    meta.status_inicial = request.form.get('status_inicial')
+    meta.valor_alvo = request.form.get('valor_alvo')
+    
+      # Atualizar ou adicionar valores da meta
     anos = request.form.getlist('anos[]')
     semestres = request.form.getlist('semestres[]')
     valores = request.form.getlist('valores[]')
 
     for ano, semestre, valor in zip(anos, semestres, valores):
-        # Substitui vírgula por ponto para garantir o formato correto
-        valor = valor.replace(',', '.')
-        
+        valor = valor.replace(',', '.')  # Substitui vírgula por ponto para garantir o formato correto
         valor_meta = Valormeta.query.filter_by(metape_id=meta_id, ano=ano, semestre=semestre).first()
         if valor_meta:
             valor_meta.valor = valor
         else:
             novo_valor_meta = Valormeta(metape_id=meta_id, ano=ano, semestre=semestre, valor=valor)
             db.session.add(novo_valor_meta)
-
-    db.session.commit()
-    flash('Meta alterada com sucesso!', 'success')
+    
+    try:
+        db.session.commit()
+        flash('Meta alterada com sucesso!', 'success')
+        print("Commit realizado com sucesso.")
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao salvar a meta: {str(e)}', 'error')
+        print(f"Erro ao salvar a meta: {str(e)}")
+    
     return redirect(url_for('relatoriometas.exibir_relatoriometas', planejamento_selecionado=meta.objetivo_pe.planejamento_estrategico_id))
+
 
 @relatoriometas_route.route('/sucesso')
 def sucesso():
     return render_template('sucesso.html')
-##############################################################################################################################
-###################################################################################################################################
+##############################################################################################################################3
+
 @relatoriometas_route.route('/graficometas', methods=['GET'])
 @login_required
 def exibir_graficometas():
@@ -139,24 +152,34 @@ def exibir_graficometas():
             metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
             valoresmetas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
 
+        # Preparar dados para o gráfico
+        dados_graficos = []
+        for meta in metaspe:
+            valores = [valor for valor in valoresmetas if valor.metape_id == meta.id]
+            for valor in valores:
+                dados_graficos.append({
+                    'meta': meta.nome,
+                    'ano': valor.ano,
+                    'semestre': valor.semestre,
+                    'valor': valor.valor,
+                    'valor_alvo': meta.valor_alvo if meta.valor_alvo is not None else 0  # Definindo valor padrão se for None
+                })
+
+        # Ordenar dados por ano e semestre
+        dados_graficos = sorted(dados_graficos, key=lambda x: (x['ano'], x['semestre']))
+
         # Gerar o gráfico
-        plt.figure(figsize=(14, 8))  # Aumentar o tamanho da figura
-        nomes_metas = [meta.nome for meta in metaspe]
-        valores_execucao = [sum(valor.valor for valor in valoresmetas if valor.metape_id == meta.id) for meta in metaspe]
+        plt.figure(figsize=(14, 8))
+        for dado in dados_graficos:
+            plt.bar(f"{dado['ano']} S{dado['semestre']}", dado['valor'], label=f"Meta: {dado['meta']}", alpha=0.7)
+            plt.axhline(dado['valor_alvo'], color='r', linestyle='--', linewidth=1, label=f"Meta Alvo: {dado['meta']}")
 
-        colors = cm.get_cmap('tab20', len(metaspe))
-        bars = plt.bar(range(len(metaspe)), valores_execucao, color=[colors(i / len(metaspe)) for i in range(len(metaspe))])
-        plt.title('Valores das Metas')
-        plt.xlabel('Meta')
+        plt.title('Progresso das Metas')
+        plt.xlabel('Período')
         plt.ylabel('Valor')
-        plt.xticks(range(len(metaspe)), [f'Meta {i+1}' for i in range(len(metaspe))], rotation=45, ha='right', fontsize=9)
-
-        for bar, valor in zip(bars, valores_execucao):
-            yval = bar.get_height()
-            plt.text(bar.get_x() + bar.get_width()/2, yval, round(yval, 2), ha='center', va='bottom', fontsize=8)
-
-        plt.legend(bars, nomes_metas, bbox_to_anchor=(0.5, -0.3), loc='upper center', ncol=1, fontsize=8)
-        plt.subplots_adjust(bottom=0.4, top=0.9)
+        plt.xticks(rotation=45, ha='right')
+        plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
+        plt.tight_layout()
 
         img = BytesIO()
         plt.savefig(img, format='png')
@@ -172,6 +195,8 @@ def exibir_graficometas():
         flash('Você não tem permissão para acessar esta página.', 'danger')
         return redirect(url_for('login.login_page'))
 
+
+#######################################################################################################################################
 @relatoriometas_route.route('/gerar_pdf', methods=['GET'])
 @login_required
 def gerar_pdf():
@@ -237,10 +262,6 @@ def gerar_pdf():
 
     return send_file(pdf_buffer, download_name='grafico_metas.pdf', as_attachment=True)
 
-  
-############################################################################################################################
-###########################################################################################################################
-###############################################################################################################
 @relatoriometas_route.route('/export/csv_metas')
 @login_required
 def export_csv_metas():
@@ -309,6 +330,14 @@ def export_pdf_metas():
 
     for meta in metaspe:
         elements.append(Paragraph(f"Meta: {meta.nome}", styles['Heading2']))
+        elements.append(Paragraph(f"Descrição: {meta.descricao}", styleN))
+        elements.append(Paragraph(f"Responsável: {meta.responsavel}", styleN))
+        elements.append(Paragraph(f"Recursos Necessários: {meta.recursos_necessarios}", styleN))
+        elements.append(Paragraph(f"Data de Início: {meta.data_inicio}", styleN))
+        elements.append(Paragraph(f"Data de Término: {meta.data_termino}", styleN))
+        elements.append(Paragraph(f"Status Inicial: {meta.status_inicial}%", styleN))
+        elements.append(Paragraph(f"Valor Alvo: {meta.valor_alvo}%", styleN))
+
         data = [["Ano", "Semestre", "Valor"]]
         for valor in valoresmetas:
             if valor.metape_id == meta.id:

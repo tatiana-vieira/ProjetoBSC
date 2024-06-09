@@ -78,6 +78,13 @@
             <thead>
                 <tr>
                     <th>Meta</th>
+                    <th>Descrição</th>
+                    <th>Responsável</th>
+                    <th>Recursos Necessários</th>
+                    <th>Data de Início</th>
+                    <th>Data de Término</th>
+                    <th>Status Inicial</th>
+                    <th>Valor Alvo</th>
                     <th>Ano</th>
                     <th>Semestre</th>
                     <th>Valor</th>
@@ -92,6 +99,13 @@
                             {% for valor in valores_meta %}
                                 <tr>
                                     <td class="meta-info">{{ meta.nome }}</td>
+                                    <td>{{ meta.descricao }}</td>
+                                    <td>{{ meta.responsavel }}</td>
+                                    <td>{{ meta.recursos_necessarios }}</td>
+                                    <td>{{ meta.data_inicio }}</td>
+                                    <td>{{ meta.data_termino }}</td>
+                                    <td>{{ meta.status_inicial }}%</td>
+                                    <td>{{ meta.valor_alvo }}%</td>
                                     <td>{{ valor.ano }}</td>
                                     <td>{{ valor.semestre }}</td>
                                     <td>{{ valor.valor }}%</td>
@@ -105,6 +119,13 @@
                         {% else %}
                             <tr>
                                 <td class="meta-info">{{ meta.nome }}</td>
+                                <td>{{ meta.descricao }}</td>
+                                <td>{{ meta.responsavel }}</td>
+                                <td>{{ meta.recursos_necessarios }}</td>
+                                <td>{{ meta.data_inicio }}</td>
+                                <td>{{ meta.data_termino }}</td>
+                                <td>{{ meta.status_inicial }}%</td>
+                                <td>{{ meta.valor_alvo }}%</td>
                                 <td colspan="3">Nenhum valor encontrado</td>
                                 <td>
                                     <a href="{{ url_for('relatoriometas.editar_meta', meta_id=meta.id) }}">

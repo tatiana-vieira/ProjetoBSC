@@ -329,6 +329,14 @@ def associar_metaspe():
         if request.method == 'POST':
             objetivo_pe_id = request.form['objetivo_pe_id']
             nome_meta = request.form['nome']
+            descricao = request.form['descricao']
+            responsavel = request.form['responsavel']
+            recursos = request.form['recursos']
+            data_inicio = request.form['data_inicio']
+            data_termino = request.form['data_termino']
+            status_inicial = request.form['status_inicial']
+            valor_alvo = request.form['valor_alvo']
+
             objetivo_pe = ObjetivoPE.query.get(objetivo_pe_id)
             if objetivo_pe is None:
                 flash('Objetivo não encontrado!', 'error')
@@ -341,7 +349,17 @@ def associar_metaspe():
             if meta_existente:
                 meta_id = meta_existente.id
             else:
-                nova_meta = MetaPE(objetivo_pe_id=objetivo_pe_id, nome=nome_meta)
+                nova_meta = MetaPE(
+                    objetivo_pe_id=objetivo_pe_id, 
+                    nome=nome_meta,
+                    descricao=descricao,
+                    responsavel=responsavel,
+                    recursos_necessarios=recursos,
+                    data_inicio=data_inicio,
+                    data_termino=data_termino,
+                    status_inicial=status_inicial,
+                    valor_alvo=valor_alvo
+                )
                 db.session.add(nova_meta)
                 db.session.commit()
                 meta_id = nova_meta.id

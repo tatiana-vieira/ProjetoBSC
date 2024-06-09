@@ -7,7 +7,7 @@
 {% block conteudo %}
 <div style="margin: auto; width: 50%; text-align: center;">
     <div class="form-block"><br>
-        <h2>Alterar Meta</h2><br>
+        <h2 style="color: darkblue;">Alterar Meta</h2><br>
         <form id="MetaForm" method="POST" action="{{ url_for('relatoriometas.salvar_alteracao_meta', meta_id=meta.id) }}">
             <label for="pdi_id">PDI:</label>
             <select id="pdi_id" name="pdi_id" required style="width: 100%; margin-bottom: 10px;">
@@ -15,16 +15,39 @@
                     <option value="{{ pdi.id }}" {% if pdi.id == meta.objetivo_pe.planejamento_estrategico_id %}selected{% endif %}>{{ pdi.nome }}</option>
                 {% endfor %}
             </select><br>
+
             <label for="objetivo_id">Objetivo:</label>
             <select id="objetivo_id" name="objetivo_id" required style="width: 100%; margin-bottom: 10px;">
                 {% for objetivo in objetivos %}
                     <option value="{{ objetivo.id }}" {% if objetivo.id == meta.objetivo_pe_id %}selected{% endif %}>{{ objetivo.nome }}</option>
                 {% endfor %}
-            </select>
+            </select><br>
+
             <label for="nome">Nome da Meta:</label>
             <input type="text" id="nome" name="nome" value="{{ meta.nome }}" required style="width: 100%; margin-bottom: 10px;"><br>
-            
-            <h3>Valores da Meta</h3>
+
+            <label for="descricao">Descrição da Meta:</label>
+            <textarea id="descricao" name="descricao" required style="width: 100%; margin-bottom: 10px;">{{ meta.descricao }}</textarea><br>
+
+            <label for="responsavel">Responsável:</label>
+            <input type="text" id="responsavel" name="responsavel" value="{{ meta.responsavel }}" required style="width: 100%; margin-bottom: 10px;"><br>
+
+            <label for="recursos">Recursos Necessários:</label>
+            <textarea id="recursos" name="recursos" required style="width: 100%; margin-bottom: 10px;">{{ meta.recursos_necessarios }}</textarea><br>
+
+            <label for="data_inicio">Data de Início:</label>
+            <input type="date" id="data_inicio" name="data_inicio" value="{{ meta.data_inicio }}" required style="width: 100%; margin-bottom: 10px;"><br>
+
+            <label for="data_termino">Data de Término:</label>
+            <input type="date" id="data_termino" name="data_termino" value="{{ meta.data_termino }}" required style="width: 100%; margin-bottom: 10px;"><br>
+
+            <label for="status_inicial">Status Inicial (em %):</label>
+            <input type="number" id="status_inicial" name="status_inicial" value="{{ meta.status_inicial }}" required min="0" max="100" step="1" style="width: 100%; margin-bottom: 10px;"><br>
+
+            <label for="valor_alvo">Valor Alvo (em %):</label>
+            <input type="number" id="valor_alvo" name="valor_alvo" value="{{ meta.valor_alvo }}" required step="0.01" style="width: 100%; margin-bottom: 10px;"><br>
+
+            <h3 style="color: darkblue;">Valores da Meta</h3>
             <table style="width: 100%; margin-bottom: 10px;">
                 <thead>
                     <tr>
@@ -36,30 +59,30 @@
                 <tbody>
                     {% for valor in valores_meta %}
                         <tr>
-                            <td><input type="text" name="anos[]" value="{{ valor.ano }}" class="no-arrows" required></td>
-                            <td><input type="text" name="semestres[]" value="{{ valor.semestre }}" class="no-arrows" required></td>
-                            <td><input type="text" name="valores[]" value="{{ valor.valor }}" required></td>
+                            <td><input type="number" name="anos[]" value="{{ valor.ano }}" class="no-arrows" required></td>
+                            <td>
+                                <select name="semestres[]" required>
+                                    <option value="1" {% if valor.semestre == 1 %}selected{% endif %}>1º Semestre (Jan-Jun)</option>
+                                    <option value="2" {% if valor.semestre == 2 %}selected{% endif %}>2º Semestre (Jul-Dez)</option>
+                                </select>
+                            </td>
+                            <td><input type="number" step="0.01" name="valores[]" value="{{ valor.valor }}" required></td>
                         </tr>
                     {% endfor %}
-                    <tr>
-                        <td><input type="text" name="anos[]" placeholder="Ano" class="no-arrows" required></td>
-                        <td><input type="text" name="semestres[]" placeholder="Semestre" class="no-arrows" required></td>
-                        <td><input type="text" name="valores[]" placeholder="Valor" required></td>
-                    </tr>
                 </tbody>
             </table>
 
             <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar Alterações</button>
             <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>
         </form>
-        <script>
-            function fechar() {
-                    window.location.href = "{{ url_for('login.get_proreitor') }}";
-                }
-        </script>
     </div>
 </div>
+
 <script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
+
     document.getElementById('pdi_id').addEventListener('change', function() {
         var pdiId = this.value;
         fetch('/objetivos_relacionados_pdi/' + pdiId)

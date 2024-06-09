@@ -328,7 +328,14 @@ class MetaPE(db.Model):
     __tablename__ = 'meta_pe'
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(250), nullable=False)
-    objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'))
+    descricao = db.Column(db.Text, nullable=True)
+    responsavel = db.Column(db.String(255), nullable=True)
+    recursos_necessarios = db.Column(db.Text, nullable=True)
+    data_inicio = db.Column(db.Date, nullable=True)
+    data_termino = db.Column(db.Date, nullable=True)
+    status_inicial = db.Column(db.Numeric(5, 2), nullable=True)
+    valor_alvo = db.Column(db.Numeric(5, 2), nullable=True)
+    objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'), nullable=False)
     objetivo_pe = db.relationship('ObjetivoPE', backref='meta_pe')
 
 class Valormeta(db.Model):
