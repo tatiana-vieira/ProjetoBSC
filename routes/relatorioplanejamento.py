@@ -1,5 +1,5 @@
 from flask import render_template, request, flash, redirect, url_for, session, make_response, jsonify
-from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, IndicadorPlan, Programa,CadeiaValor
+from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, IndicadorPlan, Programa,CadeiaValor,Risco
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
 from flask_login import login_required
@@ -10,6 +10,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
+
 
 relatorioplanejamento_route = Blueprint('relatorioplanejamento', __name__)
 
@@ -158,6 +159,7 @@ def exibir_detalhes_planejamentocadeia():
             objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
             metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
             indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas])).all()
+            riscos = Risco.query.filter(Risco.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
 
             dados_objetivos = []
             for objetivo in objetivos:
@@ -165,7 +167,8 @@ def exibir_detalhes_planejamentocadeia():
                 for meta in [m for m in metas if m.objetivo_pe_id == objetivo.id]:
                     indicadores_dados = [{'nome': indicador.nome} for indicador in indicadores if indicador.meta_pe_id == meta.id]
                     metas_dados.append({'nome': meta.nome, 'indicadores': indicadores_dados})
-                dados_objetivos.append({'nome': objetivo.nome, 'metas': metas_dados})
+                riscos_dados = [{'descricao': risco.descricao, 'nivel': risco.nivel, 'acao_preventiva': risco.acao_preventiva} for risco in riscos if risco.objetivo_pe_id == objetivo.id]
+                dados_objetivos.append({'nome': objetivo.nome, 'metas': metas_dados, 'riscos': riscos_dados})
 
             cadeias_valor_json = [{'macroprocessogerencial': cadeia.macroprocessogerencial,
                                    'macroprocessofinalistico': cadeia.macroprocessofinalistico,
@@ -178,3 +181,113 @@ def exibir_detalhes_planejamentocadeia():
     
     flash('Você não tem permissão para acessar esta página.', 'danger')
     return redirect(url_for('login.login_page'))
+#################################################################################################################3
+
+@relatorioplanejamento_route.route('/gerarrel_pdf/<int:planejamento_id>', methods=['GET'])
+@login_required
+def gerarrel_pdf(planejamento_id):
+    planejamento = PlanejamentoEstrategico.query.get_or_404(planejamento_id)
+    objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
+    metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+    indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas])).all()
+    riscos = Risco.query.filter(Risco.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+
+    dados = []
+    for objetivo in objetivos:
+        metas_dados = []
+        for meta in [m for m in metas if m.objetivo_pe_id == objetivo.id]:
+            indicadores_dados = [{'nome': indicador.nome} for indicador in indicadores if indicador.meta_pe_id == meta.id]
+            metas_dados.append({'nome': meta.nome, 'indicadores': indicadores_dados})
+        riscos_dados = [{'descricao': risco.descricao, 'nivel': risco.nivel, 'acao_preventiva': risco.acao_preventiva} for risco in riscos if risco.objetivo_pe_id == objetivo.id]
+        dados.append({'nome': objetivo.nome, 'metas': metas_dados, 'riscos': riscos_dados})
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    elements.append(Paragraph("Relatório de Planejamento Estratégico", styles['Title']))
+
+    for objetivo in dados:
+        elements.append(Paragraph(f"Objetivo: {objetivo['nome']}", styles['Heading2']))
+        for meta in objetivo['metas']:
+            elements.append(Paragraph(f"Meta: {meta['nome']}", styles['Heading3']))
+            data = [["Indicador"]]
+            for indicador in meta['indicadores']:
+                data.append([indicador['nome']])
+            table = Table(data, colWidths=[450])
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ]))
+            elements.append(table)
+        for risco in objetivo['riscos']:
+            elements.append(Paragraph(f"Risco: {risco['descricao']}", styles['Heading3']))
+            data = [["Nível", "Ação Preventiva"], [risco['nivel'], risco['acao_preventiva']]]
+            table = Table(data, colWidths=[225, 225])
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ]))
+            elements.append(table)
+
+    doc.build(elements)
+    
+    buffer.seek(0)
+    response = make_response(buffer.getvalue())
+    response.headers['Content-Disposition'] = 'inline; filename=planejamentos.pdf'
+    response.headers['Content-Type'] = 'application/pdf'
+    return response
+
+########################################################################################################################
+@relatorioplanejamento_route.route('/gerarrel_excel/<int:planejamento_id>', methods=['GET'])
+@login_required
+def gerarrel_excel(planejamento_id):
+    planejamento = PlanejamentoEstrategico.query.get_or_404(planejamento_id)
+    objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
+    metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+    indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas])).all()
+    riscos = Risco.query.filter(Risco.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+
+    data = []
+    for objetivo in objetivos:
+        for meta in [m for m in metas if m.objetivo_pe_id == objetivo.id]:
+            for indicador in [i for i in indicadores if i.meta_pe_id == meta.id]:
+                data.append({
+                    'Objetivo': objetivo.nome,
+                    'Meta': meta.nome,
+                    'Indicador': indicador.nome,
+                    'Risco': '',
+                    'Nível do Risco': '',
+                    'Ação Preventiva': ''
+                })
+
+        for risco in [r for r in riscos if r.objetivo_pe_id == objetivo.id]:
+            data.append({
+                'Objetivo': objetivo.nome,
+                'Meta': '',
+                'Indicador': '',
+                'Risco': risco.descricao,
+                'Nível do Risco': risco.nivel,
+                'Ação Preventiva': risco.acao_preventiva
+            })
+
+    df = pd.DataFrame(data)
+
+    output = BytesIO()
+    writer = pd.ExcelWriter(output, engine='openpyxl')
+    df.to_excel(writer, index=False, sheet_name='Planejamento')
+    writer.close()
+    output.seek(0)
+
+    return send_file(output, download_name='planejamento.xlsx', as_attachment=True)

@@ -17,9 +17,12 @@ def load_user(user_id):
 def get_coordenador():
     # Acessando o contexto do aplicativo Flask
     permanent_session_lifetime_ms = current_app.config.get('PERMANENT_SESSION_LIFETIME_MS')
+
+    programa_id = current_user.programa_id
     
+      # Recuperar o programa_id do usuário logado
     # Seu código para recuperar os dados do coordenador
-    return render_template('indexcord.html', permanent_session_lifetime_ms=permanent_session_lifetime_ms)
+    return render_template('indexcord.html', permanent_session_lifetime_ms=permanent_session_lifetime_ms,programa_id=programa_id)
 ######################################################################################################################
 @login_route.route('/get_proreitor')
 def get_proreitor():

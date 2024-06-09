@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session,jsonify,send_file
-from .models import Users, Programa,CadeiaValor, PlanejamentoEstrategico, PDI,ObjetivoPE,Objetivo,MetaPE,AcaoPE,IndicadorPlan,Valorindicador,Valormeta # Certifique-se de importar seus modelos corretamente
+from .models import Users, Programa,CadeiaValor, PlanejamentoEstrategico,Risco, PDI,ObjetivoPE,Objetivo,MetaPE,AcaoPE,IndicadorPlan,Valorindicador,Valormeta # Certifique-se de importar seus modelos corretamente
 from routes.db import db
 from flask_bcrypt import Bcrypt
 import io
@@ -597,3 +597,5 @@ def associar_cadeiavalor():
             planejamentos = []
 
         return render_template('cadeia_valor.html', planejamentos=planejamentos)
+    
+###########################################################################################################3

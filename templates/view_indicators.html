@@ -1,57 +1,156 @@
 {% extends 'basecord.html' %}
 
-{% block titulo %}
-  Indicadores de Desempenho
-{% endblock %}
-
 {% block conteudo %}
-<body>
-    <h4 style="text-align: center; color: #003366;">Indicadores de Desempenho</h4>
+<h3>Indicadores de Discentes</h3>
 
-    <div style="text-align: center; margin-top: 20px;">
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Ano de Coleta</th>
-                    <th>Indicador</th>
-                    <th>Valor (%)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ano, taxa in taxas_conclusao.items() %}
-                <tr>
-                    <td>{{ ano }}</td>
-                    <td>Taxa de Conclusão</td>
-                    <td>{{ taxa }}%</td>
-                </tr>
-                {% endfor %}
-                {% for ano, taxa in taxas_abandono.items() %}
-                <tr>
-                    <td>{{ ano }}</td>
-                    <td>Taxa de Abandono</td>
-                    <td>{{ taxa }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+<h4>Taxa de Conclusão</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Ano</th>
+            <th>Taxa de Conclusão (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ano, taxa in taxa_conclusao.items() %}
+        <tr>
+            <td>{{ ano }}</td>
+            <td>{{ taxa }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-    <div style="text-align: center; margin-top: 20px;">
-        <div style="display: inline-block;">
-            <a href="{{ url_for('calculoindicadores.visualizar_graficos', programa_id=programa_id) }}" class="btn btn-info" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Gerar Gráficos</a>
-        </div>
-        <div style="display: inline-block;">
-            <a href="{{ url_for('calculoindicadores.exportar_graficos_pdf', programa_id=programa_id) }}" class="btn btn-secondary" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Exportar PDF</a>
-        </div>
-        <div style="display: inline-block;">
-            <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
-        </div>
-    </div>
+<h4>Taxa de Abandono</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Ano</th>
+            <th>Taxa de Abandono (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ano, taxa in taxa_abandono.items() %}
+        <tr>
+            <td>{{ ano }}</td>
+            <td>{{ taxa }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-    <script>
-        function fechar() {
-            window.location.href = "{{ url_for('login.get_coordenador') }}";
-        }
-    </script>
-</body>
+<h3>Indicadores de Docentes</h3>
+
+<h4>Distribuição de Titulação</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nível</th>
+            <th>Percentual (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for nivel, percentual in distribuicao_titulacao.items() %}
+        <tr>
+            <td>{{ nivel }}</td>
+            <td>{{ percentual }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h4>Carga Horária Média</h4>
+<p>{{ carga_horaria_media }} horas</p>
+
+<h4>Atividades de Orientação Média</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Tipo</th>
+            <th>Média</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for tipo, media in atividades_orientacao_media.items() %}
+        <tr>
+            <td>{{ tipo }}</td>
+            <td>{{ media }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h4>Distribuição por Regime de Trabalho</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Regime de Trabalho</th>
+            <th>Percentual (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for regime, percentual in distribuicao_regime_trabalho.items() %}
+        <tr>
+            <td>{{ regime }}</td>
+            <td>{{ percentual }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h4>Distribuição por Sexo</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Sexo</th>
+            <th>Percentual (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sexo, percentual in distribuicao_sexo.items() %}
+        <tr>
+            <td>{{ sexo }}</td>
+            <td>{{ percentual }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h4>Distribuição por Categoria</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Categoria</th>
+            <th>Percentual (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for categoria, percentual in distribuicao_categoria.items() %}
+        <tr>
+            <td>{{ categoria }}</td>
+            <td>{{ percentual }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h4>Tempo Médio de Afastamento</h4>
+<p>{{ tempo_medio_afastamento }} dias</p>
+
+<h4>Idade Média dos Docentes</h4>
+<p>{{ idade_media_docentes }} anos</p>
+
+<div style="text-align: center;">
+    <a href="{{ url_for('calculoindicadores.exportar_graficos_pdf', programa_id=programa_id) }}" class="btn btn-primary">Exportar PDF</a>
+    <a href="{{ url_for('calculoindicadores.gerar_excel_completo', programa_id=programa_id) }}" class="btn btn-primary">Exportar Excel</a>
+    <button type="button" onclick="fechar()" class="btn btn-danger">Fechar</button>
+</div>
+
+<script>
+function fechar() {
+    // Redirect to the coordinator page after login
+    window.location.href = "{{ url_for('login.get_coordenador') }}";
+}
+</script>
+
 {% endblock %}

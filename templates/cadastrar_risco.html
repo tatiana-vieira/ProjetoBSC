@@ -1,0 +1,77 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+    Cadastro de Riscos - PRPPG
+{% endblock %}
+
+{% block conteudo %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div style="margin: auto; width: 50%; text-align: center;">
+  <div class="form-block">
+    <h3>Cadastro de Riscos</h3><br>
+    <form method="POST" action="{{ url_for('relatoriometas.cadastrar_risco') }}">
+      <label for="objetivo_pe_id">Selecione o Objetivo:</label><br>
+      <select name="objetivo_pe_id" required style="width: 90%; margin-bottom: 10px;">
+          {% for objetivo in objetivos_pe %}
+              <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
+          {% endfor %}
+      </select>
+      <br>
+
+      <label for="descricao">Descrição do Risco:</label><br>
+      <input type="text" id="descricao" name="descricao" required style="width: 90%; margin-bottom: 10px;"><br>
+
+      <label for="nivel">Nível:</label><br>
+      <input type="text" id="nivel" name="nivel" required style="width: 90%; margin-bottom: 10px;"><br>
+
+      <label for="acao_preventiva">Ação Preventiva:</label><br>
+      <input type="text" id="acao_preventiva" name="acao_preventiva" required style="width: 90%; margin-bottom: 10px;"><br>
+
+      <div style="margin-top: 20px;">
+          <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
+          <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.alert-error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.form-block .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.form-block .row .col-md-3 {
+    flex: 1;
+    margin-right: 10px;
+}
+</style>
+
+<script>
+  function fechar() {
+      window.location.href = "{{ url_for('login.get_coordenador') }}";
+  }
+</script>
+{% endblock %}

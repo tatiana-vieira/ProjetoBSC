@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for, jsonify, flash, session, make_response, send_file
-from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, Valormeta, db, Programa
+from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, Valormeta, db, Programa,Risco
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
 import base64
@@ -7,7 +7,7 @@ from io import BytesIO  # Adicione esta linha para importar o módulo io
 import csv
 import io
 import matplotlib.pyplot as plt
-from flask_login import login_required
+from flask_login import  login_required, current_user
 import matplotlib.cm as cm
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
@@ -363,3 +363,58 @@ def export_pdf_metas():
     response.headers['Content-Disposition'] = 'attachment; filename=metas.pdf'
     response.headers['Content-Type'] = 'application/pdf'
     return response
+#####################################################################################################################3
+
+@relatoriometas_route.route('/cadastrar_risco', methods=['GET', 'POST'])
+@login_required
+def cadastrar_risco():
+    programa_id = current_user.programa_id
+    if programa_id:
+        # Obtendo objetivos associados ao programa do coordenador
+        objetivos_pe_associados = ObjetivoPE.query.join(PlanejamentoEstrategico, ObjetivoPE.planejamento_estrategico_id == PlanejamentoEstrategico.id)\
+                                                  .filter(PlanejamentoEstrategico.id_programa == programa_id).all()
+        print("Objetivos associados:", objetivos_pe_associados)  # Debug: Verificar se os objetivos são carregados
+
+        if request.method == 'POST':
+            objetivo_pe_id = request.form['objetivo_pe_id']
+            descricao = request.form['descricao']
+            nivel = request.form['nivel']
+            acao_preventiva = request.form['acao_preventiva']
+
+            print("Dados recebidos:", objetivo_pe_id, descricao, nivel, acao_preventiva)  # Debug: Verificar dados recebidos
+
+            # Verifica se o objetivo existe
+            objetivo_pe = ObjetivoPE.query.get(objetivo_pe_id)
+            if not objetivo_pe:
+                flash('Objetivo não encontrado!', 'error')
+                return redirect(url_for('relatoriometas.cadastrar_risco'))
+
+            # Verifica se o risco já existe
+            risco_existente = Risco.query.filter_by(descricao=descricao, objetivo_pe_id=objetivo_pe_id).first()
+            if risco_existente:
+                flash('Risco já cadastrado!', 'warning')
+                return redirect(url_for('relatoriometas.cadastrar_risco'))
+
+            # Cria e salva um novo risco
+            try:
+                novo_risco = Risco(
+                    descricao=descricao,
+                    nivel=nivel,
+                    acao_preventiva=acao_preventiva,
+                    objetivo_pe_id=objetivo_pe_id
+                )
+                db.session.add(novo_risco)
+                db.session.commit()
+                print("Risco cadastrado com sucesso!")  # Debug: Verificar se o risco foi cadastrado
+                flash('Risco cadastrado com sucesso!', 'success')
+            except Exception as e:
+                db.session.rollback()
+                print("Erro ao cadastrar risco:", e)  # Debug: Verificar erros durante a transação
+                flash('Erro ao cadastrar risco!', 'error')
+            
+            return redirect(url_for('relatoriometas.cadastrar_risco'))
+
+        return render_template('cadastrar_risco.html', objetivos_pe=objetivos_pe_associados)
+    else:
+        flash('Programa não encontrado!', 'error')
+        return redirect(url_for('relatoriometas.cadastrar_risco'))

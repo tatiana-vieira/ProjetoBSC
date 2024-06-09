@@ -34,13 +34,16 @@
         </tbody>
     </table>
 
-    <h3>Objetivos, Metas e Indicadores</h3>
+    <h3>Planejamento Estratégico</h3>
     <table class="table table-striped">
         <thead>
             <tr>
                 <th>Objetivo</th>
                 <th>Meta</th>
                 <th>Indicador</th>
+                <th>Risco</th>
+                <th>Nível</th>
+                <th>Ação Preventiva</th>
             </tr>
         </thead>
         <tbody id="objetivos-metas">
@@ -85,11 +88,22 @@
                             cadeiasValorTbody.append(row);
                         });
 
-                        // Preencher Objetivos, Metas e Indicadores
+                        // Preencher Objetivos, Metas, Indicadores e Riscos
                         var objetivosMetasTbody = $('#objetivos-metas');
                         objetivosMetasTbody.empty();
                         response.objetivos.forEach(function(objetivo) {
                             var objetivoNome = objetivo.nome;
+                            var riscoRows = '';
+                            objetivo.riscos.forEach(function(risco) {
+                                riscoRows += '<tr>' +
+                                    '<td>' + objetivoNome + '</td>' +
+                                    '<td></td>' + // Meta vazia
+                                    '<td></td>' + // Indicador vazio
+                                    '<td>' + risco.descricao + '</td>' +
+                                    '<td>' + risco.nivel + '</td>' +
+                                    '<td>' + risco.acao_preventiva + '</td>' +
+                                    '</tr>';
+                            });
                             objetivo.metas.forEach(function(meta) {
                                 var metaNome = meta.nome;
                                 meta.indicadores.forEach(function(indicador) {
@@ -97,17 +111,21 @@
                                         '<td>' + objetivoNome + '</td>' +
                                         '<td>' + metaNome + '</td>' +
                                         '<td>' + indicador.nome + '</td>' +
+                                        '<td></td>' + // Risco vazio
+                                        '<td></td>' + // Nível vazio
+                                        '<td></td>' + // Ação Preventiva vazia
                                         '</tr>';
                                     objetivosMetasTbody.append(row);
                                 });
                             });
+                            objetivosMetasTbody.append(riscoRows);
                         });
 
                         $('#tabela-planejamento').show(); // Show the table container
 
                         // Update download links
-                        $('#gerar-pdf').attr('href', '/gerar_pdf/' + planejamento_id).show();
-                        $('#gerar-excel').attr('href', '/gerar_excel/' + planejamento_id).show();
+                        $('#gerar-pdf').attr('href', '/gerarrel_pdf/' + planejamento_id).show();
+                        $('#gerar-excel').attr('href', '/gerarrel_excel/' + planejamento_id).show();
                     },
                     error: function(xhr, status, error) {
                         console.error(xhr.responseText); // Log any errors

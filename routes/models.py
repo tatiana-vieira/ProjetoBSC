@@ -268,6 +268,15 @@ class PlanejamentoEstrategico(db.Model):
 
     programa = relationship("Programa", back_populates="planejamentos")  # Definindo o relacionamento inverso
 
+class Risco(db.Model):
+    __tablename__ = 'risco'
+    id = db.Column(db.Integer, primary_key=True)  # Adiciona a chave primária
+    descricao = db.Column(db.String(255), nullable=False)
+    nivel = db.Column(db.String(50))
+    acao_preventiva = db.Column(db.String(255))
+    objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'), nullable=False)
+    objetivo_pe = db.relationship('ObjetivoPE', backref='Risco')
+
 class CadeiaValor(db.Model):
     __tablename__ = 'cadeiavalor'
     id = db.Column(db.Integer, primary_key=True)

@@ -88,7 +88,12 @@
     }
 
     function visualizarindicadorcomum() {
-      window.location.href = "{{ url_for('calculoindicadores.visualizar_indicadores', programa_id=1) }}";
-    }
+      window.location.href = "{{ url_for('calculoindicadores.visualizar_indicadores', programa_id=programa_id) }}"; }
+    
+    // Certifique-se de que programa_id está disponível como uma variável de JavaScript
+    var programa_id = "{{ programa_id }}";
   </script>
+
+
+
 {% endblock %}

@@ -1,0 +1,98 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+    Indicadores de Docentes - Programa {{ programa_id }}
+{% endblock %}
+
+{% block conteudo %}
+<div style="text-align: center; margin-top: 20px;">
+    <h3>Indicadores de Docentes</h3>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Distribuição de Titulação</h5>
+            <ul>
+                {% for nivel, percentual in distribuicao_titulacao.items() %}
+                    <li>{{ nivel }}: {{ percentual }}%</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Carga Horária Média</h5>
+            <p>{{ carga_horaria_media }} horas</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Atividades de Orientação Média</h5>
+            <ul>
+                {% for tipo, media in atividades_orientacao_media.items() %}
+                    <li>{{ tipo }}: {{ media }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Distribuição por Regime de Trabalho</h5>
+            <ul>
+                {% for regime, percentual in distribuicao_regime_trabalho.items() %}
+                    <li>{{ regime }}: {{ percentual }}%</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Distribuição por Sexo</h5>
+            <ul>
+                {% for sexo, percentual in distribuicao_sexo.items() %}
+                    <li>{{ sexo }}: {{ percentual }}%</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Distribuição por Categoria</h5>
+            <ul>
+                {% for categoria, percentual in distribuicao_categoria.items() %}
+                    <li>{{ categoria }}: {{ percentual }}%</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Tempo Médio de Afastamento</h5>
+            <p>{{ tempo_medio_afastamento }} dias</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Idade Média dos Docentes</h5>
+            <p>{{ idade_media_docentes }} anos</p>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <a id="gerar-pdf" href="{{ url_for('calculoindicadores.gerar_pdf_docentes', programa_id=programa_id) }}" class="btn btn-primary">Gerar PDF</a>
+        <a id="gerar-excel" href="{{ url_for('calculoindicadores.gerar_excel_docentes', programa_id=programa_id) }}" class="btn btn-success">Gerar Planilha</a>
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-top: 20px;">Fechar</button>
+    </div>
+</div>
+
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
+</script>
+{% endblock %}
