@@ -1,78 +1,60 @@
-{% extends 'basecord.html' %}
+{% extends "base.html" %}
 
-{% block titulo %}
-    Cadastro de Metas - PRPPG
-{% endblock %}
+{% block content %}
+<h1>Gráfico de Ações das Metas</h1>
 
-{% block conteudo %}
-<body>
-    <div class="container">
-        <h1 class="text-center">AÇÕES DO PLANEJAMENTO ESTRATÉGICO</h1>
-        <form method="get" action="{{ url_for('graficoacaope.exibir_graficoacaope') }}">
-            <div class="form-group">
-                <label for="planejamento_selecionado">Selecionar Planejamento:</label>
-                <select class="form-control" id="planejamento_selecionado" name="planejamento_selecionado" required onchange="this.form.submit()">
-                    <option value="">Selecione um planejamento</option>
-                    {% for planejamento in planejamentos %}
-                        <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento.id == planejamento_selecionado.id %}selected{% endif %}>{{ planejamento.nome }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="meta_selecionada" style="margin-top: 1em;">Selecionar Meta:</label>
-                <select class="form-control" id="meta_selecionada" name="meta_selecionada" required onchange="this.form.submit()">
-                    <option value="">Selecione uma meta</option>
-                    {% for meta in metas %}
-                        <option value="{{ meta.id }}" {% if meta_selecionada_id and meta.id == meta_selecionada_id %}selected{% endif %}>{{ meta.nome }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% if meta_selecionada_id and meta_tem_acoes %}
-            <div class="text-center">
-                <button type="submit" class="btn btn-primary" style="margin-top: 1em;">Gerar Gráfico</button>
-            </div>
-            {% endif %}
-        </form>
+<label for="planejamento">Selecionar Planejamento:</label>
+<select id="planejamento" name="planejamento">
+    <option value="">--Selecione o Planejamento--</option>
+    {% for planejamento in planejamentos %}
+        <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento.id == planejamento_selecionado.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+    {% endfor %}
+</select>
 
-        {% if graficos %}
-            <h2 class="text-center">Gráficos de Ações</h2>
-            {% for grafico in graficos %}
-                <div class="card my-4">
-                    <div class="card-body">
-                        <h5 class="card-title text-center">Meta: {{ grafico.meta }}</h5>
-                        <div class="text-center">
-                            <img src="data:image/png;base64,{{ grafico.grafico }}" class="img-fluid" alt="Gráfico de Barras">
-                        </div>
-                        <table class="table table-striped mt-4">
-                            <thead>
-                                <tr>
-                                    <th>Nome da Ação</th>
-                                    <th>Data Início</th>
-                                    <th>Data Término</th>
-                                    <th>Porcentagem de Execução</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for acao in grafico.acoes %}
-                                    <tr>
-                                        <td>{{ acao.nome }}</td>
-                                        <td>{{ acao.data_inicio }}</td>
-                                        <td>{{ acao.data_termino }}</td>
-                                        <td>{{ acao.porcentagem_execucao }}%</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        <div class="text-center">
-                            <button type="button" class="btn btn-secondary" onclick="window.history.back()">Fechar</button>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        {% endif %}
-    </div>
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
-</body>
+<br>
+
+<label for="meta">Selecionar Meta:</label>
+<select id="meta" name="meta" {% if not metas %}disabled{% endif %}>
+    <option value="">--Selecione a Meta--</option>
+    {% for meta in metas %}
+        <option value="{{ meta.id }}" {% if meta.id == meta_selecionada_id %}selected{% endif %}>{{ meta.nome }}</option>
+    {% endfor %}
+</select>
+
+<br>
+
+<div id="graficos">
+    {% if graficos %}
+        {% for grafico in graficos %}
+            <h3>{{ grafico.meta }}</h3>
+            <img src="data:image/png;base64,{{ grafico.grafico }}" alt="Gráfico de Ações">
+            <ul>
+                {% for acao in grafico.acoes %}
+                    <li>{{ acao.nome }}: {{ acao.porcentagem_execucao }}%</li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    {% else %}
+        <p>Nenhuma ação encontrada para a meta selecionada.</p>
+    {% endif %}
+</div>
+
+<script>
+    $(document).ready(function(){
+        $('#planejamento').change(function(){
+            var planejamento_id = $(this).val();
+            if (planejamento_id) {
+                window.location.href = "{{ url_for('graficoacaope.exibir_graficoacaope') }}?planejamento_selecionado=" + planejamento_id;
+            }
+        });
+
+        $('#meta').change(function(){
+            var planejamento_id = $('#planejamento').val();
+            var meta_id = $(this).val();
+            if (meta_id) {
+                window.location.href = "{{ url_for('graficoacaope.exibir_graficoacaope') }}?planejamento_selecionado=" + planejamento_id + "&meta_selecionada=" + meta_id;
+            }
+        });
+    });
+</script>
 {% endblock %}

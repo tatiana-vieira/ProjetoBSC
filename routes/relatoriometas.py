@@ -418,3 +418,45 @@ def cadastrar_risco():
     else:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('relatoriometas.cadastrar_risco'))
+########################################################################################################
+@relatoriometas_route.route('/listar_riscos', methods=['GET'])
+@login_required
+def listar_riscos():
+    programa_id = current_user.programa_id
+    if programa_id:
+        riscos = Risco.query.join(ObjetivoPE, Risco.objetivo_pe_id == ObjetivoPE.id)\
+                            .join(PlanejamentoEstrategico, ObjetivoPE.planejamento_estrategico_id == PlanejamentoEstrategico.id)\
+                            .filter(PlanejamentoEstrategico.id_programa == programa_id).all()
+        return render_template('listar_riscos.html', riscos=riscos)
+    else:
+        flash('Programa não encontrado!', 'error')
+        return redirect(url_for('relatoriometas.cadastrar_risco'))
+
+@relatoriometas_route.route('/editar_risco/<int:risco_id>', methods=['GET'])
+@login_required
+def editar_risco(risco_id):
+    risco = Risco.query.get_or_404(risco_id)
+    objetivos_pe_associados = ObjetivoPE.query.join(PlanejamentoEstrategico, ObjetivoPE.planejamento_estrategico_id == PlanejamentoEstrategico.id)\
+                                              .filter(PlanejamentoEstrategico.id_programa == current_user.programa_id).all()
+    return render_template('alterar_risco.html', risco=risco, objetivos_pe=objetivos_pe_associados)
+
+@relatoriometas_route.route('/salvar_alteracao_risco/<int:risco_id>', methods=['POST'])
+@login_required
+def salvar_alteracao_risco(risco_id):
+    risco = Risco.query.get_or_404(risco_id)
+    
+    risco.objetivo_pe_id = request.form.get('objetivo_pe_id')
+    risco.descricao = request.form.get('descricao')
+    risco.nivel = request.form.get('nivel')
+    risco.acao_preventiva = request.form.get('acao_preventiva')
+    
+    try:
+        db.session.commit()
+        flash('Risco alterado com sucesso!', 'success')
+        print("Commit realizado com sucesso.")
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao salvar o risco: {str(e)}', 'error')
+        print(f"Erro ao salvar o risco: {str(e)}")
+    
+    return redirect(url_for('relatoriometas.listar_riscos'))

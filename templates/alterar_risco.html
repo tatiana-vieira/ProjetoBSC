@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block titulo %}
+    Alterar Risco - PRPPG
+{% endblock %}
+
+{% block conteudo %}
+<div style="margin: auto; width: 50%; text-align: center;">
+    <div class="form-block"><br>
+        <h2 style="color: darkblue;">Alterar Risco</h2><br>
+        <form id="RiscoForm" method="POST" action="{{ url_for('relatoriometas.salvar_alteracao_risco', risco_id=risco.id) }}">
+            <label for="objetivo_pe_id">Objetivo:</label>
+            <select id="objetivo_pe_id" name="objetivo_pe_id" required style="width: 100%; margin-bottom: 10px;">
+                {% for objetivo in objetivos_pe %}
+                    <option value="{{ objetivo.id }}" {% if objetivo.id == risco.objetivo_pe_id %}selected{% endif %}>{{ objetivo.nome }}</option>
+                {% endfor %}
+            </select><br>
+
+            <label for="descricao">Descrição do Risco:</label>
+            <textarea id="descricao" name="descricao" required style="width: 100%; margin-bottom: 10px;">{{ risco.descricao }}</textarea><br>
+
+            <label for="nivel">Nível:</label>
+            <input type="text" id="nivel" name="nivel" value="{{ risco.nivel }}" required style="width: 100%; margin-bottom: 10px;"><br>
+
+            <label for="acao_preventiva">Ação Preventiva:</label>
+            <textarea id="acao_preventiva" name="acao_preventiva" required style="width: 100%; margin-bottom: 10px;">{{ risco.acao_preventiva }}</textarea><br>
+
+            <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar Alterações</button>
+            <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>
+        </form>
+    </div>
+</div>
+
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('relatoriometas.listar_riscos') }}";
+    }
+</script>
+{% endblock %}
