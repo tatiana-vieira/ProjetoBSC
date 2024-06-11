@@ -48,7 +48,7 @@ def exibir_gantt():
 
                     ax.set_xlabel('Data')
                     ax.set_ylabel('Ação')
-                    ax.set_title('Gráfico de Gantt das Ações')
+                    ax.set_title('Período de execução das Ações')
 
                     img = io.BytesIO()
                     plt.savefig(img, format='png', bbox_inches='tight')

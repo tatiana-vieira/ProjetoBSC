@@ -174,36 +174,27 @@ def visualizar_programaspe():
     if request.method == 'POST':
         programa_id = request.form['programa']
         programa = Programa.query.get(programa_id)
-        print(f"Programa selecionado: {programa}")
         
         planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-        print(f"Planejamentos Estratégicos: {planejamentos}")
         
         return render_template('visualizar_programas.html', programas=Programa.query.all(), planejamentos=planejamentos, programa_selecionado=programa)
     
     return render_template('visualizar_programas.html', programas=Programa.query.all(), planejamentos=None, programa_selecionado=None)
 
-
 @planejamento_route.route('/visualizar_dados_programa', methods=['POST'])
 def visualizar_dados_programa():
     planejamento_id = request.form['planejamento']
     planejamento = PlanejamentoEstrategico.query.get(planejamento_id)
-    print(f"Planejamento selecionado: {planejamento}")
     
     objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
-    print(f"Objetivos: {objetivospe}")
     
     metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
-    print(f"Metas: {metaspe}")
     
     indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metaspe])).all()
-    print(f"Indicadores: {indicadores}")
     
     valores_metas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
-    print(f"Valores das Metas: {valores_metas}")
     
     acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()
-    print(f"Ações: {acoes}")
     
     return render_template('dados_programa.html', planejamento=planejamento, objetivos=objetivospe, metas=metaspe, indicadores=indicadores, acoes=acoes, valores_metas=valores_metas)
 ###################################################################################################################################
