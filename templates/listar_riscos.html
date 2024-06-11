@@ -1,43 +1,41 @@
 {% extends 'base.html' %}
 
-{% block titulo %}
-    Lista de Riscos - PRPPG
-{% endblock %}
-
 {% block conteudo %}
-<div style="margin: auto; width: 80%; text-align: center;">
-    <h2>Lista de Riscos</h2>
-    <table style="width: 100%; margin-bottom: 20px; border-collapse: collapse;">
+<div class="container">
+    <h4 style="text-align: center; color: #003366;">Lista de Riscos</h4>
+    <table class="table table-striped">
         <thead>
             <tr>
                 <th>Descrição</th>
                 <th>Nível</th>
                 <th>Ação Preventiva</th>
                 <th>Objetivo</th>
-                <th>Ações</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
             {% for risco in riscos %}
-                <tr>
-                    <td>{{ risco.descricao }}</td>
-                    <td>{{ risco.nivel }}</td>
-                    <td>{{ risco.acao_preventiva }}</td>
-                    <td>{{ risco.objetivo_pe.nome }}</td>
-                    <td>
-                        <a href="{{ url_for('relatoriometas.editar_risco', risco_id=risco.id) }}" style="background-color: rgb(11, 130, 50); color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">Alterar</a>
-                        <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
-                    </td>
-                </tr>
+            <tr>
+                <td>{{ risco.descricao }}</td>
+                <td>{{ risco.nivel }}</td>
+                <td>{{ risco.acao_preventiva }}</td>
+                <td>{{ risco.objetivo_pe.nome }}</td>
+                <td>
+                    <a href="{{ url_for('relatoriometas.editar_risco', risco_id=risco.id) }}" class="btn btn-success">Alterar</a>
+                    <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>
+                </td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>
-    <script>
-        function fechar() {
-            window.location.href = "{{ url_for('login.get_coordenador') }}";
-        }
-    </script>
+    <div style="text-align: center;">
+        <a href="{{ url_for('relatoriometas.exportar_riscos_pdf') }}" class="btn btn-primary">Gerar PDF</a>
+    </div>
 </div>
 
-
+<script>
+    function fechar() {
+         window.location.href = "{{ url_for('login.get_coordenador') }}";
+     }
+ </script>
 {% endblock %}

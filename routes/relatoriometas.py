@@ -407,6 +407,7 @@ def cadastrar_risco():
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('relatoriometas.cadastrar_risco'))
 ########################################################################################################
+##################################################################################################3
 @relatoriometas_route.route('/listar_riscos', methods=['GET'])
 @login_required
 def listar_riscos():
@@ -448,3 +449,32 @@ def salvar_alteracao_risco(risco_id):
         print(f"Erro ao salvar o risco: {str(e)}")
     
     return redirect(url_for('relatoriometas.listar_riscos'))
+
+@relatoriometas_route.route('/exportar_riscos_pdf', methods=['GET'])
+@login_required
+def exportar_riscos_pdf():
+    programa_id = current_user.programa_id
+    if programa_id:
+        riscos = Risco.query.join(ObjetivoPE, Risco.objetivo_pe_id == ObjetivoPE.id)\
+                            .join(PlanejamentoEstrategico, ObjetivoPE.planejamento_estrategico_id == PlanejamentoEstrategico.id)\
+                            .filter(PlanejamentoEstrategico.id_programa == programa_id).all()
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        styles = getSampleStyleSheet()
+        elements = [Paragraph("Lista de Riscos", styles['Title'])]
+
+        for risco in riscos:
+            elements.append(Paragraph(f"Descrição: {risco.descricao}", styles['BodyText']))
+            elements.append(Paragraph(f"Nível: {risco.nivel}", styles['BodyText']))
+            elements.append(Paragraph(f"Ação Preventiva: {risco.acao_preventiva}", styles['BodyText']))
+            elements.append(Paragraph(f"Objetivo: {risco.objetivo_pe.nome}", styles['BodyText']))
+            elements.append(Paragraph(" ", styles['BodyText']))
+
+        doc.build(elements)
+        buffer.seek(0)
+        return send_file(buffer, as_attachment=True, download_name='riscos.pdf', mimetype='application/pdf')
+    else:
+        flash('Programa não encontrado!', 'error')
+        return redirect(url_for('relatoriometas.cadastrar_risco'))
+  
