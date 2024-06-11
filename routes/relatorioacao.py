@@ -1,5 +1,5 @@
-from flask import render_template,flash,request,redirect,session,url_for,send_file,make_response
-from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, AcaoPE,Programa
+from flask import render_template, flash, request, redirect, session, url_for, make_response
+from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, AcaoPE, Programa, db
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
 from io import BytesIO
@@ -7,11 +7,13 @@ from flask_login import login_required
 import csv
 import io
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib import colors
-import matplotlib.pyplot as plt
+import xlsxwriter
 from reportlab.lib.enums import TA_JUSTIFY
+from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 
 
 relatorioacao_route = Blueprint('relatorioacao', __name__)
@@ -49,7 +51,7 @@ def exibir_relatorioacao():
     else:
         flash('Você não tem permissão para acessar esta página.', 'danger')
         return redirect(url_for('login.login_page'))
-####################################################################################################
+
 @relatorioacao_route.route('/export/csv_acoes')
 @login_required
 def export_csv_acoes():
@@ -87,7 +89,66 @@ def export_csv_acoes():
     response.headers['Content-Disposition'] = 'attachment; filename=acoes.csv'
     response.headers['Content-type'] = 'text/csv'
     return response
-#######################################################################################################################3
+
+@relatorioacao_route.route('/export/xlsx_acoes')
+@login_required
+def export_xlsx_acoes():
+    if session.get('role') != 'Coordenador':
+        flash('Você não tem permissão para acessar esta página.', 'danger')
+        return redirect(url_for('login.login_page'))
+
+    planejamento_selecionado_id = request.args.get('planejamento_selecionado')
+    if not planejamento_selecionado_id:
+        flash('Nenhum planejamento selecionado.', 'warning')
+        return redirect(url_for('relatorioacao.exibir_relatorioacao'))
+
+    planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
+    if not planejamento_selecionado:
+        flash('Planejamento não encontrado.', 'warning')
+        return redirect(url_for('relatorioacao.exibir_relatorioacao'))
+
+    objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
+    metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
+    acoespe = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()
+
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet()
+
+    header_format = workbook.add_format({'bold': True, 'text_wrap': True, 'valign': 'top', 'fg_color': '#D7E4BC', 'border': 1})
+    cell_format = workbook.add_format({'border': 1})
+
+    headers = ['Objetivo', 'Meta', 'Porcentagem de Execução', 'Ação', 'Data de Início', 'Data de Término', 'Responsável', 'Status', 'Observação']
+    for col_num, header in enumerate(headers):
+        worksheet.write(0, col_num, header, header_format)
+
+    row_num = 1
+    for objetivo in objetivospe:
+        for meta in metaspe:
+            if meta.objetivo_pe_id == objetivo.id:
+                for acao in acoespe:
+                    if acao.meta_pe_id == meta.id:
+                        worksheet.write(row_num, 0, objetivo.nome, cell_format)
+                        worksheet.write(row_num, 1, meta.nome, cell_format)
+                        worksheet.write(row_num, 2, acao.porcentagem_execucao, cell_format)
+                        worksheet.write(row_num, 3, acao.nome, cell_format)
+                        worksheet.write(row_num, 4, acao.data_inicio, cell_format)
+                        worksheet.write(row_num, 5, acao.data_termino, cell_format)
+                        worksheet.write(row_num, 6, acao.responsavel, cell_format)
+                        worksheet.write(row_num, 7, acao.status, cell_format)
+                        worksheet.write(row_num, 8, acao.observacao, cell_format)
+                        row_num += 1
+
+    workbook.close()
+    output.seek(0)
+
+    response = make_response(output.getvalue())
+    response.headers['Content-Disposition'] = 'attachment; filename=acoes.xlsx'
+    response.headers['Content-type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    return response
+
+#######################################################################################################################
+
 @relatorioacao_route.route('/export/pdf_acoes')
 @login_required
 def export_pdf_acoes():
@@ -109,37 +170,39 @@ def export_pdf_acoes():
     metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
     acoespe = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()
 
-    buffer = io.BytesIO()
+    buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
     styles = getSampleStyleSheet()
     styleN = styles['BodyText']
-    styleN.alignment = TA_JUSTIFY
+    styleN.alignment = TA_LEFT
+    styleN.fontSize = 10
+    style_heading = ParagraphStyle(name='Heading', fontSize=12, alignment=TA_LEFT, spaceAfter=10, fontName='Helvetica-Bold')
+    style_subheading = ParagraphStyle(name='SubHeading', fontSize=11, alignment=TA_LEFT, spaceAfter=5, fontName='Helvetica-Bold')
 
     elements = []
     elements.append(Paragraph("Relatório de Ações", styles['Title']))
+    elements.append(Spacer(1, 12))
 
     for objetivo in objetivospe:
-        elements.append(Paragraph(f"Objetivo: {objetivo.nome}", styles['Heading2']))
+        elements.append(Paragraph(f"Objetivo: {objetivo.nome}", style_heading))
+        elements.append(Spacer(1, 12))
         for meta in metaspe:
             if meta.objetivo_pe_id == objetivo.id:
-                elements.append(Paragraph(f"Meta: {meta.nome}", styles['Heading3']))
-                data = [["Porcentagem de Execução", "Ação", "Data de Início", "Data de Término", "Responsável", "Status", "Observação"]]
+                elements.append(Paragraph(f"Meta: {meta.nome}", style_subheading))
+                elements.append(Spacer(1, 8))
                 for acao in acoespe:
                     if acao.meta_pe_id == meta.id:
-                        data.append([acao.porcentagem_execucao, acao.nome, acao.data_inicio, acao.data_termino, acao.responsavel, acao.status, acao.observacao])
-                
-                t = Table(data, colWidths=[50, 100, 50, 50, 50, 50, 100])
-                t.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                ]))
-                elements.append(t)
-                elements.append(Paragraph("", styleN))  # Linha em branco
+                        acao_text = (
+                            f"<b>Nome da Ação:</b> {acao.nome}<br/>"
+                            f"<b>Porcentagem de Execução:</b> {acao.porcentagem_execucao}%<br/>"
+                            f"<b>Data de Início:</b> {acao.data_inicio}<br/>"
+                            f"<b>Data de Término:</b> {acao.data_termino}<br/>"
+                            f"<b>Responsável:</b> {acao.responsavel}<br/>"
+                            f"<b>Status:</b> {acao.status}<br/>"
+                            f"<b>Observação:</b> {acao.observacao}<br/><br/>"
+                        )
+                        elements.append(Paragraph(acao_text, styleN))
+                        elements.append(Spacer(1, 12))
 
     doc.build(elements)
 

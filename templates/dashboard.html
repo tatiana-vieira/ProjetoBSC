@@ -6,7 +6,7 @@
 
 {% block conteudo %}
 <body>
-    <h4 style="text-align: center; color: #003366;">PLANEJAMENTO ESTRATÉGICO (INDICADORES)</h4>
+    <h4 style="text-align: center; color: #003366;">Planejamento Estratégico - Indicadores</h4><br>
 
     <div style="text-align: center;">
         <h4 style="color: #003366;">Selecione um Planejamento Estratégico:</h4>
@@ -48,9 +48,12 @@
         <table>
             <thead>
                 <tr>
-                    <th>Meta</th>           
+                    <th>Meta</th>
                     <th>Indicador</th>
                     <th>Descrição</th>
+                    <th>Frequência de Coleta</th>
+                    <th>Peso</th>
+                    <th>Valor Meta</th>
                     <th>Ano</th>
                     <th>Semestre</th>
                     <th>Valor</th>
@@ -65,10 +68,17 @@
                                 <td>{{ meta.nome if meta.nome else '' }}</td>
                                 <td>{{ indicador.nome if indicador.nome else '' }}</td>
                                 <td>{{ indicador.descricao | default('') }}</td>
+                                <td>{{ indicador.frequencia_coleta | default('') }}</td>
+                                <td>{{ indicador.peso | default('') }}</td>
+                                <td>{{ indicador.valor_meta | default('') }}</td>
                                 <td>{{ valorindicador.ano if valorindicador.ano else '' }}</td>
                                 <td>{{ valorindicador.semestre if valorindicador.semestre else '' }}</td>
                                 <td>{{ valorindicador.valor if valorindicador.valor else '' }}</td>
-                                <td><a href="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}"><button style="background-color: green; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">Alterar</button></a></td>
+                                <td>
+                                    <a href="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}">
+                                        <button style="background-color: green; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">Alterar</button>
+                                    </a>
+                                </td>
                             </tr>
                         {% endfor %}
                     {% endfor %}
@@ -79,9 +89,9 @@
     
     <div style="text-align: center; margin-top: 20px;">
         {% if planejamento_selecionado %}
-            <form action="{{ url_for('relatorioindicador.export_csv') }}" method="GET" style="display: inline;">
+            <form action="{{ url_for('relatorioindicador.export_xlsx') }}" method="GET" style="display: inline;">
                 <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
-                <button type="submit" class="btn btn-secondary">Exportar CSV</button>
+                <button type="submit" class="btn btn-success">Exportar Planilha</button>
             </form>
             <form action="{{ url_for('relatorioindicador.export_pdf') }}" method="GET" style="display: inline;">
                 <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">

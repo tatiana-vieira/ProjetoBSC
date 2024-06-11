@@ -123,7 +123,6 @@ def salvar_alteracao_meta(meta_id):
 def sucesso():
     return render_template('sucesso.html')
 ##############################################################################################################################3
-
 @relatoriometas_route.route('/graficometas', methods=['GET'])
 @login_required
 def exibir_graficometas():
@@ -141,6 +140,7 @@ def exibir_graficometas():
         objetivospe = []
         metaspe = []
         valoresmetas = []
+        graph_base64 = None
 
         if planejamento_selecionado_id:
             planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
@@ -152,42 +152,38 @@ def exibir_graficometas():
             metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
             valoresmetas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
 
-        # Preparar dados para o gráfico
-        dados_graficos = []
-        for meta in metaspe:
-            valores = [valor for valor in valoresmetas if valor.metape_id == meta.id]
-            for valor in valores:
+            # Preparar dados para o gráfico
+            dados_graficos = []
+            for meta in metaspe:
+                valores = [valor for valor in valoresmetas if valor.metape_id == meta.id]
+                progresso = sum(valor.valor for valor in valores)
+                restante = meta.valor_alvo - progresso
                 dados_graficos.append({
                     'meta': meta.nome,
-                    'ano': valor.ano,
-                    'semestre': valor.semestre,
-                    'valor': valor.valor,
-                    'valor_alvo': meta.valor_alvo if meta.valor_alvo is not None else 0  # Definindo valor padrão se for None
+                    'data_inicio': meta.data_inicio,
+                    'data_termino': meta.data_termino,
+                    'progresso': progresso,
+                    'restante': restante if restante > 0 else 0  # Evitar valores negativos
                 })
 
-        # Ordenar dados por ano e semestre
-        dados_graficos = sorted(dados_graficos, key=lambda x: (x['ano'], x['semestre']))
+            # Gerar o gráfico
+            plt.figure(figsize=(14, 8))
+            for dado in dados_graficos:
+                plt.barh(dado['meta'], dado['progresso'], color='skyblue', label='Progresso')
+                plt.barh(dado['meta'], dado['restante'], left=dado['progresso'], color='lightcoral', label='Restante')
 
-        # Gerar o gráfico
-        plt.figure(figsize=(14, 8))
-        for dado in dados_graficos:
-            plt.bar(f"{dado['ano']} S{dado['semestre']}", dado['valor'], label=f"Meta: {dado['meta']}", alpha=0.7)
-            plt.axhline(dado['valor_alvo'], color='r', linestyle='--', linewidth=1, label=f"Meta Alvo: {dado['meta']}")
+            plt.xlabel('Valor')
+            plt.title('Progresso das Metas')
+            plt.legend(['Progresso', 'Restante'])
+            plt.tight_layout()
 
-        plt.title('Progresso das Metas')
-        plt.xlabel('Período')
-        plt.ylabel('Valor')
-        plt.xticks(rotation=45, ha='right')
-        plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
-        plt.tight_layout()
+            img = BytesIO()
+            plt.savefig(img, format='png')
+            img.seek(0)
+            plt.close()
 
-        img = BytesIO()
-        plt.savefig(img, format='png')
-        img.seek(0)
-        plt.close()
-
-        # Codificar o gráfico em base64 para incorporação no HTML
-        graph_base64 = base64.b64encode(img.getvalue()).decode()
+            # Codificar o gráfico em base64 para incorporação no HTML
+            graph_base64 = base64.b64encode(img.getvalue()).decode()
 
         return render_template('graficometas.html', objetivos=objetivospe, metas=metaspe, valoresmetas=valoresmetas, graph_base64=graph_base64, planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado)
     
@@ -195,8 +191,6 @@ def exibir_graficometas():
         flash('Você não tem permissão para acessar esta página.', 'danger')
         return redirect(url_for('login.login_page'))
 
-
-#######################################################################################################################################
 @relatoriometas_route.route('/gerar_pdf', methods=['GET'])
 @login_required
 def gerar_pdf():
@@ -219,23 +213,17 @@ def gerar_pdf():
     valoresmetas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
 
     # Gerar o gráfico novamente
-    plt.figure(figsize=(14, 8))  # Aumentar o tamanho da figura
-    nomes_metas = [meta.nome for meta in metaspe]
-    valores_execucao = [sum(valor.valor for valor in valoresmetas if valor.metape_id == meta.id) for meta in metaspe]
+    plt.figure(figsize=(14, 8))
+    for meta in metaspe:
+        progresso = sum(valor.valor for valor in valoresmetas if valor.metape_id == meta.id)
+        restante = meta.valor_alvo - progresso
+        plt.barh(meta.nome, progresso, color='skyblue')
+        plt.barh(meta.nome, restante, left=progresso, color='lightcoral')
 
-    colors = cm.get_cmap('tab20', len(metaspe))
-    bars = plt.bar(range(len(metaspe)), valores_execucao, color=[colors(i / len(metaspe)) for i in range(len(metaspe))])
-    plt.title('Valores das Metas')
-    plt.xlabel('Meta')
-    plt.ylabel('Valor')
-    plt.xticks(range(len(metaspe)), [f'Meta {i+1}' for i in range(len(metaspe))], rotation=45, ha='right', fontsize=9)
-
-    for bar, valor in zip(bars, valores_execucao):
-        yval = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2, yval, round(yval, 2), ha='center', va='bottom', fontsize=8)
-
-    plt.legend(bars, nomes_metas, bbox_to_anchor=(0.5, -0.3), loc='upper center', ncol=1, fontsize=8)
-    plt.subplots_adjust(bottom=0.4, top=0.9)
+    plt.xlabel('Valor')
+    plt.title('Progresso das Metas')
+    plt.legend(['Progresso', 'Restante'])
+    plt.tight_layout()
 
     img = BytesIO()
     plt.savefig(img, format='png')
@@ -245,23 +233,23 @@ def gerar_pdf():
     # Criar PDF
     pdf_buffer = BytesIO()
     c = canvas.Canvas(pdf_buffer, pagesize=letter)
-    
+
     # Adicionar logo centralizado
     logo_width = 100
     logo_height = 50
     c.drawImage(LOGO_PATH, (PAGE_WIDTH - logo_width) / 2, PAGE_HEIGHT - 100, width=logo_width, height=logo_height)
-    
+
     # Adicionar gráfico centralizado
     graph_width = 500
     graph_height = 300
     c.drawImage(ImageReader(img), (PAGE_WIDTH - graph_width) / 2, 350, width=graph_width, height=graph_height)
-    
+
     c.showPage()
     c.save()
     pdf_buffer.seek(0)
 
     return send_file(pdf_buffer, download_name='grafico_metas.pdf', as_attachment=True)
-
+#######################################################################################################################
 @relatoriometas_route.route('/export/csv_metas')
 @login_required
 def export_csv_metas():

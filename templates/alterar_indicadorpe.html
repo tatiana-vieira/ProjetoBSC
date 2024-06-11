@@ -28,6 +28,34 @@
       <input type="text" id="nome" name="nome" value="{{ indicador.nome }}" required style="width: 80%; margin-bottom: 10px;"><br>
     </div>
 
+    <div class="form-group">
+      <label for="descricao">Descrição:</label><br>
+      <input type="text" id="descricao" name="descricao" value="{{ indicador.descricao }}" required style="width: 80%; margin-bottom: 10px;"><br>
+    </div>
+
+    <div class="form-group">
+      <label for="frequencia_coleta">Frequência de Coleta:</label><br>
+      <select id="frequencia_coleta" name="frequencia_coleta" required style="width: 80%; margin-bottom: 10px;">
+        <option value="diário" {% if indicador.frequencia_coleta == 'diário' %}selected{% endif %}>Diário</option>
+        <option value="semanal" {% if indicador.frequencia_coleta == 'semanal' %}selected{% endif %}>Semanal</option>
+        <option value="mensal" {% if indicador.frequencia_coleta == 'mensal' %}selected{% endif %}>Mensal</option>
+        <option value="trimestral" {% if indicador.frequencia_coleta == 'trimestral' %}selected{% endif %}>Trimestral</option>
+        <option value="semestral" {% if indicador.frequencia_coleta == 'semestral' %}selected{% endif %}>Semestral</option>
+        <option value="anual" {% if indicador.frequencia_coleta == 'anual' %}selected{% endif %}>Anual</option>
+        <option value="quadrienal" {% if indicador.frequencia_coleta == 'quadrienal' %}selected{% endif %}>Quadrienal</option>
+      </select><br>
+    </div>
+
+    <div class="form-group">
+      <label for="peso">Peso:</label><br>
+      <input type="number" id="peso" name="peso" value="{{ indicador.peso }}" required style="width: 80%; margin-bottom: 10px;" step="0.01"><br>
+    </div>
+
+    <div class="form-group">
+      <label for="valor_meta">Valor Meta:</label><br>
+      <input type="number" id="valor_meta" name="valor_meta" value="{{ indicador.valor_meta }}" required style="width: 80%; margin-bottom: 10px;" step="0.01"><br>
+    </div>
+
     {% for valorindicador in valores_indicadores %}
     <div class="form-group" style="display: flex; justify-content: center; gap: 10px;">
       <div>
@@ -75,7 +103,6 @@
               // Redireciona para a página do relatório de ações
               window.location.href = "{{ url_for('relatorioindicador.exibir_relatorioindicador') }}";
           }
-     
   </script>
 </body>
 {% endblock %}

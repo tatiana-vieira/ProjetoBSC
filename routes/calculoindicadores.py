@@ -190,29 +190,47 @@ def calcular_tempo_medio_afastamento(programa_id):
     
     media_dias_afastados = total_dias_afastados / total_afastamentos if total_afastamentos > 0 else 0
     return media_dias_afastados
-
+############################################################33333333
 def calcular_idade_media_docentes(programa_id):
     programa = Programa.query.filter_by(id=programa_id).first()
     codigo_programa = programa.codigo if programa else None
     if not codigo_programa:
+        print("Programa não encontrado.")
         return 0
     
     docentes = Docente.query.filter_by(codigoprograma=codigo_programa).all()
     total_idade = 0
     total_docentes = len(docentes)
+    print(f"Total de docentes: {total_docentes}")
     
     for docente in docentes:
+        print(f"Processando docente: {docente.nome}, Data de nascimento: {docente.datanasc}")
         if docente.datanasc:
             try:
-                data_nasc = datetime.strptime(docente.datanasc, '%Y-%m-%d')
+                # Ajuste o formato de acordo com o formato dos dados
+                data_nasc = datetime.strptime(docente.datanasc, '%d/%m/%Y')
                 idade = (datetime.now() - data_nasc).days // 365
                 total_idade += idade
-            except ValueError:
+                print(f"Idade calculada: {idade}")
+            except ValueError as e:
+                print(f"Erro ao processar data de nascimento: {e}")
                 continue
     
     idade_media = total_idade / total_docentes if total_docentes > 0 else 0
+    print(f"Idade média calculada: {idade_media}")
     return idade_media
 
+# Certifique-se de que a função `calcular_idade_media_docentes` seja chamada corretamente e que o `programa_id` fornecido seja válido.
+# Aqui está como você poderia chamar essa função dentro de um endpoint Flask, por exemplo:
+
+@calculoindicadores_route.route('/visualizar_idade_media/<int:programa_id>')
+@login_required
+def visualizar_idade_media(programa_id):
+    idade_media = calcular_idade_media_docentes(programa_id)
+    return render_template('idade_media.html', idade_media=idade_media, programa_id=programa_id)
+
+
+#############################################################################
 @calculoindicadores_route.route('/visualizar_indicadores/<int:programa_id>')
 def visualizar_indicadores(programa_id):
     taxa_conclusao = calcular_taxa_conclusao_por_ano(programa_id)
@@ -223,7 +241,6 @@ def visualizar_indicadores(programa_id):
     distribuicao_regime_trabalho = calcular_distribuicao_regime_trabalho(programa_id)
     distribuicao_sexo = calcular_distribuicao_sexo(programa_id)
     distribuicao_categoria = calcular_distribuicao_categoria(programa_id)
-    tempo_medio_afastamento = calcular_tempo_medio_afastamento(programa_id)
     idade_media_docentes = calcular_idade_media_docentes(programa_id)
 
     return render_template('view_indicators.html', 
@@ -235,7 +252,6 @@ def visualizar_indicadores(programa_id):
                            distribuicao_regime_trabalho=distribuicao_regime_trabalho,
                            distribuicao_sexo=distribuicao_sexo,
                            distribuicao_categoria=distribuicao_categoria,
-                           tempo_medio_afastamento=tempo_medio_afastamento,
                            idade_media_docentes=idade_media_docentes,
                            programa_id=programa_id)
 
@@ -315,9 +331,7 @@ def exportar_graficos_pdf(programa_id):
     table = Table(data)
     elements.append(table)
 
-    elements.append(Paragraph("Tempo Médio de Afastamento", styles['Heading3']))
-    elements.append(Paragraph(f"{tempo_medio_afastamento:.2f} dias", styles['BodyText']))
-
+  
     elements.append(Paragraph("Idade Média dos Docentes", styles['Heading3']))
     elements.append(Paragraph(f"{idade_media_docentes:.2f} anos", styles['BodyText']))
 
@@ -337,7 +351,6 @@ def gerar_excel_completo(programa_id):
     distribuicao_regime_trabalho = calcular_distribuicao_regime_trabalho(programa_id)
     distribuicao_sexo = calcular_distribuicao_sexo(programa_id)
     distribuicao_categoria = calcular_distribuicao_categoria(programa_id)
-    tempo_medio_afastamento = calcular_tempo_medio_afastamento(programa_id)
     idade_media_docentes = calcular_idade_media_docentes(programa_id)
 
     data = []
@@ -396,12 +409,6 @@ def gerar_excel_completo(programa_id):
             'Categoria': categoria,
             'Valor': f"{percentual:.2f}%"
         })
-
-    data.append({
-        'Indicador': 'Tempo Médio de Afastamento',
-        'Categoria': '',
-        'Valor': f"{tempo_medio_afastamento:.2f} dias"
-    })
 
     data.append({
         'Indicador': 'Idade Média dos Docentes',

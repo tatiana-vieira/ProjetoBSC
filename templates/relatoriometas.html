@@ -17,7 +17,7 @@
                     <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento_selecionado.id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
                 {% endfor %}
             </select>
-            <button type="submit" class="btn btn-primary">Buscar</button>
+            <button type="submit" class="btn btn-primary" style="background-color: blue; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Buscar</button>
         </form>
     </div>
 
@@ -144,14 +144,14 @@
         {% if planejamento_selecionado %}
             <form action="{{ url_for('relatoriometas.export_csv_metas') }}" method="GET" style="display: inline;">
                 <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
-                <button type="submit" class="btn btn-secondary">Exportar CSV</button>
+                <button type="submit" class="btn btn-secondary" style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Exportar Excel</button>
             </form>
             <form action="{{ url_for('relatoriometas.export_pdf_metas') }}" method="GET" style="display: inline;">
                 <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
-                <button type="submit" class="btn btn-secondary">Exportar PDF</button>
+                <button type="submit" class="btn btn-secondary" style="background-color: blue; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Exportar PDF</button>
             </form>
         {% endif %}
-        <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px; padding: 10px 20px; border: none; border-radius: 4px;">Fechar</button>
     </div>
 
     <script>

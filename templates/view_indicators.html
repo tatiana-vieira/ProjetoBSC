@@ -15,7 +15,7 @@
         {% for ano, taxa in taxa_conclusao.items() %}
         <tr>
             <td>{{ ano }}</td>
-            <td>{{ taxa }}</td>
+            <td>{{ "%.3f"|format(taxa) }}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -33,7 +33,7 @@
         {% for ano, taxa in taxa_abandono.items() %}
         <tr>
             <td>{{ ano }}</td>
-            <td>{{ taxa }}</td>
+            <td>{{ "%.3f"|format(taxa) }}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -53,14 +53,14 @@
         {% for nivel, percentual in distribuicao_titulacao.items() %}
         <tr>
             <td>{{ nivel }}</td>
-            <td>{{ percentual }}</td>
+            <td>{{ "%.3f"|format(percentual) }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 
 <h4>Carga Horária Média</h4>
-<p>{{ carga_horaria_media }} horas</p>
+<p>{{ "%.3f"|format(carga_horaria_media) }} horas</p>
 
 <h4>Atividades de Orientação Média</h4>
 <table class="table table-striped">
@@ -74,7 +74,7 @@
         {% for tipo, media in atividades_orientacao_media.items() %}
         <tr>
             <td>{{ tipo }}</td>
-            <td>{{ media }}</td>
+            <td>{{ "%.3f"|format(media) }}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -92,7 +92,7 @@
         {% for regime, percentual in distribuicao_regime_trabalho.items() %}
         <tr>
             <td>{{ regime }}</td>
-            <td>{{ percentual }}</td>
+            <td>{{ "%.3f"|format(percentual) }}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -110,7 +110,7 @@
         {% for sexo, percentual in distribuicao_sexo.items() %}
         <tr>
             <td>{{ sexo }}</td>
-            <td>{{ percentual }}</td>
+            <td>{{ "%.3f"|format(percentual) }}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -128,17 +128,14 @@
         {% for categoria, percentual in distribuicao_categoria.items() %}
         <tr>
             <td>{{ categoria }}</td>
-            <td>{{ percentual }}</td>
+            <td>{{ "%.3f"|format(percentual) }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 
-<h4>Tempo Médio de Afastamento</h4>
-<p>{{ tempo_medio_afastamento }} dias</p>
-
 <h4>Idade Média dos Docentes</h4>
-<p>{{ idade_media_docentes }} anos</p>
+<p>{{ "%.3f"|format(idade_media_docentes) }} anos</p>
 
 <div style="text-align: center;">
     <a href="{{ url_for('calculoindicadores.exportar_graficos_pdf', programa_id=programa_id) }}" class="btn btn-primary">Exportar PDF</a>

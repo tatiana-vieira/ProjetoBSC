@@ -6,7 +6,19 @@
 <div style="margin: auto; width: 50%; text-align: center;">
   <div class="form-block">
     <h3>Cadastro de Indicadores</h3><br>
-    <form method="POST" action="{{ url_for('associar_indicadorespe') }}">
+    <!-- Exibir mensagens flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alert-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    <form method="POST" action="{{ url_for('planejamento.associar_indicadorespe') }}">
       <label for="meta_pe_id">Selecione a Meta:</label><br>
       <select name="meta_pe_id" required style="width: 90%; margin-bottom: 10px;">
           {% for meta in metas_pe %}
@@ -16,8 +28,26 @@
       
       <label for="nome">Nome do Indicador:</label><br>
       <input type="text" id="nome" name="nome" required style="width: 90%; margin-bottom: 10px;"><br>
-      <label for="descricao">Descricao:</label><br>
-      <input type="text" id="descricao" name="descricao" required style="width: 90%; margin-bottom: 10px;"><br>   
+      
+      <label for="descricao">Descrição:</label><br>
+      <input type="text" id="descricao" name="descricao" required style="width: 90%; margin-bottom: 10px;"><br>
+
+      <label for="peso">Peso:</label><br>
+      <input type="number" id="peso" name="peso" value="1.0" required style="width: 90%; margin-bottom: 10px;" step="0.01"><br>
+      
+      <label for="frequencia_coleta">Frequência de Coleta:</label><br>
+      <select name="frequencia_coleta" required style="width: 90%; margin-bottom: 10px;">
+          <option value="diário">Diário</option>
+          <option value="semanal">Semanal</option>
+          <option value="mensal">Mensal</option>
+          <option value="trimestral">Trimestral</option>
+          <option value="semestral">Semestral</option>
+          <option value="anual">Anual</option>
+          <option value="quadrienal">Quadrienal</option>
+      </select><br>
+
+      <label for="valor_meta">Valor Meta:</label><br>
+      <input type="number" id="valor_meta" name="valor_meta" value="0.0" required style="width: 90%; margin-bottom: 10px;" step="0.01"><br>
 
       <!-- Div para adicionar os campos dinâmicos -->
       <div id="campos-dinamicos">
@@ -38,23 +68,23 @@
                 <button type="button" id="add-button" style="background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-top: 8px;">Adicionar</button>
             </div>
         </div>
-    </div>
-
-      <!-- Adicione outros campos para os indicadores, se necessário -->
+      </div>
 
       <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
       <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>            
-   </form>
- </div>
+    </form>
+  </div>
 </div>
+
 <script>
   function fechar() {
       // Redireciona para a página do coordenador após o login
       window.location.href = "{{ url_for('login.get_coordenador') }}";
   }
 </script> 
+
 <script>
-   document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function() {
     const addButton = document.getElementById('add-button');
     const camposDinamicos = document.getElementById('campos-dinamicos');
 
@@ -64,15 +94,15 @@
 
       novoCampo.innerHTML = `
         <div class="col-md-3">
-          <label for="ano">Ano</label>
+          <label for="ano">Ano:</label>
           <input type="text" name="ano[]" required style="width: 100%; margin-bottom: 8px;">
         </div>
         <div class="col-md-3">
-          <label for="semestre">Semestre</label>
+          <label for="semestre">Semestre:</label>
           <input type="text" name="semestre[]" required style="width: 100%; margin-bottom: 8px;">
         </div>
         <div class="col-md-3">
-          <label for="valor">Valor</label>
+          <label for="valor">Valor:</label>
           <input type="text" name="valor[]" required style="width: 100%; margin-bottom: 8px;">
         </div>
       `;
@@ -81,6 +111,4 @@
     });
   });
 </script>
-
-
 {% endblock %}

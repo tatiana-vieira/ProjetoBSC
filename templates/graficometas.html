@@ -1,45 +1,35 @@
-{% extends 'basecord.html' %}
+{% extends 'base.html' %}
 
 {% block titulo %}
-  Planejamento Estratégico - 2024:2028 (Gráfico de Metas)
+    Gráfico de Metas - PRPPG
 {% endblock %}
 
 {% block conteudo %}
-<body>
-    <h4 style="text-align: center; color: #003366;">PLANEJAMENTO ESTRATÉGICO (GRÁFICO DE METAS)</h4>
+<div style="margin: auto; width: 80%; text-align: center;">
+    <h2>Progresso das Metas</h2>
 
-    <div style="text-align: center;">
-        <h4 style="color: #003366;">Selecione um Planejamento Estratégico:</h4>
-        <form method="GET" action="{{ url_for('relatoriometas.exibir_graficometas') }}">
-            <select id="planejamento_estrategico" name="planejamento_selecionado" required style="width: 300px; margin-bottom: 20px;">
-                <option value="">-- Selecione --</option>
-                {% for planejamento in planejamentos %}
-                    <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento_selecionado.id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
-                {% endfor %}
-            </select>
-            <button type="submit" class="btn btn-primary">Buscar</button>
-        </form>
-    </div>
+    <form method="GET" action="{{ url_for('relatoriometas.exibir_graficometas') }}">
+        <label for="planejamento_selecionado">Selecionar Planejamento:</label>
+        <select id="planejamento_selecionado" name="planejamento_selecionado">
+            <option value="">--Selecione o Planejamento--</option>
+            {% for planejamento in planejamentos %}
+                <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento.id == planejamento_selecionado.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" style="background-color: blue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Buscar</button>
+    </form>
 
-    <div id="grafico-metas" style="text-align: center; margin-top: 20px;">
-        {% if graph_base64 %}
-            <h2>Gráfico de Metas</h2>
-            <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Metas">
-        {% endif %}
-    </div>
+    {% if graph_base64 %}
+        <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Metas">
+        <br>
+        <a href="{{ url_for('relatoriometas.gerar_pdf', planejamento_selecionado=planejamento_selecionado.id) }}" style="background-color: blue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">Exportar PDF</a>
+        <button type="button" onclick="fechar()" style="background-color: red; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
+    {% endif %}
+</div>
 
-    <div style="text-align: center; margin-top: 20px;">
-        <form method="GET" action="{{ url_for('relatoriometas.gerar_pdf') }}" style="display: inline;">
-            <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
-            <button type="submit" class="btn btn-secondary">Gerar PDF</button>
-        </form>
-        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
-    </div>
-
-    <script>
-        function fechar() {
-            window.location.href = "{{ url_for('login.get_coordenador') }}";
-        }
-    </script>
-</body>
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
+</script>
 {% endblock %}

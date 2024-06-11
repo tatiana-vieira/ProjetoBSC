@@ -151,32 +151,22 @@ def associar_acaope():
             return redirect(url_for('login.get_coordenador'))
 ########################################## Alterar ação #####################################################
 @planejamento_route.route('/alterar_acaope/<int:acao_id>', methods=['GET', 'POST'])
+@login_required
 def alterar_acaope(acao_id):
-    # Busca a ação a ser alterada pelo ID
     acao = AcaoPE.query.get_or_404(acao_id)
-    
-    if request.method == 'POST':
-        # Atualiza os campos da ação com os dados do formulário, se fornecidos
-        if 'data_termino' in request.form:
-            acao.data_termino = request.form['data_termino']
-        if 'responsavel' in request.form:
-            acao.responsavel = request.form['responsavel']
-        if 'status' in request.form:
-            acao.status = request.form['status']
-        if 'observacao' in request.form:
-            acao.observacao = request.form['observacao']
-        if 'porcentagem_execucao' in request.form:
-            acao.porcentagem_execucao = request.form['porcentagem_execucao']
-        
-        # Salva as alterações no banco de dados
-        db.session.commit()
 
+    if request.method == 'POST':
+        acao.data_termino = request.form['data_termino']
+        acao.responsavel = request.form['responsavel']
+        acao.status = request.form['status']
+        acao.observacao = request.form['observacao']
+        acao.porcentagem_execucao = request.form['porcentagem_execucao']
+
+        db.session.commit()
         flash('Ação alterada com sucesso!', 'success')
-        # Redireciona de volta para a página de alteração de ação para permanecer na mesma tela
-        return redirect(url_for('planejamento.alterar_acaope', acao_id=acao_id))
-    else:
-        # Retorna o formulário de alteração preenchido com os dados da ação
-        return render_template('alterar_acaope.html', acao=acao)
+        return redirect(url_for('planejamento.alterar_acaope', acao_id=acao.id))
+
+    return render_template('alterar_acaope.html', acao=acao)
 ################################################################################################
 ################################################# Pro -reitor ###################################
 @planejamento_route.route('/visualizar_programaspe', methods=['GET', 'POST'])
@@ -219,52 +209,49 @@ def visualizar_dados_programa():
 ###################################################################################################################################
 ###########################################################################################################################
 @planejamento_route.route('/associar_indicadorespe', methods=['GET', 'POST'])
+@login_required
 def associar_indicadorespe():
-    # Se o programa existir, obtenha os planejamentos estratégicos associados a ele
     programa_id = current_user.programa_id
     if programa_id:
         planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-
-        # Inicialize uma lista para armazenar as metas associadas a objetivos associados a esses planejamentos estratégicos
         metas_pe_associadas = []
 
-        # Para cada planejamento estratégico, obtenha os objetivos associados
         for planejamento in planejamentos:
             objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
-
-            # Para cada objetivo, obtenha as metas associadas
             for objetivo in objetivos:
                 metas_pe = MetaPE.query.filter_by(objetivo_pe_id=objetivo.id).all()
                 metas_pe_associadas.extend(metas_pe)
 
-        # Se a requisição for POST, processar o formulário
         if request.method == 'POST':
-            # Obtenha os dados do formulário
             meta_pe_id = request.form['meta_pe_id']
             nome_indicador = request.form['nome']
-            descricao = request.form['descricao']  # Adicionado para obter a descrição do indicador 
+            descricao = request.form['descricao']
+            frequencia_coleta = request.form['frequencia_coleta']
+            peso = request.form['peso']
+            valor_meta = request.form['valor_meta']
 
-            # Verifica se a meta PE existe e se está associada a um objetivo do programa do Coordenador
             meta_pe = MetaPE.query.get(meta_pe_id)
             if meta_pe is None:
                 flash('Meta não encontrada!', 'error')
-                return redirect(url_for('get_coordenador'))
+                return redirect(url_for('planejamento.associar_indicadorespe'))
 
-            # Verifica se o indicador já existe na tabela IndicadorPE
             indicador_existente = IndicadorPlan.query.filter_by(nome=nome_indicador, meta_pe_id=meta_pe_id).first()
 
-            # Se o indicador já existir, obtenha o ID
             if indicador_existente:
                 indicador_id = indicador_existente.id
             else:
-                # Se o indicador não existir, adicione-o à tabela IndicadorPE
-                novo_indicador = IndicadorPlan(nome=nome_indicador, meta_pe_id=meta_pe_id, descricao=descricao)  # Adicionado descricao
+                novo_indicador = IndicadorPlan(
+                    nome=nome_indicador,
+                    meta_pe_id=meta_pe_id,
+                    descricao=descricao,
+                    frequencia_coleta=frequencia_coleta,
+                    peso=peso,
+                    valor_meta=valor_meta
+                )
                 db.session.add(novo_indicador)
                 db.session.commit()
-                # Obtenha o ID do indicador recém-adicionado
                 indicador_id = novo_indicador.id
 
-            # Salvar os valores do indicador na tabela Valorindicador
             ano = request.form.getlist('ano[]')
             semestre = request.form.getlist('semestre[]')
             valor = request.form.getlist('valor[]')
@@ -274,16 +261,16 @@ def associar_indicadorespe():
                 db.session.add(novo_valor)
 
             db.session.commit()
-
             flash('Indicador cadastrado com sucesso!', 'success')
-            return redirect(url_for('login.get_coordenador'))
-        
-        # Se a requisição for GET, renderize o template com as metas
+            return redirect(url_for('planejamento.associar_indicadorespe'))
+
         return render_template('indicadorpe.html', metas_pe=metas_pe_associadas)
     
     else:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('get_coordenador'))
+
+
 #########################################################################################################3
 @planejamento_route.route('/alterar_indicadorpe/<int:indicador_id>', methods=['GET', 'POST'])
 @login_required
@@ -293,24 +280,33 @@ def alterar_indicadorpe(indicador_id):
 
     if request.method == 'POST':
         nome = request.form.get('nome')
+        descricao = request.form.get('descricao')
+        frequencia_coleta = request.form.get('frequencia_coleta')
+        peso = request.form.get('peso')
+        valor_meta = request.form.get('valor_meta')
         semestres = request.form.getlist('semestres[]')
         anos = request.form.getlist('anos[]')
         valores = request.form.getlist('valores[]')
 
-        # Atualiza o nome do indicador
         if nome:
             indicador.nome = nome
+        if descricao:
+            indicador.descricao = descricao
+        if frequencia_coleta:
+            indicador.frequencia_coleta = frequencia_coleta
+        if peso:
+            indicador.peso = peso
+        if valor_meta:
+            indicador.valor_meta = valor_meta
 
-        # Atualiza os valores dos indicadores
         for i, valorindicador in enumerate(valores_indicadores):
             valorindicador.semestre = semestres[i]
             valorindicador.ano = anos[i]
             valorindicador.valor = valores[i]
 
-        # Salva as alterações no banco de dados
         db.session.commit()
         flash('Indicador e valores atualizados com sucesso.', 'success')
-        return redirect(url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id))
+        return redirect(url_for('relatorioindicador.exibir_relatorioindicador'))
 
     return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
 ##############################################################################################################################
