@@ -16,6 +16,13 @@
                 {% endfor %}
             </select><br>
 
+            <label for="meta_pe_id">Meta:</label>
+            <select id="meta_pe_id" name="meta_pe_id" required style="width: 100%; margin-bottom: 10px;">
+                {% for meta in metas_pe %}
+                    <option value="{{ meta.id }}" {% if meta.id == risco.meta_pe_id %}selected{% endif %}>{{ meta.nome }}</option>
+                {% endfor %}
+            </select><br>
+
             <label for="descricao">Descrição do Risco:</label>
             <textarea id="descricao" name="descricao" required style="width: 100%; margin-bottom: 10px;">{{ risco.descricao }}</textarea><br>
 
@@ -25,15 +32,46 @@
             <label for="acao_preventiva">Ação Preventiva:</label>
             <textarea id="acao_preventiva" name="acao_preventiva" required style="width: 100%; margin-bottom: 10px;">{{ risco.acao_preventiva }}</textarea><br>
 
+            <label for="probabilidade">Probabilidade:</label>
+            <select id="probabilidade" name="probabilidade" required style="width: 100%; margin-bottom: 10px;">
+                <option value="Baixa" {% if risco.probabilidade == 'Baixa' %}selected{% endif %}>Baixa</option>
+                <option value="Média" {% if risco.probabilidade == 'Média' %}selected{% endif %}>Média</option>
+                <option value="Alta" {% if risco.probabilidade == 'Alta' %}selected{% endif %}>Alta</option>
+            </select><br>
+            
+            <label for="impacto">Impacto:</label>
+            <select id="impacto" name="impacto" required style="width: 100%; margin-bottom: 10px;">
+                <option value="Insignificante" {% if risco.impacto == 'Insignificante' %}selected{% endif %}>Insignificante</option>
+                <option value="Moderado" {% if risco.impacto == 'Moderado' %}selected{% endif %}>Moderado</option>
+                <option value="Catastrophic" {% if risco.impacto == 'Catastrófico' %}selected{% endif %}>Catastrophic</option>
+            </select><br>
+
             <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar Alterações</button>
+           
             <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>
         </form>
     </div>
 </div>
 
 <script>
-   function fechar() {
+    function fechar() {
         window.location.href = "{{ url_for('login.get_coordenador') }}";
     }
+
+    document.getElementById('objetivo_pe_id').addEventListener('change', function() {
+        var objetivoId = this.value;
+        fetch(`/metas_por_objetivo/${objetivoId}`)
+            .then(response => response.json())
+            .then(data => {
+                var metaSelect = document.getElementById('meta_pe_id');
+                metaSelect.innerHTML = '<option value="" disabled selected>Selecione uma meta</option>';
+                data.forEach(function(meta) {
+                    var option = document.createElement('option');
+                    option.value = meta.id;
+                    option.text = meta.nome;
+                    metaSelect.add(option);
+                });
+            });
+    });
 </script>
 {% endblock %}

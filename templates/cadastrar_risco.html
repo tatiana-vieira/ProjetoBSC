@@ -19,11 +19,24 @@
   <div class="form-block">
     <h3>Cadastro de Riscos</h3><br>
     <form method="POST" action="{{ url_for('relatoriometas.cadastrar_risco') }}">
-      <label for="objetivo_pe_id">Selecione o Objetivo:</label><br>
-      <select name="objetivo_pe_id" required style="width: 90%; margin-bottom: 10px;">
-          {% for objetivo in objetivos_pe %}
-              <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
+      <label for="planejamento_id">Selecione o Planejamento:</label><br>
+      <select name="planejamento_id" id="planejamento_id" required style="width: 90%; margin-bottom: 10px;">
+          <option value="" disabled selected>Selecione um planejamento</option>
+          {% for planejamento in planejamentos %}
+              <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
           {% endfor %}
+      </select>
+      <br>
+
+      <label for="objetivo_pe_id">Selecione o Objetivo:</label><br>
+      <select name="objetivo_pe_id" id="objetivo_pe_id" required style="width: 90%; margin-bottom: 10px;" disabled>
+          <option value="" disabled selected>Selecione um objetivo</option>
+      </select>
+      <br>
+
+      <label for="meta_pe_id">Selecione a Meta:</label><br>
+      <select name="meta_pe_id" id="meta_pe_id" required style="width: 90%; margin-bottom: 10px;" disabled>
+          <option value="" disabled selected>Selecione uma meta</option>
       </select>
       <br>
 
@@ -35,6 +48,22 @@
 
       <label for="acao_preventiva">Ação Preventiva:</label><br>
       <input type="text" id="acao_preventiva" name="acao_preventiva" required style="width: 90%; margin-bottom: 10px;"><br>
+
+      <label for="probabilidade">Probabilidade:</label>
+      <select id="probabilidade" name="probabilidade" required style="width: 90%; margin-bottom: 10px;">
+          <option value="Baixa">Baixa</option>
+          <option value="Média">Média</option>
+          <option value="Alta">Alta</option>
+      </select><br>
+      <br>
+
+      <label for="impacto">Impacto:</label><br>
+      <select id="impacto" name="impacto" required style="width: 90%; margin-bottom: 10px;">
+          <option value="Insignificante">Insignificante</option>
+          <option value="Moderado">Moderado</option>
+          <option value="Catastrófico">Catastrófico</option>
+      </select><br>
+      <br>
 
       <div style="margin-top: 20px;">
           <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
@@ -73,5 +102,39 @@
   function fechar() {
       window.location.href = "{{ url_for('login.get_coordenador') }}";
   }
+
+  document.getElementById('planejamento_id').addEventListener('change', function() {
+      var planejamentoId = this.value;
+      fetch(`/objetivos_por_planejamento/${planejamentoId}`)
+          .then(response => response.json())
+          .then(data => {
+              var objetivoSelect = document.getElementById('objetivo_pe_id');
+              objetivoSelect.innerHTML = '<option value="" disabled selected>Selecione um objetivo</option>';
+              data.forEach(function(objetivo) {
+                  var option = document.createElement('option');
+                  option.value = objetivo.id;
+                  option.text = objetivo.nome;
+                  objetivoSelect.add(option);
+              });
+              objetivoSelect.disabled = false;
+          });
+  });
+
+  document.getElementById('objetivo_pe_id').addEventListener('change', function() {
+      var objetivoId = this.value;
+      fetch(`/metas_por_objetivo/${objetivoId}`)
+          .then(response => response.json())
+          .then(data => {
+              var metaSelect = document.getElementById('meta_pe_id');
+              metaSelect.innerHTML = '<option value="" disabled selected>Selecione uma meta</option>';
+              data.forEach(function(meta) {
+                  var option = document.createElement('option');
+                  option.value = meta.id;
+                  option.text = meta.nome;
+                  metaSelect.add(option);
+              });
+              metaSelect.disabled = false;
+          });
+  });
 </script>
 {% endblock %}

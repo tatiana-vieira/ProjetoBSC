@@ -1,3 +1,4 @@
+import logging
 from flask import render_template, request, redirect, url_for, jsonify, flash, session, make_response, send_file
 from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, Valormeta, db, Programa,Risco
 from flask_sqlalchemy import SQLAlchemy
@@ -17,11 +18,20 @@ from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from io import BytesIO
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 LOGO_PATH = 'static/PPG.png'  # Atualize para o caminho correto do logo
 PAGE_WIDTH, PAGE_HEIGHT = letter
 
 relatoriometas_route = Blueprint('relatoriometas', __name__)
+
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
+
 
 def get_planejamento_metas():
     metas = MetaPE.query.all()
@@ -358,18 +368,24 @@ def export_pdf_metas():
 def cadastrar_risco():
     programa_id = current_user.programa_id
     if programa_id:
-        # Obtendo objetivos associados ao programa do coordenador
-        objetivos_pe_associados = ObjetivoPE.query.join(PlanejamentoEstrategico, ObjetivoPE.planejamento_estrategico_id == PlanejamentoEstrategico.id)\
-                                                  .filter(PlanejamentoEstrategico.id_programa == programa_id).all()
-        print("Objetivos associados:", objetivos_pe_associados)  # Debug: Verificar se os objetivos são carregados
+        # Obtendo planejamentos associados ao programa do coordenador
+        planejamentos_associados = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
 
         if request.method == 'POST':
+            planejamento_id = request.form['planejamento_id']
             objetivo_pe_id = request.form['objetivo_pe_id']
+            meta_pe_id = request.form['meta_pe_id']
             descricao = request.form['descricao']
             nivel = request.form['nivel']
             acao_preventiva = request.form['acao_preventiva']
+            probabilidade = request.form['probabilidade']
+            impacto = request.form['impacto']
 
-            print("Dados recebidos:", objetivo_pe_id, descricao, nivel, acao_preventiva)  # Debug: Verificar dados recebidos
+            # Verifica se o planejamento existe
+            planejamento = PlanejamentoEstrategico.query.get(planejamento_id)
+            if not planejamento:
+                flash('Planejamento não encontrado!', 'error')
+                return redirect(url_for('relatoriometas.cadastrar_risco'))
 
             # Verifica se o objetivo existe
             objetivo_pe = ObjetivoPE.query.get(objetivo_pe_id)
@@ -377,8 +393,14 @@ def cadastrar_risco():
                 flash('Objetivo não encontrado!', 'error')
                 return redirect(url_for('relatoriometas.cadastrar_risco'))
 
+            # Verifica se a meta existe
+            meta_pe = MetaPE.query.get(meta_pe_id)
+            if not meta_pe:
+                flash('Meta não encontrada!', 'error')
+                return redirect(url_for('relatoriometas.cadastrar_risco'))
+
             # Verifica se o risco já existe
-            risco_existente = Risco.query.filter_by(descricao=descricao, objetivo_pe_id=objetivo_pe_id).first()
+            risco_existente = Risco.query.filter_by(descricao=descricao, objetivo_pe_id=objetivo_pe_id, meta_pe_id=meta_pe_id).first()
             if risco_existente:
                 flash('Risco já cadastrado!', 'warning')
                 return redirect(url_for('relatoriometas.cadastrar_risco'))
@@ -389,45 +411,71 @@ def cadastrar_risco():
                     descricao=descricao,
                     nivel=nivel,
                     acao_preventiva=acao_preventiva,
-                    objetivo_pe_id=objetivo_pe_id
+                    objetivo_pe_id=objetivo_pe_id,
+                    meta_pe_id=meta_pe_id,
+                    probabilidade=probabilidade,
+                    impacto=impacto
                 )
                 db.session.add(novo_risco)
                 db.session.commit()
-                print("Risco cadastrado com sucesso!")  # Debug: Verificar se o risco foi cadastrado
                 flash('Risco cadastrado com sucesso!', 'success')
             except Exception as e:
                 db.session.rollback()
-                print("Erro ao cadastrar risco:", e)  # Debug: Verificar erros durante a transação
                 flash('Erro ao cadastrar risco!', 'error')
             
             return redirect(url_for('relatoriometas.cadastrar_risco'))
 
-        return render_template('cadastrar_risco.html', objetivos_pe=objetivos_pe_associados)
+        return render_template('cadastrar_risco.html', planejamentos=planejamentos_associados)
     else:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('relatoriometas.cadastrar_risco'))
 ########################################################################################################
 ##################################################################################################3
-@relatoriometas_route.route('/listar_riscos', methods=['GET'])
+@relatoriometas_route.route('/listar_riscos', methods=['GET', 'POST'])
 @login_required
 def listar_riscos():
     programa_id = current_user.programa_id
-    if programa_id:
-        riscos = Risco.query.join(ObjetivoPE, Risco.objetivo_pe_id == ObjetivoPE.id)\
-                            .join(PlanejamentoEstrategico, ObjetivoPE.planejamento_estrategico_id == PlanejamentoEstrategico.id)\
-                            .filter(PlanejamentoEstrategico.id_programa == programa_id).all()
-        return render_template('listar_riscos.html', riscos=riscos)
-    else:
+    if not programa_id:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('relatoriometas.cadastrar_risco'))
 
-@relatoriometas_route.route('/editar_risco/<int:risco_id>', methods=['GET'])
+    planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+    
+    if request.method == 'POST':
+        planejamento_id = request.form['planejamento_id']
+        riscos = Risco.query.join(ObjetivoPE, Risco.objetivo_pe_id == ObjetivoPE.id)\
+                            .join(PlanejamentoEstrategico, ObjetivoPE.planejamento_estrategico_id == PlanejamentoEstrategico.id)\
+                            .filter(PlanejamentoEstrategico.id == planejamento_id).all()
+        return render_template('listar_riscos.html', riscos=riscos, planejamentos=planejamentos, selected_planejamento=planejamento_id)
+    
+    return render_template('listar_riscos.html', planejamentos=planejamentos, riscos=None)
+
+
+@relatoriometas_route.route('/editar_risco/<int:risco_id>', methods=['GET', 'POST'])
 @login_required
 def editar_risco(risco_id):
     risco = Risco.query.get_or_404(risco_id)
+    if request.method == 'POST':
+        risco.descricao = request.form['descricao']
+        risco.nivel = request.form['nivel']
+        risco.acao_preventiva = request.form['acao_preventiva']
+        risco.probabilidade = request.form['probabilidade']
+        risco.impacto = request.form['impacto']
+        
+        try:
+            db.session.commit()
+            flash('Risco alterado com sucesso!', 'success')
+            return redirect(url_for('relatoriometas.listar_riscos'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao salvar o risco: {str(e)}', 'error')
+    
     objetivos_pe_associados = ObjetivoPE.query.join(PlanejamentoEstrategico, ObjetivoPE.planejamento_estrategico_id == PlanejamentoEstrategico.id)\
                                               .filter(PlanejamentoEstrategico.id_programa == current_user.programa_id).all()
-    return render_template('alterar_risco.html', risco=risco, objetivos_pe=objetivos_pe_associados)
+    metas_pe_associadas = MetaPE.query.filter_by(objetivo_pe_id=risco.objetivo_pe_id).all()
+    
+    return render_template('alterar_risco.html', risco=risco, objetivos_pe=objetivos_pe_associados, metas_pe=metas_pe_associadas)
+
 
 @relatoriometas_route.route('/salvar_alteracao_risco/<int:risco_id>', methods=['POST'])
 @login_required
@@ -435,18 +483,19 @@ def salvar_alteracao_risco(risco_id):
     risco = Risco.query.get_or_404(risco_id)
     
     risco.objetivo_pe_id = request.form.get('objetivo_pe_id')
+    risco.meta_pe_id = request.form.get('meta_pe_id')
     risco.descricao = request.form.get('descricao')
     risco.nivel = request.form.get('nivel')
     risco.acao_preventiva = request.form.get('acao_preventiva')
+    risco.probabilidade = request.form.get('probabilidade')
+    risco.impacto = request.form.get('impacto')
     
     try:
         db.session.commit()
         flash('Risco alterado com sucesso!', 'success')
-        print("Commit realizado com sucesso.")
     except Exception as e:
         db.session.rollback()
         flash(f'Erro ao salvar o risco: {str(e)}', 'error')
-        print(f"Erro ao salvar o risco: {str(e)}")
     
     return redirect(url_for('relatoriometas.listar_riscos'))
 
@@ -469,6 +518,8 @@ def exportar_riscos_pdf():
             elements.append(Paragraph(f"Nível: {risco.nivel}", styles['BodyText']))
             elements.append(Paragraph(f"Ação Preventiva: {risco.acao_preventiva}", styles['BodyText']))
             elements.append(Paragraph(f"Objetivo: {risco.objetivo_pe.nome}", styles['BodyText']))
+            elements.append(Paragraph(f"Probabilidade: {risco.probabilidade}", styles['BodyText']))
+            elements.append(Paragraph(f"Impacto: {risco.impacto}", styles['BodyText']))
             elements.append(Paragraph(" ", styles['BodyText']))
 
         doc.build(elements)
@@ -477,4 +528,61 @@ def exportar_riscos_pdf():
     else:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('relatoriometas.cadastrar_risco'))
-  
+    
+#####################################################################################
+@relatoriometas_route.route('/objetivos_por_planejamento/<int:planejamento_id>', methods=['GET'])
+@login_required
+def objetivos_por_planejamento(planejamento_id):
+    objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
+    objetivos_data = [{'id': objetivo.id, 'nome': objetivo.nome} for objetivo in objetivos]
+    return jsonify(objetivos_data)
+
+@relatoriometas_route.route('/metas_por_objetivo/<int:objetivo_id>', methods=['GET'])
+@login_required
+def metas_por_objetivo(objetivo_id):
+    metas = MetaPE.query.filter_by(objetivo_pe_id=objetivo_id).all()
+    metas_data = [{'id': meta.id, 'nome': meta.nome} for meta in metas]
+    return jsonify(metas_data)
+
+
+#############################################################################################3
+@relatoriometas_route.route('/listar_matriz_riscos', methods=['GET', 'POST'])
+@login_required
+def listar_matriz_riscos():
+    programa_id = current_user.programa_id
+    if not programa_id:
+        flash('Programa não encontrado!', 'error')
+        return redirect(url_for('relatoriometas.cadastrar_risco'))
+
+    planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+
+    if request.method == 'POST':
+        planejamento_id = request.form['planejamento_id']
+        riscos = Risco.query.join(ObjetivoPE, Risco.objetivo_pe_id == ObjetivoPE.id)\
+                            .join(PlanejamentoEstrategico, ObjetivoPE.planejamento_estrategico_id == PlanejamentoEstrategico.id)\
+                            .filter(PlanejamentoEstrategico.id == planejamento_id).all()
+
+        # Gerar a matriz de riscos
+        matriz_riscos = gerar_matriz_riscos(riscos)
+        return render_template('listar_matriz.html', planejamentos=planejamentos, selected_planejamento=planejamento_id, matriz_riscos=matriz_riscos, enumerate=enumerate)
+
+    return render_template('listar_matriz.html', planejamentos=planejamentos, matriz_riscos=None, enumerate=enumerate)
+
+def gerar_matriz_riscos(riscos):
+    # Definindo os labels dos eixos
+    row_labels = ['Baixa', 'Média', 'Alta']
+    col_labels = ['Insignificante', 'Moderado', 'Catastrófico']
+
+    # Inicializando a matriz 3x3
+    matriz = [[[] for _ in range(len(col_labels))] for _ in range(len(row_labels))]
+
+    for risco in riscos:
+        try:
+            row_idx = row_labels.index(risco.probabilidade)
+            col_idx = col_labels.index(risco.impacto)
+            matriz[row_idx][col_idx].append(risco.descricao)
+        except ValueError as e:
+            print(f"Erro: {e}. Verifique os valores de probabilidade e impacto do 'Risco'.")
+            continue
+
+    return matriz

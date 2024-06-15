@@ -270,12 +270,18 @@ class PlanejamentoEstrategico(db.Model):
 
 class Risco(db.Model):
     __tablename__ = 'risco'
-    id = db.Column(db.Integer, primary_key=True)  # Adiciona a chave primária
+
+    id = db.Column(db.Integer, primary_key=True)
     descricao = db.Column(db.String(255), nullable=False)
     nivel = db.Column(db.String(50))
     acao_preventiva = db.Column(db.String(255))
-    objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'), nullable=False)
-    objetivo_pe = db.relationship('ObjetivoPE', backref='Risco')
+    objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'))
+    meta_pe_id = db.Column(db.Integer, db.ForeignKey('meta_pe.id'))
+    probabilidade = db.Column(db.String(50))  # Adicionando o campo probabilidade
+    impacto = db.Column(db.String(50))        # Adicionando o campo impacto
+
+    objetivo_pe = db.relationship('ObjetivoPE', backref='riscos')
+    meta_pe = db.relationship('MetaPE', backref='riscos')
 
 class CadeiaValor(db.Model):
     __tablename__ = 'cadeiavalor'
