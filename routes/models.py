@@ -217,6 +217,7 @@ class Users(db.Model):
     programa_id = db.Column(db.Integer, nullable=True)
     password_hash = db.Column(db.String(1500), nullable=False)
 
+
     def set_password(self, password):
         # Gere o hash da senha usando Flask-Bcrypt
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -351,6 +352,7 @@ class MetaPE(db.Model):
     status_inicial = db.Column(db.Numeric(5, 2), nullable=True)
     valor_alvo = db.Column(db.Numeric(5, 2), nullable=True)
     objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'), nullable=False)
+
     objetivo_pe = db.relationship('ObjetivoPE', backref='meta_pe')
 
 class Valormeta(db.Model):

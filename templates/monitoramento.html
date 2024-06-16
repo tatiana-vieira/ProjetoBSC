@@ -1,0 +1,144 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+    Planejamento Estratégico
+{% endblock %}
+
+{% block conteudo %}
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <div class="container">
+        <h2 style="text-align: center; color: #003366; margin-top: 20px;">Dados do Planejamento</h2><br>
+
+        <section>
+            <div class="form-container" style="text-align: center;">
+                <h5>Selecione um Planejamento Estratégico</h5>
+                <form method="POST">
+                    <label for="planejamento_id">Planejamento:</label>
+                    <select name="planejamento_id" id="planejamento_id" required>
+                        <option value="" disabled selected>Selecione um planejamento</option>
+                        {% for planejamento in planejamentos %}
+                            <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Exibir dados</button>
+                </form>
+            </div>
+        </section>
+
+        {% if planejamento_selecionado %}
+        <section class="dados-planejamento">
+            <h3>Objetivos</h3>
+            <table class="table-objetivos">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for objetivo in objetivos %}
+                    <tr>
+                        <td>{{ objetivo.nome }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h3>Metas</h3>
+            <table class="table-metas">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Status Inicial</th>
+                        <th>Tempo Restante (dias)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for meta in metas %}
+                    <tr>
+                        <td>{{ meta.nome }}</td>
+                        <td>{{ meta.status_inicial }}</td>
+                        <td>{{ meta.tempo_restante }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h3>Indicadores</h3>
+            <table class="table-indicadores">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Peso</th>
+                        <th>Frequência de Coleta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for indicador in indicadores %}
+                    <tr>
+                        <td>{{ indicador.nome }}</td>
+                        <td>{{ indicador.peso }}</td>
+                        <td>{{ indicador.frequencia_coleta }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h3>Ações</h3>
+            <table class="table-acoes">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Porcentagem de Execução</th>
+                        <th>Status</th>
+                        <th>Tempo Restante (dias)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for acao in acoes %}
+                    <tr>
+                        <td>{{ acao.nome }}</td>
+                        <td>{{ acao.porcentagem_execucao }}</td>
+                        <td>{{ acao.status }}</td>
+                        <td>{{ acao.tempo_restante }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h3>Riscos</h3>
+            <table class="table-riscos">
+                <thead>
+                    <tr>
+                        <th>Descrição</th>
+                        <th>Ação Preventiva</th>
+                        <th>Impacto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for risco in riscos %}
+                    <tr>
+                        <td>{{ risco.descricao }}</td>
+                        <td>{{ risco.acao_preventiva }}</td>
+                        <td>{{ risco.impacto }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="{{ url_for('gerar_pdf', planejamento_id=planejamento_selecionado.id) }}" target="_blank">
+                <button style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Gerar PDF</button>
+            </a>
+            <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
+        }
+    </script>
+
+{% endblock %}

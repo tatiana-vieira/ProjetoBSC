@@ -1,10 +1,10 @@
 import os
 import logging
 from logging.handlers import RotatingFileHandler
-from flask import Flask, jsonify, request, render_template, redirect, url_for, session, flash, current_app
+from flask import Flask, jsonify, request, render_template, redirect, url_for, session, flash, current_app,make_response
 from sqlalchemy import select, text
 from routes.models import (Ensino, Engajamento, Transfconhecimento, Pesquisar, Orientacao, PDI, Meta, Objetivo, Indicador, Producaointelectual, Users, Programa, BSC,
-                           MetaPE, IndicadorPlan, AcaoPE, ObjetivoPE, PlanejamentoEstrategico)
+                           MetaPE, IndicadorPlan, AcaoPE, ObjetivoPE, PlanejamentoEstrategico,Risco)
 from routes.multidimensional import multidimensional_route
 from routes.pdiprppg import pdiprppg_route
 from routes.producao import producao_route
@@ -29,6 +29,14 @@ from wtforms.validators import DataRequired
 from flask_login import login_required, current_user, UserMixin, LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import joinedload
+from datetime import datetime
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+import os
 
 app = Flask(__name__)
 
@@ -789,7 +797,179 @@ def dbtest():
     except Exception as e:
         logger.error(f'Teste de conexão com o banco de dados falhou: {e}')
         return f'Database connection failed: {e}'
+##################################################################################3
+@app.route('/monitoramento', methods=['GET', 'POST'])
+@login_required
+def monitoramento():
+    user_id = current_user.id  # Obtendo o ID do usuário logado
+    programa_id = current_user.programa_id  # Obtendo o programa do usuário logado
 
+    if not programa_id:
+        flash("Usuário não tem um programa associado.", "error")
+        return redirect(url_for('get_coordenador'))
+
+    planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+
+    planejamento_selecionado = None
+    objetivos = []
+    metas = []
+    indicadores = []
+    acoes = []
+    riscos = []
+
+    if request.method == 'POST':
+        planejamento_id = request.form.get('planejamento_id')
+        if planejamento_id:
+            planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_id)
+            objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
+            metas = MetaPE.query.join(ObjetivoPE).filter(ObjetivoPE.planejamento_estrategico_id == planejamento_id).all()
+            indicadores = IndicadorPlan.query.join(MetaPE).filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+            acoes = AcaoPE.query.join(MetaPE).filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+            riscos = Risco.query.join(MetaPE).filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+
+            # Calcular tempo restante para metas
+            for meta in metas:
+                if meta.data_termino:
+                    meta.tempo_restante = (meta.data_termino - datetime.now().date()).days
+                else:
+                    meta.tempo_restante = 'Indefinido'
+
+            # Calcular tempo restante para ações
+            for acao in acoes:
+                if acao.data_termino:
+                    acao.tempo_restante = (acao.data_termino - datetime.now().date()).days
+                else:
+                    acao.tempo_restante = 'Indefinido'
+
+    return render_template('monitoramento.html', planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado, objetivos=objetivos, metas=metas, indicadores=indicadores, acoes=acoes, riscos=riscos)
+###################################################################################
+@app.route('/monitoramento/gerar_pdf/<int:planejamento_id>', methods=['GET'])
+@login_required
+def gerar_pdf(planejamento_id):
+    planejamento = PlanejamentoEstrategico.query.get_or_404(planejamento_id)
+    objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
+    metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+    indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas])).all()
+    acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).all()
+    riscos = Risco.query.filter(Risco.meta_pe_id.in_([meta.id for meta in metas])).all()
+
+    # Calcular tempo restante para metas
+    for meta in metas:
+        if meta.data_termino:
+            meta.tempo_restante = (meta.data_termino - datetime.now().date()).days
+        else:
+            meta.tempo_restante = 'Indefinido'
+
+    # Calcular tempo restante para ações
+    for acao in acoes:
+        if acao.data_termino:
+            acao.tempo_restante = (acao.data_termino - datetime.now().date()).days
+        else:
+            acao.tempo_restante = 'Indefinido'
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+
+    styles = getSampleStyleSheet()
+    style_normal = ParagraphStyle(name='Normal', fontSize=8)
+    style_heading = ParagraphStyle(name='Heading', fontSize=10, fontName="Helvetica-Bold")
+
+    elements.append(Paragraph("Relatório de Planejamento Estratégico", styles['Title']))
+
+    elements.append(Paragraph("Objetivos", style_heading))
+    objetivos_data = [["Nome"]]
+    for objetivo in objetivos:
+        objetivos_data.append([Paragraph(str(objetivo.nome), style_normal)])
+    objetivos_table = Table(objetivos_data, colWidths=[450])
+    objetivos_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    elements.append(objetivos_table)
+
+    elements.append(Paragraph("Metas", style_heading))
+    metas_data = [["Nome", "Status Inicial", "Tempo Restante (dias)"]]
+    for meta in metas:
+        metas_data.append([Paragraph(str(meta.nome), style_normal), Paragraph(str(meta.status_inicial), style_normal), Paragraph(str(meta.tempo_restante), style_normal)])
+    metas_table = Table(metas_data, colWidths=[200, 100, 150])
+    metas_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    elements.append(metas_table)
+
+    elements.append(Paragraph("Indicadores", style_heading))
+    indicadores_data = [["Nome", "Peso", "Frequência de Coleta"]]
+    for indicador in indicadores:
+        indicadores_data.append([Paragraph(str(indicador.nome), style_normal), Paragraph(str(indicador.peso), style_normal), Paragraph(str(indicador.frequencia_coleta), style_normal)])
+    indicadores_table = Table(indicadores_data, colWidths=[200, 100, 150])
+    indicadores_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    elements.append(indicadores_table)
+
+    elements.append(Paragraph("Ações", style_heading))
+    acoes_data = [["Nome", "Porcentagem de Execução", "Status", "Tempo Restante (dias)"]]
+    for acao in acoes:
+        acoes_data.append([Paragraph(str(acao.nome), style_normal), Paragraph(str(acao.porcentagem_execucao), style_normal), Paragraph(str(acao.status), style_normal), Paragraph(str(acao.tempo_restante), style_normal)])
+    acoes_table = Table(acoes_data, colWidths=[200, 100, 100, 100])
+    acoes_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    elements.append(acoes_table)
+
+    elements.append(Paragraph("Riscos", style_heading))
+    riscos_data = [["Descrição", "Ação Preventiva", "Impacto"]]
+    for risco in riscos:
+        riscos_data.append([Paragraph(str(risco.descricao), style_normal), Paragraph(str(risco.acao_preventiva), style_normal), Paragraph(str(risco.impacto), style_normal)])
+    riscos_table = Table(riscos_data, colWidths=[200, 200, 100])
+    riscos_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    elements.append(riscos_table)
+
+    doc.build(elements)
+
+    buffer.seek(0)
+    response = make_response(buffer.getvalue())
+    response.headers['Content-Disposition'] = 'inline; filename=planejamento.pdf'
+    response.headers['Content-Type'] = 'application/pdf'
+    return response
+
+
+
+
+
+#######################################################################################################33333
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     app.run(host="0.0.0.0", port=port)
