@@ -15,10 +15,10 @@
     {% endif %}
 {% endwith %}
 
-<div style="margin: auto; width: 50%; text-align: center;">
+<div style="margin: auto; width: 80%; text-align: center;">
   <div class="form-block">
     <h3>Cadastro de Metas</h3><br>
-    <form method="POST" action="{{ url_for('associar_metaspe') }}">
+    <form method="POST" action="{{ url_for('planejamento.associar_metaspe') }}">
       <label for="objetivo_pe_id">Selecione o Objetivo:</label><br>
       <select name="objetivo_pe_id" required style="width: 90%; margin-bottom: 10px;">
           {% for objetivo in objetivos_pe %}
@@ -69,19 +69,50 @@
                 <label for="valor">Valor:</label>
                 <input type="number" step="0.01" name="valor[]" required style="width: 100%;">
             </div>
-            <div class="col-md-3" style="display: flex; align-items: flex-end; justify-content: space-between;">
-                <button type="button" id="add-button" style="background-color: #28a745; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer;">Adicionar</button>
-                <span style="margin-left: 10px; align-self: center; white-space: nowrap;">Obs.: Adicionar ano, semestre e valor.</span>
-            </div>
         </div>
       </div>
 
       <div style="margin-top: 20px;">
-          <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
-          <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
+          <button type="submit" class="btn btn-primary">Cadastrar Meta</button>
       </div>
    </form>
- </div>
+  </div>
+
+  <div class="form-block" style="margin-top: 50px;">
+    <h3>Metas Cadastradas</h3><br>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Descrição</th>
+          <th>Responsável</th>
+          <th>Data Início</th>
+          <th>Data Término</th>
+          <th>Status Inicial</th>
+          <th>Valor Alvo</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for meta in metas %}
+        <tr>
+          <td>{{ meta.id }}</td>
+          <td>{{ meta.nome }}</td>
+          <td>{{ meta.descricao }}</td>
+          <td>{{ meta.responsavel }}</td>
+          <td>{{ meta.data_inicio }}</td>
+          <td>{{ meta.data_termino }}</td>
+          <td>{{ meta.status_inicial }}</td>
+          <td>{{ meta.valor_alvo }}</td>
+          <td>
+            <a href="{{ url_for('planejamento.alterar_metape', metape_id=meta.id) }}" class="btn btn-warning btn-sm">Editar</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <style>
@@ -108,42 +139,13 @@
     margin-right: 10px;
 }
 </style>
+<div class="form-group" style="text-align: center;">
+  <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+</div>
 
 <script>
   function fechar() {
       window.location.href = "{{ url_for('login.get_coordenador') }}";
   }
-
-  document.addEventListener('DOMContentLoaded', function() {
-    const addButton = document.getElementById('add-button');
-    const camposDinamicos = document.getElementById('campos-dinamicos');
-
-    addButton.addEventListener('click', function() {
-      const novoCampo = document.createElement('div');
-      novoCampo.classList.add('row');
-      novoCampo.style.marginBottom = '10px';
-
-      novoCampo.innerHTML = `
-        <div class="col-md-3">
-          <label for="ano">Ano</label>
-          <input type="number" name="ano[]" required style="width: 100%;">
-        </div>
-        <div class="col-md-3">
-          <label for="semestre">Semestre</label>
-          <select name="semestre[]" required style="width: 100%;">
-              <option value="">-- Selecione --</option>
-              <option value="1">1º Semestre (Jan-Jun)</option>
-              <option value="2">2º Semestre (Jul-Dez)</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label for="valor">Valor</label>
-          <input type="number" step="0.01" name="valor[]" required style="width: 100%;">
-        </div>
-      `;
-
-      camposDinamicos.appendChild(novoCampo);
-    });
-  });
 </script>
 {% endblock %}

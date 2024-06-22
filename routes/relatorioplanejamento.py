@@ -155,7 +155,6 @@ def exibir_detalhes_planejamentocadeia():
             if not planejamento_selecionado:
                 return jsonify({'error': 'Planejamento não encontrado'})
 
-            cadeias_valor = CadeiaValor.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
             objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
             metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
             indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas])).all()
@@ -170,12 +169,7 @@ def exibir_detalhes_planejamentocadeia():
                 riscos_dados = [{'descricao': risco.descricao, 'nivel': risco.nivel, 'acao_preventiva': risco.acao_preventiva} for risco in riscos if risco.objetivo_pe_id == objetivo.id]
                 dados_objetivos.append({'nome': objetivo.nome, 'metas': metas_dados, 'riscos': riscos_dados})
 
-            cadeias_valor_json = [{'macroprocessogerencial': cadeia.macroprocessogerencial,
-                                   'macroprocessofinalistico': cadeia.macroprocessofinalistico,
-                                   'valorpublico': cadeia.valorpublico,
-                                   'macroprocessosuporte': cadeia.macroprocessosuporte} for cadeia in cadeias_valor]
-
-            return jsonify({'cadeias_valor': cadeias_valor_json, 'objetivos': dados_objetivos})
+            return jsonify({'objetivos': dados_objetivos})  # Retorna os dados em formato JSON para o AJAX
 
         return render_template('relplanocadeia.html', planejamentos=planejamentos)
     

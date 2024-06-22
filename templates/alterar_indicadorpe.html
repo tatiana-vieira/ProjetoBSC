@@ -76,7 +76,6 @@
     <div>
       <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar</button>
       <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
-      <button type="button" onclick="voltar()" style="background-color: grey; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Voltar</button>
     </div>
   </form>
 
@@ -95,14 +94,8 @@
 
   <script>
     function fechar() {
-        window.location.href = "{{ url_for('login.get_coordenador') }}";
+        window.location.href = "{{ url_for('planejamento.associar_indicadorespe') }}";
     }
-  </script>
-  <script>
-        function voltar() {
-              // Redireciona para a página do relatório de ações
-              window.location.href = "{{ url_for('relatorioindicador.exibir_relatorioindicador') }}";
-          }
   </script>
 </body>
 {% endblock %}

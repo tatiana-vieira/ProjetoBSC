@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block conteudo %}
-<div style="margin: auto; width: 50%; text-align: center;">
+<div style="margin: auto; width: 80%; text-align: center;">
   <!-- Mensagens Flash -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -14,18 +14,13 @@
         <div class="alert alert-{{ category }} text-center">{{ message }}</div>
       {% endfor %}
       </div>
-      <script>
-        setTimeout(function() {
-            window.location.href = "{{ url_for('associar_acaope') }}";
-        }, 3000); // 3 segundos de atraso antes de redirecionar
-      </script>
     {% endif %}
   {% endwith %}
   <!-- Fim das Mensagens Flash -->
 
   <div class="form-block"><br>
     <h2>Cadastro de Ação</h2><br>
-    <form method="POST" action="{{ url_for('associar_acaope') }}">
+    <form method="POST" action="{{ url_for('planejamento.associar_acaope') }}">
       <label for="meta_pe_id">Selecione a Meta cadastrada:</label></br>
       <select name="meta_pe_id" required style="width: 80%; margin-bottom: 10px;">
           {% for meta in metas_pe %}
@@ -53,16 +48,55 @@
       </select><br>
       <label for="observacao">Observação:</label><br>
       <input type="text" id="observacao" name="observacao" required style="width: 80%; margin-bottom: 10px;"><br>
-      <!-- Adicione outros campos para os indicadores, se necessário -->
 
       <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
-      <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>            
     </form>
  </div>
+
+  <div class="form-block" style="margin-top: 50px;">
+    <h3>Ações Cadastradas</h3><br>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Meta</th>
+          <th>Porcentagem Execução</th>
+          <th>Data Início</th>
+          <th>Data Término</th>
+          <th>Responsável</th>
+          <th>Status</th>
+          <th>Observação</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for acao in acoes %}
+        <tr>
+          <td>{{ acao.id }}</td>
+          <td>{{ acao.nome }}</td>
+          <td>{{ acao.meta_pe.nome }}</td>
+          <td>{{ acao.porcentagem_execucao }}</td>
+          <td>{{ acao.data_inicio }}</td>
+          <td>{{ acao.data_termino }}</td>
+          <td>{{ acao.responsavel }}</td>
+          <td>{{ acao.status }}</td>
+          <td>{{ acao.observacao }}</td>
+          <td>
+            <a href="{{ url_for('planejamento.alterar_acaope', acao_id=acao.id) }}" class="btn btn-warning btn-sm">Editar</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="form-group" style="text-align: center;">
+  <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
 </div>
 <script>
   function fechar() {
       window.location.href = "{{ url_for('login.get_coordenador') }}";
   }
-</script> 
-{% endblock conteudo %}
+</script>
+{% endblock %}

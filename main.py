@@ -654,50 +654,7 @@ def rota_protegida():
     # Esta rota só será acessível para usuários autenticados
     return 'Esta rota é protegida!'
 ##################################################################################################################################
-@app.route('/associar_objetivospe', methods=['POST', 'GET'])
-def associar_objetivospe():
-    if 'email' not in session:
-        flash('Você precisa estar logado para acessar esta página.', 'danger')
-        return redirect(url_for('login_page'))
 
-    # Verifica se o usuário é um coordenador e se o programa_id corresponde ao programa do usuário logado
-    if not current_user.is_authenticated or current_user.role != 'Coordenador':
-        return 'Acesso não autorizado'
-    
-    # Verifica se o programa_id do coordenador está na sessão
-    if 'programa_id' not in session:
-        flash('Você precisa estar associado a um programa para acessar esta página.', 'danger')
-        return redirect(url_for('get_coordenador'))
-
-    # Recupera o programa_id do coordenador da sessão
-    programa_id = session['programa_id']
-
-    if request.method == 'POST':
-        nome = request.form['nome']
-        objetivo_pdi_id = request.form['objetivo_id']   
-        planejamento_estrategico_id = request.form['planejamento_id']
-
-        # Verifica se o programa_id corresponde ao programa do coordenador logado
-        if planejamento_estrategico_id != programa_id:
-            return 'Acesso não autorizado'
-
-        # Recupera os objetivos associados ao programa do coordenador logado
-        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=programa_id).all()
-
-        # Cria uma nova meta e a adiciona ao banco de dados
-        novo_objetivo = ObjetivoPE(
-             nome=nome, objetivo_id=objetivo_pdi_id, planejamento_estrategico_id=planejamento_estrategico_id)
-        
-        db.session.add(novo_objetivo)
-        db.session.commit()
-
-        flash('Objetivo cadastrado com sucesso!', 'success')
-        return redirect(url_for('get_coordenador'))
-    else:
-        # Se o método não for POST, apenas renderiza o formulário HTML com os objetivos associados ao programa do coordenador logado
-        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=programa_id).all()
-
-        return render_template('objetivope.html', objetivos=objetivos)
 ##################################################################################################################################
 ########################################################################################################
 @app.route('/associar_indicadorespe', methods=['GET', 'POST'])
@@ -761,7 +718,6 @@ def associar_metaspe():
     # Aqui você pode adicionar qualquer lógica necessária para renderizar a página de planejamento estratégico
       return render_template('relatoriometas.html')
 #################################################################################################################################
-
 ##############################################################################################################################
 @app.route('/altpdi', methods=['GET', 'POST'])
 def exibir_altpdi():

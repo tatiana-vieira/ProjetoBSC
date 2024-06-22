@@ -35,7 +35,6 @@
             <tr>
                 <th>Objetivo</th>
                 <th>Meta</th>
-                <th>Porcentagem de Execução</th>
                 <th>Indicador</th>
             </tr>
         </thead>
@@ -51,7 +50,6 @@
                             <td rowspan="{{ rowspan_objetivo }}">{{ objetivo.nome }}</td>
                         {% endif %}
                         <td rowspan="{{ rowspan_meta }}">{{ meta.nome }}</td>
-                        <td rowspan="{{ rowspan_meta }}">{{ meta.porcentagem_execucao }}</td>
                         {% if indicadores_meta %}
                             <td>{{ indicadores_meta[0].nome }}</td>
                         {% else %}

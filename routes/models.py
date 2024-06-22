@@ -265,9 +265,11 @@ class PlanejamentoEstrategico(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(250), nullable=False)
     pdi_id = db.Column(db.Integer, db.ForeignKey('pdi.id'))
-    id_programa = db.Column(db.Integer, db.ForeignKey('programas.id'))  # Corrigindo o nome da tabela referenciada
-
-    programa = relationship("Programa", back_populates="planejamentos")  # Definindo o relacionamento inverso
+    id_programa = db.Column(db.Integer, db.ForeignKey('programas.id'))
+    
+    programa = db.relationship("Programa", back_populates="planejamentos")
+    pdi = db.relationship('PDI', back_populates='planejamentos')
+    objetivos_pe = db.relationship('ObjetivoPE', back_populates='planejamento_estrategico')
 
 class Risco(db.Model):
     __tablename__ = 'risco'
@@ -297,9 +299,12 @@ class CadeiaValor(db.Model):
 class PDI(db.Model):
     __tablename__ = 'pdi'
     id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(2500), nullable=False)  
-    datainicio = db.Column(db.Integer, nullable=False) 
-    datafim = db.Column(db.Integer, nullable=False) 
+    nome = db.Column(db.String(100))
+    datainicio = db.Column(db.Integer)
+    datafim = db.Column(db.Integer)
+    
+    objetivos = db.relationship('Objetivo', back_populates='pdi')
+    planejamentos = db.relationship('PlanejamentoEstrategico', back_populates='pdi')
 
 class Meta(db.Model):
     __tablename__ = 'meta_pdi'
@@ -324,21 +329,20 @@ class Objetivo(db.Model):
     pdi_id = db.Column(db.Integer, db.ForeignKey('pdi.id'), nullable=False)
     nome = db.Column(db.String(2500), nullable=False)
     bsc = db.Column(db.String(100), nullable=False)
+    
     pdi = db.relationship('PDI', back_populates='objetivos')
     metas = db.relationship('Meta', back_populates='objetivo')
-    objetivos_pe = db.relationship('ObjetivoPE', primaryjoin='Objetivo.id == ObjetivoPE.objetivo_pdi_id', back_populates='objetivo')
-
-PDI.objetivos = db.relationship('Objetivo', back_populates='pdi')
+    objetivos_pe = db.relationship('ObjetivoPE', back_populates='objetivo_pdi')
 
 class ObjetivoPE(db.Model):
     __tablename__ = 'objetivo_pe'
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(250), nullable=False)
     planejamento_estrategico_id = db.Column(db.Integer, db.ForeignKey('planejamento_estrategico.id'))
-    objetivo_pdi_id = db.Column(db.Integer, db.ForeignKey('objetivo_pdi.id'))  # Corrigido para referenciar a tabela objetivo_pdi
-
-    planejamento_estrategico = db.relationship('PlanejamentoEstrategico', backref='objetivos_pe')
-    objetivo = db.relationship("Objetivo", back_populates="objetivos_pe")
+    objetivo_pdi_id = db.Column(db.Integer, db.ForeignKey('objetivo_pdi.id'))
+    
+    planejamento_estrategico = db.relationship('PlanejamentoEstrategico', back_populates='objetivos_pe')
+    objetivo_pdi = db.relationship("Objetivo", back_populates="objetivos_pe")
 
 class MetaPE(db.Model):
     __tablename__ = 'meta_pe'

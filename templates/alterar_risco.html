@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'basecord.html' %}
 
 {% block titulo %}
     Alterar Risco - PRPPG
@@ -8,7 +8,19 @@
 <div style="margin: auto; width: 50%; text-align: center;">
     <div class="form-block"><br>
         <h2 style="color: darkblue;">Alterar Risco</h2><br>
-        <form id="RiscoForm" method="POST" action="{{ url_for('relatoriometas.salvar_alteracao_risco', risco_id=risco.id) }}">
+        <!-- Mensagens Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div>
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} text-center">{{ message }}</div>
+            {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        <!-- Fim das Mensagens Flash -->
+
+        <form id="RiscoForm" method="POST" action="{{ url_for('relatoriometas.editar_risco', risco_id=risco.id) }}">
             <label for="objetivo_pe_id">Objetivo:</label>
             <select id="objetivo_pe_id" name="objetivo_pe_id" required style="width: 100%; margin-bottom: 10px;">
                 {% for objetivo in objetivos_pe %}
@@ -43,7 +55,7 @@
             <select id="impacto" name="impacto" required style="width: 100%; margin-bottom: 10px;">
                 <option value="Insignificante" {% if risco.impacto == 'Insignificante' %}selected{% endif %}>Insignificante</option>
                 <option value="Moderado" {% if risco.impacto == 'Moderado' %}selected{% endif %}>Moderado</option>
-                <option value="Catastrophic" {% if risco.impacto == 'Catastrófico' %}selected{% endif %}>Catastrophic</option>
+                <option value="Catastrófico" {% if risco.impacto == 'Catastrófico' %}selected{% endif %}>Catastrófico</option>
             </select><br>
 
             <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar Alterações</button>
@@ -55,7 +67,7 @@
 
 <script>
     function fechar() {
-        window.location.href = "{{ url_for('login.get_coordenador') }}";
+        window.location.href = "{{ url_for('relatoriometas.cadastrar_risco') }}";
     }
 
     document.getElementById('objetivo_pe_id').addEventListener('change', function() {

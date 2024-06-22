@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session,jsonify,send_file
-from .models import Users, Programa,CadeiaValor, PlanejamentoEstrategico,Risco, PDI,ObjetivoPE,Objetivo,MetaPE,AcaoPE,IndicadorPlan,Valorindicador,Valormeta # Certifique-se de importar seus modelos corretamente
+from .models import Users, Programa,CadeiaValor, PlanejamentoEstrategico,Risco, PDI,Objetivo,ObjetivoPE,MetaPE,AcaoPE,IndicadorPlan,Valorindicador,Valormeta # Certifique-se de importar seus modelos corretamente
 from routes.db import db
 from flask_bcrypt import Bcrypt
 import io
@@ -10,6 +10,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib import colors
+from sqlalchemy.orm import joinedload
 
 
 planejamento_route = Blueprint('planejamento', __name__)
@@ -25,16 +26,25 @@ def coordenador_required(f):
             return redirect(url_for('login.login_page'))
         return f(*args, **kwargs)
     return decorated_function
+##################################################################33
+@planejamento_route.route('/editar/<int:id>', methods=['GET', 'POST'])
+def editar_planejamento(id):
+    planejamento = PlanejamentoEstrategico.query.get(id)
+    if request.method == 'POST':
+        planejamento.nome = request.form['nome']
+        db.session.commit()
+        flash('Planejamento atualizado com sucesso!', 'success')
+        return redirect(url_for('planejamento.cadastro_planejamentope'))
 
-
-##################################
+    return render_template('editar_planejamento.html', planejamento=planejamento)
+#############################################################################
 @planejamento_route.route('/cadastro_planejamentope', methods=['GET', 'POST'])
 @coordenador_required
 def cadastro_planejamentope():
     if request.method == 'POST':
         # Processar o formulário de cadastro de planejamento
         nome = request.form['nome']
-        pdi_id = request.form['pdi_id']
+        pdi_id = request.form['planejamento_id']
 
         # Lógica para criar um novo planejamento estratégico
         novo_planejamento = PlanejamentoEstrategico(
@@ -58,97 +68,136 @@ def cadastro_planejamentope():
             flash('Nenhum programa associado encontrado para este usuário.', 'danger')
             return redirect(url_for('login.login_page'))
 
-        return render_template('planejamento.html', pdis=pdis, programa_do_usuario=programa_do_usuario)
+        # Obter todos os planejamentos cadastrados
+        planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=current_user.programa_id).all()
+
+        return render_template('planejamento.html', pdis=pdis, programa_do_usuario=programa_do_usuario, planejamentos=planejamentos)
+
 #################################################################################################################################
 @planejamento_route.route('/associar_objetivospe', methods=['GET', 'POST'])
+@coordenador_required
 def associar_objetivospe():
+    if 'email' not in session:
+        flash('Você precisa estar logado para acessar esta página.', 'danger')
+        return redirect(url_for('login_page'))
+
+    if not current_user.is_authenticated or current_user.role != 'Coordenador':
+        return 'Acesso não autorizado'
+    
+    if 'programa_id' not in session:
+        flash('Você precisa estar associado a um programa para acessar esta página.', 'danger')
+        return redirect(url_for('get_coordenador'))
+
+    programa_id = session['programa_id']
+
     if request.method == 'POST':
-        # Aqui vai o código para lidar com o formulário submetido
         nome = request.form['nome']
-        planejamento_estrategico_id = request.form['planejamento_id']
         objetivo_pdi_id = request.form['objetivo_id']
+        planejamento_estrategico_id = request.form['planejamento_id']
 
-        # Cria um novo objetivo PE e o adiciona ao banco de dados
+        if planejamento_estrategico_id != programa_id:
+            return 'Acesso não autorizado'
+
         novo_objetivo = ObjetivoPE(
-            nome=nome,
-            planejamento_estrategico_id=planejamento_estrategico_id,
-            objetivo_pdi_id=objetivo_pdi_id
+            nome=nome, 
+            objetivo_pdi_id=objetivo_pdi_id, 
+            planejamento_estrategico_id=planejamento_estrategico_id
         )
-
+        
         db.session.add(novo_objetivo)
         db.session.commit()
 
         flash('Objetivo cadastrado com sucesso!', 'success')
-        # Redireciona para a mesma página para exibir a mensagem
-        return redirect(url_for('associar_objetivospe'))
+        return redirect(url_for('planejamento.associar_objetivospe'))
 
-    else:
-        # Se o método não for POST, obtemos os dados necessários apenas do programa do Coordenador logado
-        programa_id = current_user.programa_id
-        planejamento_estrategico = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-        objetivos_por_planejamento = []
+    planejamento_estrategico = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+    objetivos_por_planejamento = []
 
-        # Para cada planejamento estratégico, obtemos os objetivos associados
-        for pe in planejamento_estrategico:
-            objetivos = Objetivo.query.filter_by(pdi_id=pe.pdi_id).all()
-            objetivos_por_planejamento.append((pe, objetivos))
+    for pe in planejamento_estrategico:
+        objetivos = Objetivo.query.filter_by(pdi_id=pe.pdi_id).all()
+        for objetivo in objetivos:
+            objetivos_pe = ObjetivoPE.query.filter_by(objetivo_pdi_id=objetivo.id).all()
+            for objetivo_pe in objetivos_pe:
+                objetivos_por_planejamento.append((pe, objetivo, objetivo_pe))
 
-        # Se o programa existir, você pode acessar seus planejamentos estratégicos
-        if programa_id:
-            programa = Programa.query.get(programa_id)
-            planejamentos = programa.planejamentos
-            for planejamento in planejamentos:
-                print(planejamento.nome)  # Ou qualquer outra operação que você deseje fazer com os planejamentos
-        else:
-            print("Programa não encontrado")
+    return render_template('objetivope.html', objetivos_por_planejamento=objetivos_por_planejamento)
 
-        # Renderizamos o formulário HTML com os dados obtidos
-        return render_template('objetivope.html', objetivos_por_planejamento=objetivos_por_planejamento)
 
-###################################################################################################################################
-#######################################################################################################################
+################################################################333    
+@planejamento_route.route('/editar_objetivope/<int:id>', methods=['GET', 'POST'])
+def editar_objetivope(id):
+    objetivo = ObjetivoPE.query.get_or_404(id)
+
+    if request.method == 'POST':
+        objetivo.nome = request.form['nome']
+        objetivo.planejamento_estrategico_id = request.form['planejamento_id']
+        objetivo.objetivo_pdi_id = request.form['objetivo_id']
+
+        db.session.commit()
+
+        flash('Objetivo atualizado com sucesso!', 'success')
+        return redirect(url_for('planejamento.editar_objetivope', id=id))
+
+    planejamento_estrategico = PlanejamentoEstrategico.query.all()
+    objetivos_pdi = Objetivo.query.all()
+
+    return render_template('editar_objetivope.html', objetivo=objetivo, planejamento_estrategico=planejamento_estrategico, objetivos_pdi=objetivos_pdi)
+
+########################################################################
+
+####################################################################################################################
 @planejamento_route.route('/associar_acaope', methods=['GET', 'POST'])
 @coordenador_required
 def associar_acaope():
-    if request.method == 'POST':
-        meta_pe_id = request.form['meta_pe_id']
-        nome = request.form['nome']
-        porcentagem_execucao = request.form['porcentagem_execucao']
-        data_inicio = request.form['data_inicio']
-        data_termino = request.form['data_termino']
-        responsavel = request.form['responsavel']
-        status = request.form['status']
-        observacao = request.form['observacao']
+    programa_id = current_user.programa_id
+    if programa_id:
+        planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+        metas_pe_associadas = []
+        acoes = []
 
-        # Verifica se a meta existe
-        meta_pe = MetaPE.query.get(meta_pe_id)
-        if meta_pe is None:
-            flash('Meta não encontrada!', 'error')
-            return redirect(url_for('associar_acaope'))
+        for planejamento in planejamentos:
+            objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+            for objetivo in objetivos:
+                metas_pe = MetaPE.query.filter_by(objetivo_pe_id=objetivo.id).all()
+                metas_pe_associadas.extend(metas_pe)
+                for meta in metas_pe:
+                    acoes.extend(AcaoPE.query.filter_by(meta_pe_id=meta.id).all())
 
-        # Cria uma nova ação associada à meta
-        nova_acao = AcaoPE(nome=nome, meta_pe_id=meta_pe_id, porcentagem_execucao=porcentagem_execucao, data_inicio=data_inicio, data_termino=data_termino,
-                           responsavel=responsavel, status=status, observacao=observacao)
-        db.session.add(nova_acao)
-        db.session.commit()
+        if request.method == 'POST':
+            meta_pe_id = request.form['meta_pe_id']
+            nome = request.form['nome']
+            porcentagem_execucao = request.form['porcentagem_execucao']
+            data_inicio = request.form['data_inicio']
+            data_termino = request.form['data_termino']
+            responsavel = request.form['responsavel']
+            status = request.form['status']
+            observacao = request.form['observacao']
 
-        flash('Ação cadastrada com sucesso!', 'success')
-        return redirect(url_for('associar_acaope'))
+            meta_pe = MetaPE.query.get(meta_pe_id)
+            if meta_pe is None:
+                flash('Meta não encontrada!', 'error')
+                return redirect(url_for('planejamento.associar_acaope'))
 
+            nova_acao = AcaoPE(
+                nome=nome, 
+                meta_pe_id=meta_pe_id, 
+                porcentagem_execucao=porcentagem_execucao, 
+                data_inicio=data_inicio, 
+                data_termino=data_termino,
+                responsavel=responsavel, 
+                status=status, 
+                observacao=observacao
+            )
+            db.session.add(nova_acao)
+            db.session.commit()
+
+            flash('Ação cadastrada com sucesso!', 'success')
+            return redirect(url_for('planejamento.associar_acaope'))
+
+        return render_template('acaope.html', metas_pe=metas_pe_associadas, acoes=acoes)
     else:
-        programa_id = current_user.programa_id
-        if programa_id:
-            planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-            metas_pe_associadas = []
-            for planejamento in planejamentos:
-                objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
-                for objetivo in objetivos:
-                    metas_pe = MetaPE.query.filter_by(objetivo_pe_id=objetivo.id).all()
-                    metas_pe_associadas.extend(metas_pe)
-            return render_template('acaope.html', metas_pe=metas_pe_associadas)
-        else:
-            flash('Programa não encontrado!', 'error')
-            return redirect(url_for('login.get_coordenador'))
+        flash('Programa não encontrado!', 'error')
+        return redirect(url_for('login.get_coordenador'))
 ########################################## Alterar ação #####################################################
 @planejamento_route.route('/alterar_acaope/<int:acao_id>', methods=['GET', 'POST'])
 @login_required
@@ -180,7 +229,7 @@ def visualizar_programaspe():
         return render_template('visualizar_programas.html', programas=Programa.query.all(), planejamentos=planejamentos, programa_selecionado=programa)
     
     return render_template('visualizar_programas.html', programas=Programa.query.all(), planejamentos=None, programa_selecionado=None)
-
+#####################################################################################################################
 @planejamento_route.route('/visualizar_dados_programa', methods=['POST'])
 def visualizar_dados_programa():
     planejamento_id = request.form['planejamento']
@@ -255,12 +304,12 @@ def associar_indicadorespe():
             flash('Indicador cadastrado com sucesso!', 'success')
             return redirect(url_for('planejamento.associar_indicadorespe'))
 
-        return render_template('indicadorpe.html', metas_pe=metas_pe_associadas)
+        indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas_pe_associadas])).all()
+        return render_template('indicadorpe.html', metas_pe=metas_pe_associadas, indicadores=indicadores)
     
     else:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('get_coordenador'))
-
 
 #########################################################################################################3
 @planejamento_route.route('/alterar_indicadorpe/<int:indicador_id>', methods=['GET', 'POST'])
@@ -297,7 +346,7 @@ def alterar_indicadorpe(indicador_id):
 
         db.session.commit()
         flash('Indicador e valores atualizados com sucesso.', 'success')
-        return redirect(url_for('relatorioindicador.exibir_relatorioindicador'))
+        return redirect(url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id))
 
     return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
 ##############################################################################################################################
@@ -327,7 +376,7 @@ def associar_metaspe():
             objetivo_pe = ObjetivoPE.query.get(objetivo_pe_id)
             if objetivo_pe is None:
                 flash('Objetivo não encontrado!', 'error')
-                return redirect(url_for('associar_metaspe'))
+                return redirect(url_for('planejamento.associar_metaspe'))
 
             # Verifica se a meta já existe na tabela MetaPE
             meta_existente = MetaPE.query.filter_by(nome=nome_meta, objetivo_pe_id=objetivo_pe_id).first()
@@ -355,13 +404,13 @@ def associar_metaspe():
             # Verifique se a meta foi criada com sucesso
             if not meta_id:
                 flash('Erro ao criar a meta!', 'error')
-                return redirect(url_for('associar_metaspe'))
+                return redirect(url_for('planejamento.associar_metaspe'))
 
             # Adiciona uma verificação para garantir que o meta_id é válido
             meta = MetaPE.query.get(meta_id)
             if not meta:
                 flash('Erro: Meta não encontrada após criação!', 'error')
-                return redirect(url_for('associar_metaspe'))
+                return redirect(url_for('planejamento.associar_metaspe'))
 
             # Se a meta foi criada com sucesso, cadastrar os valores da meta
             try:
@@ -380,13 +429,18 @@ def associar_metaspe():
                 db.session.rollback()
                 flash(f'Erro ao cadastrar valores da meta: {str(e)}', 'error')
             
-            return redirect(url_for('associar_metaspe'))
+            return redirect(url_for('planejamento.associar_metaspe'))
 
-        return render_template('metaspe.html', objetivos_pe=objetivos_pe_associados)
+        # Obter todas as metas cadastradas para exibição
+        metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos_pe_associados])).all()
+        return render_template('metaspe.html', objetivos_pe=objetivos_pe_associados, metas=metas)
 
     else:
         flash('Programa não encontrado!', 'error')
-        return redirect(url_for('associar_metaspe'))
+        return redirect(url_for('planejamento.associar_metaspe'))
+#################################################################################################
+
+
 #######################################################################################################################    
 @planejamento_route.route('/get_objetivosplano/<int:planejamento_id>')
 def get_objetivos(planejamento_id):
@@ -407,12 +461,26 @@ def alterar_metape(metape_id):
         # Atualiza os campos da meta PE com os dados do formulário, se fornecidos
         if 'nome' in request.form:
             meta_pe.nome = request.form['nome']
+        if 'descricao' in request.form:
+            meta_pe.descricao = request.form['descricao']
+        if 'responsavel' in request.form:
+            meta_pe.responsavel = request.form['responsavel']
+        if 'recursos' in request.form:
+            meta_pe.recursos_necessarios = request.form['recursos']
+        if 'data_inicio' in request.form:
+            meta_pe.data_inicio = request.form['data_inicio']
+        if 'data_termino' in request.form:
+            meta_pe.data_termino = request.form['data_termino']
+        if 'status_inicial' in request.form:
+            meta_pe.status_inicial = request.form['status_inicial']
+        if 'valor_alvo' in request.form:
+            meta_pe.valor_alvo = request.form['valor_alvo']
                 
         # Salva as alterações no banco de dados
         db.session.commit()
 
         flash('Meta alterada com sucesso!', 'success')
-        return redirect(url_for('sucesso'))  # Redireciona para a página de sucesso
+        return redirect(url_for('planejamento.associar_metaspe'))  # Redireciona para a página de metas
 
     # Passa a variável 'meta' para o template
     return render_template('alterarmetas.html', meta=meta_pe, mensagem=mensagem)

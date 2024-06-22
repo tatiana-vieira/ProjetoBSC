@@ -36,13 +36,13 @@
         <input type="text" id="porcentagem_execucao" name="porcentagem_execucao" value="{{ acao.porcentagem_execucao }}" required style="width: 50%; margin-bottom: 10px;"><br>
 
         <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar</button>
-        <button type="button" onclick="voltar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Voltar</button><br>
-        <script>
-          function voltar() {
-              // Redireciona para a página do relatório de ações
-              window.location.href = "{{ url_for('relatorioacao.exibir_relatorioacao') }}";
-          }
-        </script>
+        <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>
     </form>
 </div>
-{% endblock conteudo %}
+
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('planejamento.associar_acaope') }}";
+    }
+</script>
+{% endblock %}

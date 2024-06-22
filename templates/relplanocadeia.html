@@ -19,21 +19,6 @@
 </div>
 
 <div id="tabela-planejamento" style="display: none; margin-top: 20px;">
-    <h3>Cadeias de Valor</h3>
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Macroprocesso Gerencial</th>
-                <th>Macroprocesso Finalístico</th>
-                <th>Valor Público</th>
-                <th>Macroprocesso Suporte</th>
-            </tr>
-        </thead>
-        <tbody id="cadeias-valor">
-            <!-- Conteúdo será preenchido via AJAX -->
-        </tbody>
-    </table>
-
     <h3>Planejamento Estratégico</h3>
     <table class="table table-striped">
         <thead>
@@ -75,19 +60,6 @@
                             return;
                         }
                         
-                        // Preencher Cadeias de Valor
-                        var cadeiasValorTbody = $('#cadeias-valor');
-                        cadeiasValorTbody.empty();
-                        response.cadeias_valor.forEach(function(cadeia) {
-                            var row = '<tr>' +
-                                '<td>' + cadeia.macroprocessogerencial + '</td>' +
-                                '<td>' + cadeia.macroprocessofinalistico + '</td>' +
-                                '<td>' + cadeia.valorpublico + '</td>' +
-                                '<td>' + cadeia.macroprocessosuporte + '</td>' +
-                                '</tr>';
-                            cadeiasValorTbody.append(row);
-                        });
-
                         // Preencher Objetivos, Metas, Indicadores e Riscos
                         var objetivosMetasTbody = $('#objetivos-metas');
                         objetivosMetasTbody.empty();
@@ -134,7 +106,6 @@
             } else {
                 alert('Por favor, selecione um planejamento.');
                 $('#tabela-planejamento').hide();
-                $('#cadeias-valor').empty(); // Clear the cadeias de valor table if no selection
                 $('#objetivos-metas').empty(); // Clear the objetivos table if no selection
                 $('#gerar-pdf').hide();
                 $('#gerar-excel').hide();
