@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Docente</title>
+</head>
+<body>
+    <h1>Dashboard Docente</h1>
+    {% for plot_url in plot_urls %}
+        <img src="{{ plot_url }}" alt="Plot">
+    {% endfor %}
+    <br>
+    <a href="{{ url_for('autoavaliacaodocente.gerar_pdf_docente') }}">
+        <button>Gerar PDF</button>
+    </a>
+    <a href="/">
+        <button>Fechar</button>
+    </a>
+</body>
+</html>

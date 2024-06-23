@@ -21,6 +21,10 @@ from routes.graficoacaope import graficoacaope_route
 from routes.calculoindicadores import calculoindicadores_route
 from routes.graficoindicador import graficoindicador_route
 from routes.relatoriocompletos import relatoriocompleto_route
+from routes.autoavaliacaodiscente import autoavaliacaodiscente_route
+from routes.autoavaliacaoegresso import autoavaliacaoegresso_route
+from routes.autoavaliacaodocente import autoavaliacaodocente_route
+from routes.autoavaliacaocoordenador import autoavaliacaocoordenador_route
 from routes.db import db, init_db
 from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
@@ -121,6 +125,10 @@ app.register_blueprint(graficoacaope_route)
 app.register_blueprint(calculoindicadores_route)
 app.register_blueprint(graficoindicador_route)
 app.register_blueprint(relatoriocompleto_route)
+app.register_blueprint(autoavaliacaodiscente_route)
+app.register_blueprint(autoavaliacaoegresso_route)
+app.register_blueprint(autoavaliacaodocente_route)
+app.register_blueprint(autoavaliacaocoordenador_route)
 
 @app.route('/')
 def index():

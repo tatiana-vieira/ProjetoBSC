@@ -1,0 +1,64 @@
+{% block titulo %}
+    Autoavaliação - Discente
+{% endblock %}
+{% block conteudo %}
+<div style="margin: auto; width: 80%; text-align: center;">
+    <!-- Mensagens Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div>
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} text-center">{{ message }}</div>
+        {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+  <div class="form-block">
+    <h1>Dashboard Discente</h1>
+    <style>
+        .dashboard-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+        .dashboard-item {
+            flex: 0 0 48%; /* 2 itens por linha */
+            margin: 10px;
+            text-align: center;
+        }
+        img {
+            width: 100%;
+            height: auto;
+        }
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .logo {
+            width: 20px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+    </style>
+
+    <div class="dashboard-container">
+        
+        {% for plot_url in plot_urls %}
+            <div class="dashboard-item">
+                <img src="{{ plot_url }}" alt="Gráfico Discente">
+            </div>
+        {% endfor %}
+    </div>
+    <div class="form-group" style="text-align: center;">
+        <a href="{{ url_for('autoavaliacaodiscente.gerar_pdf') }}  ">
+            <button>Gerar PDF</button>
+        </a>
+        <a href="{{ url_for('login.get_coordenador') }}" >
+            <button>Fechar <button>
+        </a>
+    </div>
+ 
+  </div>
+</div>
+{% endblock %}

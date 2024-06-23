@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Coordenador</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Dashboard Coordenador</h1>
+        {{ table_html | safe }}
+        <br>
+        <a href="{{ url_for('autoavaliacaocoordenador.gerar_pdf_coordenador') }}" class="btn btn-primary">Gerar PDF</a>
+        <a href="{{ url_for('autoavaliacaocoordenador.fechar_dashboard') }}" class="btn btn-danger">Fechar</a>
+    </div>
+</body>
+</html>

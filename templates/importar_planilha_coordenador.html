@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Importar Planilha Coordenador</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Importar Planilha Coordenador</h1>
+        <form action="{{ url_for('autoavaliacaocoordenador.importar_planilha_coordenador') }}" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="file">Escolha a planilha:</label>
+                <input type="file" class="form-control-file" id="file" name="file">
+            </div>
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+    </div>
+</body>
+</html>

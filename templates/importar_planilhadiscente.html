@@ -1,0 +1,31 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+    Importar Planilha de Discente
+{% endblock %}
+
+{% block conteudo %}
+    <h2 style="text-align: center; color: #003366;">Importar Planilha de Discente</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="container" style="text-align: center;">
+        <form action="{{ url_for('autoavaliacaodiscente.importar_planilha_discente') }}" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="file">Selecionar Arquivo</label>
+                <input type="file" class="form-control-file" id="file" name="file">
+            </div>
+            <button type="submit" class="btn btn-primary">Upload</button>
+            <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-secondary">Fechar</a>
+        </form>
+       
+    </div>
+{% endblock %}

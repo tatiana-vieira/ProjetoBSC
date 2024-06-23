@@ -1,0 +1,28 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+    Importar Planilha Egresso
+{% endblock %}
+
+{% block conteudo %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+<div class="container">
+    <h1>Importar Planilha Egresso</h1>
+    <form action="{{ url_for('autoavaliacaoegresso.importar_planilha_egresso') }}" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="file">Selecionar Arquivo</label>
+            <input type="file" class="form-control-file" id="file" name="file">
+        </div>
+        <button type="submit" class="btn btn-primary">Upload</button>
+        <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-secondary">Fechar</a>
+    </form>
+</div>
+{% endblock %}
