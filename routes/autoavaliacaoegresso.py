@@ -53,11 +53,11 @@ def generate_egresso_dashboard(dataframe):
 
         filename = os.path.join(upload_folder, f'{uuid.uuid4()}.png')
         try:
-            plt.figure(figsize=(6, 4))
+            plt.figure(figsize=(5, 4))
             dataframe[column].value_counts().plot(kind='bar')
-            plt.title(column, fontsize=10)
-            plt.xlabel('Categorias', fontsize=8)
-            plt.ylabel('Valores', fontsize=8)
+            plt.title(column, fontsize=7)
+            plt.xlabel('Categorias', fontsize=6)
+            plt.ylabel('Valores', fontsize=7)
             plt.xticks(rotation=45, fontsize=6)
             plt.yticks(fontsize=6)
             plt.tight_layout(pad=2)

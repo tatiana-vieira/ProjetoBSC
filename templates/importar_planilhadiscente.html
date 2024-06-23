@@ -5,27 +5,29 @@
 {% endblock %}
 
 {% block conteudo %}
-    <h2 style="text-align: center; color: #003366;">Importar Planilha de Discente</h2>
+    <div class="container" style="text-align: center; padding-top: 50px;">
+        <h2 style="text-align: center; color: #003366; padding-bottom: 20px;">Importar Planilha de Discente</h2>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}" role="alert">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-    <div class="container" style="text-align: center;">
         <form action="{{ url_for('autoavaliacaodiscente.importar_planilha_discente') }}" method="POST" enctype="multipart/form-data">
             <div class="form-group">
-                <label for="file">Selecionar Arquivo</label>
-                <input type="file" class="form-control-file" id="file" name="file">
+                <label for="file" style="color: #003366;">Selecionar Arquivo</label>
+                <input type="file" class="form-control-file" id="file" name="file" style="display: none;">
+                <label for="file" class="btn btn-primary" style="background-color: #003366; border-color: #003366; margin-bottom: 20px;">Escolher arquivo</label>
             </div>
-            <button type="submit" class="btn btn-primary">Upload</button>
-            <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-secondary">Fechar</a>
+            <div>
+                <button type="submit" class="btn btn-primary" style="background-color: #003366; border-color: #003366; width: 150px;">Upload</button>
+                <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-danger" style="width: 150px;">Fechar</a>
+            </div>
         </form>
-       
     </div>
 {% endblock %}

@@ -1,24 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Importar Planilha</title>
-</head>
-<body>
-    <h1>Importar Planilha de Docentes</h1>
-    <form action="{{ url_for('autoavaliacaodocente.importar_planilha_docente') }}" method="post" enctype="multipart/form-data">
-        <input type="file" name="file">
-        <input type="submit" value="Upload">
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+    Importar Planilha de Discente
+{% endblock %}
+
+
+{% block conteudo %}
+    <div class="container" style="text-align: center; padding-top: 50px;">
+      <h2 style="text-align: center; color: #003366; padding-bottom: 20px;">Importar Planilha de Docentes</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('autoavaliacaodocente.importar_planilha_docente') }}" method="post" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="file" style="color: #003366;">Selecionar Arquivo</label>
+            <input type="file" class="form-control-file" id="file" name="file" style="display: none;">
+            <label for="file" class="btn btn-primary" style="background-color: #003366; border-color: #003366; margin-bottom: 20px;">Escolher arquivo</label>
+         </div>
+        <div>
+            <button type="submit" class="btn btn-primary" style="background-color: #003366; border-color: #003366; width: 150px;">Upload</button>
+            <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-danger" style="width: 150px;">Fechar</a>
+        </div>
     </form>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <ul class="flashes">
-        {% for category, message in messages %}
-          <li class="{{ category }}">{{ message }}</li>
-        {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
-</body>
-</html>
+        </form>
+    </div>
+ {% endblock %}
