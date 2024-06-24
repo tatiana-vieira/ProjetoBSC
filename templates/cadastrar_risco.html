@@ -43,12 +43,6 @@
       <label for="descricao">Descrição do Risco:</label><br>
       <input type="text" id="descricao" name="descricao" required style="width: 90%; margin-bottom: 10px;"><br>
 
-      <label for="nivel">Nível:</label><br>
-      <input type="text" id="nivel" name="nivel" required style="width: 90%; margin-bottom: 10px;"><br>
-
-      <label for="acao_preventiva">Ação Preventiva:</label><br>
-      <input type="text" id="acao_preventiva" name="acao_preventiva" required style="width: 90%; margin-bottom: 10px;"><br>
-
       <label for="probabilidade">Probabilidade:</label>
       <select id="probabilidade" name="probabilidade" required style="width: 90%; margin-bottom: 10px;">
           <option value="Baixa">Baixa</option>
@@ -78,9 +72,7 @@
         <tr>
           <th>ID</th>
           <th>Descrição</th>
-          <th>Meta</th>
-          <th>Nível</th>
-          <th>Ação Preventiva</th>
+          <th>Meta</th>   
           <th>Probabilidade</th>
           <th>Impacto</th>
           <th>Ações</th>
@@ -91,9 +83,7 @@
         <tr>
           <td>{{ risco.id }}</td>
           <td>{{ risco.descricao }}</td>
-          <td>{{ risco.meta_pe.nome }}</td>
-          <td>{{ risco.nivel }}</td>
-          <td>{{ risco.acao_preventiva }}</td>
+          <td>{{ risco.meta_pe.nome }}</td>       
           <td>{{ risco.probabilidade }}</td>
           <td>{{ risco.impacto }}</td>
           <td>

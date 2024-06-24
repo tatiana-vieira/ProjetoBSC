@@ -37,13 +37,7 @@
 
             <label for="descricao">Descrição do Risco:</label>
             <textarea id="descricao" name="descricao" required style="width: 100%; margin-bottom: 10px;">{{ risco.descricao }}</textarea><br>
-
-            <label for="nivel">Nível:</label>
-            <input type="text" id="nivel" name="nivel" value="{{ risco.nivel }}" required style="width: 100%; margin-bottom: 10px;"><br>
-
-            <label for="acao_preventiva">Ação Preventiva:</label>
-            <textarea id="acao_preventiva" name="acao_preventiva" required style="width: 100%; margin-bottom: 10px;">{{ risco.acao_preventiva }}</textarea><br>
-
+                     
             <label for="probabilidade">Probabilidade:</label>
             <select id="probabilidade" name="probabilidade" required style="width: 100%; margin-bottom: 10px;">
                 <option value="Baixa" {% if risco.probabilidade == 'Baixa' %}selected{% endif %}>Baixa</option>

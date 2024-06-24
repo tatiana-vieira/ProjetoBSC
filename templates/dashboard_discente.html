@@ -1,20 +1,23 @@
-{% block titulo %}
-    Autoavaliação - Discente
-{% endblock %}
 {% block conteudo %}
-
 <div style="margin: auto; width: 80%; text-align: center;">
 
+    <!-- Logo -->
+    <div style="text-align: center; margin-bottom: 20px;">
+        <img src="{{ url_for('static', filename='PPG.png') }}" alt="Logo" style="width: 150px; height: auto;">
+    </div>
+
     <!-- Mensagens Flash -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div>
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} text-center">{{ message }}</div>
-        {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
+    <div style="text-align: center;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div>
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} text-center">{{ message }}</div>
+            {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+    </div>
 
   <div class="form-block">
     <h1>Dashboard Discente</h1>
@@ -38,29 +41,41 @@
             margin-top: 20px;
         }
         .logo {
-            width: 20px;
+            width: 150px;
             height: auto;
             margin-bottom: 20px;
+        }
+        .table-container {
+            width: 100%;
+            margin: 20px auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
         }
     </style>
 
     <div class="dashboard-container">
-        
         {% for plot_url in plot_urls %}
             <div class="dashboard-item">
                 <img src="{{ plot_url }}" alt="Gráfico Discente">
             </div>
         {% endfor %}
     </div>
+
     <div class="button-container">
-        <a href="{{ url_for('autoavaliacaodiscente.gerar_pdf') }}">
-            <button class="btn btn-primary" style="background-color: #003366; border-color: #003366;">Gerar PDF</button>
-        </a>
-        <a href="{{ url_for('login.get_coordenador') }}">
-            <button class="btn btn-danger" style="background-color: red; border-color: red;">Fechar</button>
-        </a>
+        <a href="{{ url_for('autoavaliacaodiscente.gerar_pdf') }}" class="btn btn-primary" style="background-color: #003366; border-color: #003366;">Gerar PDF</a>
+        <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-danger" style="background-color: red; border-color: red;">Fechar</a>
     </div>
-   
   </div>
 </div>
 {% endblock %}

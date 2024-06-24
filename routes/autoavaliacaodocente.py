@@ -10,9 +10,6 @@ from fpdf import FPDF
 
 autoavaliacaodocente_route = Blueprint('autoavaliacaodocente', __name__)
 
-# Variável global para armazenar os caminhos dos gráficos (para testes)
-plot_filenames_global = []
-
 @autoavaliacaodocente_route.before_app_request
 def setup_upload_folder():
     current_app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -41,8 +38,7 @@ def importar_planilha_docente():
             try:
                 docente_data = pd.read_excel(filename)
                 plot_filenames = generate_docente_dashboard(docente_data)
-                global plot_filenames_global
-                plot_filenames_global = plot_filenames
+                session['plot_filenames'] = plot_filenames
                 return redirect(url_for('autoavaliacaodocente.dashboard_docente'))
             except Exception as e:
                 flash(f'Erro ao processar a planilha: {str(e)}', 'danger')
@@ -60,15 +56,15 @@ def generate_docente_dashboard(dataframe):
 
         filename = os.path.join(upload_folder, f'{uuid.uuid4()}.png')
         try:
-            plt.figure(figsize=(8, 6))
+            plt.figure(figsize=(8, 6))  # Ajuste o tamanho da figura conforme necessário
             dataframe[column].value_counts().plot(kind='bar')
-            plt.title(column, fontsize=12)
-            plt.xlabel('Categorias', fontsize=9)
-            plt.ylabel('Valores', fontsize=9)
-            plt.xticks(rotation=45, fontsize=8)
-            plt.yticks(fontsize=8)
-            plt.tight_layout(pad=2)
-            plt.savefig(filename)
+            plt.title(column, fontsize=10, wrap=True)  # Ajuste o tamanho do título e permita a quebra de linha
+            plt.xlabel('Categorias', fontsize=8)
+            plt.ylabel('Valores', fontsize=8)
+            plt.xticks(rotation=45, fontsize=6, ha='right', wrap=True)  # Ajuste o tamanho e rotação dos rótulos das categorias
+            plt.yticks(fontsize=6)
+            plt.tight_layout()
+            plt.savefig(filename, bbox_inches='tight')  # Use bbox_inches='tight' para ajustar a figura ao conteúdo
             plt.close()
             plot_filenames.append(filename)
         except Exception as e:
@@ -79,22 +75,22 @@ def generate_docente_dashboard(dataframe):
 @autoavaliacaodocente_route.route('/dashboard_docente')
 @login_required
 def dashboard_docente():
-    global plot_filenames_global
-    plot_urls = [url_for('static', filename=f'uploads/{os.path.basename(filename)}') for filename in plot_filenames_global]
+    plot_filenames = session.get('plot_filenames', [])
+    plot_urls = [url_for('static', filename=f'uploads/{os.path.basename(filename)}') for filename in plot_filenames]
     return render_template('dashboard_docente.html', plot_urls=plot_urls)
 
 @autoavaliacaodocente_route.route('/gerar_pdf_docente')
 @login_required
 def gerar_pdf_docente():
-    global plot_filenames_global
-    if not plot_filenames_global:
+    plot_filenames = session.get('plot_filenames', [])
+    if not plot_filenames:
         flash('Nenhum gráfico disponível para gerar PDF', 'danger')
         return redirect(url_for('autoavaliacaodocente.dashboard_docente'))
 
     pdf = FPDF()
     pdf.add_page()
 
-    for filename in plot_filenames_global:
+    for filename in plot_filenames:
         pdf.image(filename, x=10, y=None, w=pdf.w - 20)
 
     pdf_filename = os.path.join(current_app.config['UPLOAD_FOLDER'], 'dashboard_docente.pdf')

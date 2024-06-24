@@ -3,21 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <title>Dashboard Docente</title>
+    <style>
+        .dashboard-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+        .dashboard-item {
+            flex: 0 0 48%;
+            margin: 10px;
+            text-align: center;
+        }
+        img {
+            width: 100%;
+            height: auto;
+        }
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .logo {
+            width: 150px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            cursor: pointer;
+            margin: 10px;
+            text-decoration: none;
+        }
+        .btn-primary {
+            background-color: #003366;
+            color: black;
+        }
+        .btn-danger {
+            background-color: red;
+            color: black;
+        }
+    </style>
 </head>
 <body>
+    <!-- Logo -->
+    <div style="text-align: center; margin-bottom: 20px;">
+        <img src="{{ url_for('static', filename='PPG.png') }}" alt="Logo" class="logo">
+    </div>
     <h1>Dashboard Docente</h1>
-    {% for plot_url in plot_urls %}
-        <img src="{{ plot_url }}" alt="Plot">
-    {% endfor %}
-     <br>
-  
+    <div class="dashboard-container">
+        {% for plot_url in plot_urls %}
+            <div class="dashboard-item">
+                <img src="{{ plot_url }}" alt="Plot">
+            </div>
+        {% endfor %}
+    </div>
     <div class="button-container">
-        <a href="{{ url_for('autoavaliacaodocente.gerar_pdf_docente') }}">
-            <button class="btn btn-primary" style="background-color: #003366; border-color: #003366;">Gerar PDF</button>
-        </a>
-        <a href="{{ url_for('login.get_coordenador') }}">
-            <button class="btn btn-danger" style="background-color: red; border-color: red;">Fechar</button>
-        </a>
+        <a href="{{ url_for('autoavaliacaodocente.gerar_pdf_docente') }}" class="btn btn-primary">Gerar PDF</a>
+        <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-danger">Fechar</a>
     </div>
 </body>
 </html>

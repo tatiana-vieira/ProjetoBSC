@@ -375,8 +375,6 @@ def cadastrar_risco():
             objetivo_pe_id = request.form['objetivo_pe_id']
             meta_pe_id = request.form['meta_pe_id']
             descricao = request.form['descricao']
-            nivel = request.form['nivel']
-            acao_preventiva = request.form['acao_preventiva']
             probabilidade = request.form['probabilidade']
             impacto = request.form['impacto']
 
@@ -402,9 +400,7 @@ def cadastrar_risco():
 
             try:
                 novo_risco = Risco(
-                    descricao=descricao,
-                    nivel=nivel,
-                    acao_preventiva=acao_preventiva,
+                    descricao=descricao,                   
                     objetivo_pe_id=objetivo_pe_id,
                     meta_pe_id=meta_pe_id,
                     probabilidade=probabilidade,
@@ -451,9 +447,7 @@ def listar_riscos():
 def editar_risco(risco_id):
     risco = Risco.query.get_or_404(risco_id)
     if request.method == 'POST':
-        risco.descricao = request.form['descricao']
-        risco.nivel = request.form['nivel']
-        risco.acao_preventiva = request.form['acao_preventiva']
+        risco.descricao = request.form['descricao']       
         risco.probabilidade = request.form['probabilidade']
         risco.impacto = request.form['impacto']
         
@@ -478,9 +472,7 @@ def salvar_alteracao_risco(risco_id):
     
     risco.objetivo_pe_id = request.form.get('objetivo_pe_id')
     risco.meta_pe_id = request.form.get('meta_pe_id')
-    risco.descricao = request.form.get('descricao')
-    risco.nivel = request.form.get('nivel')
-    risco.acao_preventiva = request.form.get('acao_preventiva')
+    risco.descricao = request.form.get('descricao')    
     risco.probabilidade = request.form.get('probabilidade')
     risco.impacto = request.form.get('impacto')
     
@@ -508,9 +500,7 @@ def exportar_riscos_pdf():
         elements = [Paragraph("Lista de Riscos", styles['Title'])]
 
         for risco in riscos:
-            elements.append(Paragraph(f"Descrição: {risco.descricao}", styles['BodyText']))
-            elements.append(Paragraph(f"Nível: {risco.nivel}", styles['BodyText']))
-            elements.append(Paragraph(f"Ação Preventiva: {risco.acao_preventiva}", styles['BodyText']))
+            elements.append(Paragraph(f"Descrição: {risco.descricao}", styles['BodyText']))            
             elements.append(Paragraph(f"Objetivo: {risco.objetivo_pe.nome}", styles['BodyText']))
             elements.append(Paragraph(f"Probabilidade: {risco.probabilidade}", styles['BodyText']))
             elements.append(Paragraph(f"Impacto: {risco.impacto}", styles['BodyText']))

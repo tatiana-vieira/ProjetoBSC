@@ -276,8 +276,6 @@ class Risco(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     descricao = db.Column(db.String(255), nullable=False)
-    nivel = db.Column(db.String(50))
-    acao_preventiva = db.Column(db.String(255))
     objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'))
     meta_pe_id = db.Column(db.Integer, db.ForeignKey('meta_pe.id'))
     probabilidade = db.Column(db.String(50))  # Adicionando o campo probabilidade

@@ -1,13 +1,12 @@
 {% extends 'basecord.html' %}
 
 {% block titulo %}
-    Importar Planilha de Discente
+    Importar Planilha de Docentes
 {% endblock %}
-
 
 {% block conteudo %}
     <div class="container" style="text-align: center; padding-top: 50px;">
-      <h2 style="text-align: center; color: #003366; padding-bottom: 20px;">Importar Planilha de Docentes</h2>
+        <h2 style="text-align: center; color: #003366; padding-bottom: 20px;">Importar Planilha de Docentes</h2>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -20,16 +19,28 @@
         {% endwith %}
 
         <form action="{{ url_for('autoavaliacaodocente.importar_planilha_docente') }}" method="post" enctype="multipart/form-data">
-          <div class="form-group">
-            <label for="file" style="color: #003366;">Selecionar Arquivo</label>
-            <input type="file" class="form-control-file" id="file" name="file" style="display: none;">
-            <label for="file" class="btn btn-primary" style="background-color: #003366; border-color: #003366; margin-bottom: 20px;">Escolher arquivo</label>
-         </div>
-        <div>
-            <button type="submit" class="btn btn-primary" style="background-color: #003366; border-color: #003366; width: 150px;">Upload</button>
-            <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-danger" style="width: 150px;">Fechar</a>
-        </div>
-    </form>
+            <div class="form-group">
+                <label for="file" style="color: #003366;">Selecionar Arquivo</label>
+                <input type="file" class="form-control-file" id="file" name="file" style="display: none;" onchange="updateFileName(this)">
+                <label for="file" class="btn btn-primary" style="background-color: #003366; border-color: #003366; margin-bottom: 20px;">Escolher arquivo</label>
+                <span id="file-name" style="color: #003366; margin-left: 10px;"></span>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary" style="background-color: #003366; border-color: #003366; width: 150px;">Upload</button>
+                <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-danger" style="width: 150px;">Fechar</a>
+            </div>
         </form>
+        <div style="margin-top: 20px;">
+            <a href="{{ url_for('static', filename='uploads/example_planilha_docente.xlsx') }}" download>
+                <button class="btn btn-info" style="background-color: #17a2b8; border-color: #17a2b8;">Download Exemplo de Planilha</button>
+            </a>
+        </div>
     </div>
- {% endblock %}
+
+    <script>
+        function updateFileName(input) {
+            var fileName = input.files[0].name;
+            document.getElementById('file-name').textContent = fileName;
+        }
+    </script>
+{% endblock %}
