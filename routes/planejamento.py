@@ -74,6 +74,7 @@ def cadastro_planejamentope():
         return render_template('planejamento.html', pdis=pdis, programa_do_usuario=programa_do_usuario, planejamentos=planejamentos)
 
 #################################################################################################################################
+
 @planejamento_route.route('/associar_objetivospe', methods=['GET', 'POST'])
 @coordenador_required
 def associar_objetivospe():
@@ -89,23 +90,60 @@ def associar_objetivospe():
         return redirect(url_for('get_coordenador'))
 
     programa_id = session['programa_id']
+    
     planejamento_estrategico = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+    planejamento_selecionado = None
+    objetivos_pdi = []
+    objetivos_pe = []
 
-    # Inicialmente, sem nenhum planejamento selecionado
-    objetivos_por_planejamento = []
+    if request.method == 'POST':
+        planejamento_id = request.form.get('planejamento_id')
+        if planejamento_id:
+            planejamento_selecionado = PlanejamentoEstrategico.query.filter_by(id=planejamento_id).first()
+            # Carregar os objetivos do PDI relacionados ao planejamento selecionado
+            objetivos_pdi = Objetivo.query.filter_by(pdi_id=planejamento_selecionado.pdi_id).all()
 
-    # Quando o planejamento for selecionado
-    planejamento_id = request.args.get('planejamento_id', None)
-    if planejamento_id:
-        objetivos_por_planejamento = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
+            # Carregar os objetivos associados ao planejamento estratégico selecionado
+            objetivos_pe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
 
-    # Obter todos os objetivos do PDI, independentemente de seleção inicial
-    objetivos_pdi = Objetivo.query.all()
+        nome = request.form.get('nome')
+        objetivo_pdi_id = request.form.get('objetivo_id')
+
+        if nome and objetivo_pdi_id and planejamento_id:
+            novo_objetivo = ObjetivoPE(
+                nome=nome, 
+                objetivo_pdi_id=objetivo_pdi_id, 
+                planejamento_estrategico_id=planejamento_id
+            )
+
+            try:
+                db.session.add(novo_objetivo)
+                db.session.commit()
+                flash('Objetivo cadastrado com sucesso!', 'success')
+            except Exception as e:
+                db.session.rollback()  # Reverter o commit em caso de erro
+                flash(f'Erro ao cadastrar objetivo: {str(e)}', 'danger')
+
+            return redirect(url_for('planejamento.associar_objetivospe'))
+
+    elif request.method == 'GET':
+        # Carregar objetivos associados ao planejamento mesmo em uma requisição GET
+        if 'planejamento_id' in request.args:
+            planejamento_id = request.args.get('planejamento_id')
+            if planejamento_id:
+                planejamento_selecionado = PlanejamentoEstrategico.query.filter_by(id=planejamento_id).first()
+                # Carregar os objetivos do PDI relacionados ao planejamento selecionado
+                objetivos_pdi = Objetivo.query.filter_by(pdi_id=planejamento_selecionado.pdi_id).all()
+
+                # Carregar os objetivos associados ao planejamento estratégico selecionado
+                objetivos_pe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
 
     return render_template('objetivope.html', 
-                           objetivos_por_planejamento=objetivos_por_planejamento,
                            planejamento_estrategico=planejamento_estrategico,
-                           objetivos_pdi=objetivos_pdi)
+                           planejamento_selecionado=planejamento_selecionado,
+                           objetivos_pdi=objetivos_pdi,
+                           objetivos_pe=objetivos_pe)
+
 
 
 ################################################################333    
