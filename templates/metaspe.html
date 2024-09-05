@@ -73,8 +73,15 @@
       </div>
 
       <div style="margin-top: 20px;">
-          <button type="submit" class="btn btn-primary">Cadastrar Meta</button>
-      </div>
+          <button type="submit" class="btn btn-primary">Cadastrar</button>
+          <button type="button" onclick="cancelar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
+    </div>
+    
+    <script>
+      function cancelar() {
+          window.location.href = "{{ url_for('login.get_coordenador') }}";
+      }
+    </script>
    </form>
   </div>
 

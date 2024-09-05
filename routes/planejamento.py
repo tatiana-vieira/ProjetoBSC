@@ -89,38 +89,23 @@ def associar_objetivospe():
         return redirect(url_for('get_coordenador'))
 
     programa_id = session['programa_id']
-
-    if request.method == 'POST':
-        nome = request.form['nome']
-        objetivo_pdi_id = request.form['objetivo_id']
-        planejamento_estrategico_id = request.form['planejamento_id']
-
-        if planejamento_estrategico_id != programa_id:
-            return 'Acesso não autorizado'
-
-        novo_objetivo = ObjetivoPE(
-            nome=nome, 
-            objetivo_pdi_id=objetivo_pdi_id, 
-            planejamento_estrategico_id=planejamento_estrategico_id
-        )
-        
-        db.session.add(novo_objetivo)
-        db.session.commit()
-
-        flash('Objetivo cadastrado com sucesso!', 'success')
-        return redirect(url_for('planejamento.associar_objetivospe'))
-
     planejamento_estrategico = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+
+    # Inicialmente, sem nenhum planejamento selecionado
     objetivos_por_planejamento = []
 
-    for pe in planejamento_estrategico:
-        objetivos = Objetivo.query.filter_by(pdi_id=pe.pdi_id).all()
-        for objetivo in objetivos:
-            objetivos_pe = ObjetivoPE.query.filter_by(objetivo_pdi_id=objetivo.id).all()
-            for objetivo_pe in objetivos_pe:
-                objetivos_por_planejamento.append((pe, objetivo, objetivo_pe))
+    # Quando o planejamento for selecionado
+    planejamento_id = request.args.get('planejamento_id', None)
+    if planejamento_id:
+        objetivos_por_planejamento = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
 
-    return render_template('objetivope.html', objetivos_por_planejamento=objetivos_por_planejamento)
+    # Obter todos os objetivos do PDI, independentemente de seleção inicial
+    objetivos_pdi = Objetivo.query.all()
+
+    return render_template('objetivope.html', 
+                           objetivos_por_planejamento=objetivos_por_planejamento,
+                           planejamento_estrategico=planejamento_estrategico,
+                           objetivos_pdi=objetivos_pdi)
 
 
 ################################################################333    
@@ -136,13 +121,19 @@ def editar_objetivope(id):
         db.session.commit()
 
         flash('Objetivo atualizado com sucesso!', 'success')
-        return redirect(url_for('planejamento.editar_objetivope', id=id))
+        return redirect(url_for('planejamento.associar_objetivospe'))
 
+    # Lista de todos os planejamentos estratégicos
     planejamento_estrategico = PlanejamentoEstrategico.query.all()
+    # Lista de todos os objetivos PDI
     objetivos_pdi = Objetivo.query.all()
 
-    return render_template('editar_objetivope.html', objetivo=objetivo, planejamento_estrategico=planejamento_estrategico, objetivos_pdi=objetivos_pdi)
-
+    return render_template(
+        'editar_objetivope.html', 
+        objetivo=objetivo, 
+        planejamento_estrategico=planejamento_estrategico, 
+        objetivos_pdi=objetivos_pdi
+    )
 ########################################################################
 
 ####################################################################################################################
@@ -537,7 +528,7 @@ def export_programa_excel(programa_id):
     output.seek(0)
 
     return send_file(output, as_attachment=True, download_name='planejamento_estrategico.xlsx', mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-
+##################################################################################333333
 @planejamento_route.route('/export_programa/pdf/<int:programa_id>')
 @login_required
 def export_programa_pdf(programa_id):
