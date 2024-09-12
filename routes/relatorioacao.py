@@ -18,6 +18,21 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 
 relatorioacao_route = Blueprint('relatorioacao', __name__)
 
+def calcular_previsao(meta_pe, porcentagem_execucao, data_inicio, data_termino):
+    # Calcular a duração esperada da meta
+    duracao_esperada = (meta_pe.data_termino - meta_pe.data_inicio).days
+    duracao_atual = (data_termino - data_inicio).days
+    
+    # Calcular a eficiência com base na porcentagem de execução e na duração
+    eficiencia = (porcentagem_execucao / 100) / (duracao_atual / duracao_esperada)
+    
+    # Gerar uma previsão com base na eficiência
+    if eficiencia >= 1:
+        return "Ação no caminho certo para atingir a meta."
+    else:
+        return "Ação pode não atingir a meta no tempo previsto."
+
+
 @relatorioacao_route.route('/relatacao', methods=['GET'])
 @login_required
 def exibir_relatorioacao():
@@ -46,12 +61,18 @@ def exibir_relatorioacao():
             metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
             acoespe = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()
 
+            # Calcular a previsão para cada ação e incluir no relatório
+            for acao in acoespe:
+                meta_pe = MetaPE.query.get(acao.meta_pe_id)
+                previsao = calcular_previsao(meta_pe, acao.porcentagem_execucao, acao.data_inicio, acao.data_termino)
+                acao.previsao = previsao  # Adiciona a previsão ao objeto da ação
+
         return render_template('relatacao.html', planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado, objetivos=objetivospe, metas=metaspe, acoes=acoespe)
-    
     else:
         flash('Você não tem permissão para acessar esta página.', 'danger')
         return redirect(url_for('login.login_page'))
 
+########################################################################################
 @relatorioacao_route.route('/export/csv_acoes')
 @login_required
 def export_csv_acoes():
@@ -89,7 +110,7 @@ def export_csv_acoes():
     response.headers['Content-Disposition'] = 'attachment; filename=acoes.csv'
     response.headers['Content-type'] = 'text/csv'
     return response
-
+#################################################################################3
 @relatorioacao_route.route('/export/xlsx_acoes')
 @login_required
 def export_xlsx_acoes():
@@ -118,7 +139,7 @@ def export_xlsx_acoes():
     header_format = workbook.add_format({'bold': True, 'text_wrap': True, 'valign': 'top', 'fg_color': '#D7E4BC', 'border': 1})
     cell_format = workbook.add_format({'border': 1})
 
-    headers = ['Objetivo', 'Meta', 'Porcentagem de Execução', 'Ação', 'Data de Início', 'Data de Término', 'Responsável', 'Status', 'Observação']
+    headers = ['Objetivo', 'Meta', 'Porcentagem de Execução', 'Ação', 'Data de Início', 'Data de Término', 'Responsável', 'Status', 'Observação', 'Previsão de Impacto']
     for col_num, header in enumerate(headers):
         worksheet.write(0, col_num, header, header_format)
 
@@ -128,6 +149,7 @@ def export_xlsx_acoes():
             if meta.objetivo_pe_id == objetivo.id:
                 for acao in acoespe:
                     if acao.meta_pe_id == meta.id:
+                        previsao = calcular_previsao(meta, acao.porcentagem_execucao, acao.data_inicio, acao.data_termino)
                         worksheet.write(row_num, 0, objetivo.nome, cell_format)
                         worksheet.write(row_num, 1, meta.nome, cell_format)
                         worksheet.write(row_num, 2, acao.porcentagem_execucao, cell_format)
@@ -137,6 +159,7 @@ def export_xlsx_acoes():
                         worksheet.write(row_num, 6, acao.responsavel, cell_format)
                         worksheet.write(row_num, 7, acao.status, cell_format)
                         worksheet.write(row_num, 8, acao.observacao, cell_format)
+                        worksheet.write(row_num, 9, previsao, cell_format)
                         row_num += 1
 
     workbook.close()
@@ -146,7 +169,6 @@ def export_xlsx_acoes():
     response.headers['Content-Disposition'] = 'attachment; filename=acoes.xlsx'
     response.headers['Content-type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     return response
-
 #######################################################################################################################
 
 @relatorioacao_route.route('/export/pdf_acoes')
@@ -192,6 +214,7 @@ def export_pdf_acoes():
                 elements.append(Spacer(1, 8))
                 for acao in acoespe:
                     if acao.meta_pe_id == meta.id:
+                        previsao = calcular_previsao(meta, acao.porcentagem_execucao, acao.data_inicio, acao.data_termino)
                         acao_text = (
                             f"<b>Nome da Ação:</b> {acao.nome}<br/>"
                             f"<b>Porcentagem de Execução:</b> {acao.porcentagem_execucao}%<br/>"
@@ -199,7 +222,8 @@ def export_pdf_acoes():
                             f"<b>Data de Término:</b> {acao.data_termino}<br/>"
                             f"<b>Responsável:</b> {acao.responsavel}<br/>"
                             f"<b>Status:</b> {acao.status}<br/>"
-                            f"<b>Observação:</b> {acao.observacao}<br/><br/>"
+                            f"<b>Observação:</b> {acao.observacao}<br/>"
+                            f"<b>Previsão de Impacto:</b> {previsao}<br/><br/>"
                         )
                         elements.append(Paragraph(acao_text, styleN))
                         elements.append(Spacer(1, 12))

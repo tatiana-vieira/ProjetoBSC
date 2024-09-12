@@ -51,6 +51,7 @@
       <label for="valor_alvo">Valor Alvo:</label><br>
       <input type="number" id="valor_alvo" name="valor_alvo" required step="0.01" style="width: 90%; margin-bottom: 10px;"><br>
 
+      <!-- Campos dinâmicos para adicionar ano, semestre e valor -->
       <div id="campos-dinamicos">
         <div class="row" style="margin-bottom: 10px;">
             <div class="col-md-3">
@@ -72,17 +73,14 @@
         </div>
       </div>
 
+      <!-- Botão para adicionar mais campos -->
+      <button type="button" class="btn btn-info" onclick="adicionarCampo()">Adicionar Valor</button>
+
       <div style="margin-top: 20px;">
           <button type="submit" class="btn btn-primary">Cadastrar</button>
           <button type="button" onclick="cancelar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
-    </div>
-    
-    <script>
-      function cancelar() {
-          window.location.href = "{{ url_for('login.get_coordenador') }}";
-      }
-    </script>
-   </form>
+      </div>
+    </form>
   </div>
 
   <div class="form-block" style="margin-top: 50px;">
@@ -122,6 +120,40 @@
   </div>
 </div>
 
+<!-- Scripts para adicionar campos dinamicamente e para o botão cancelar -->
+<script>
+  function adicionarCampo() {
+      var container = document.getElementById('campos-dinamicos');
+      var novoCampo = document.createElement('div');
+      novoCampo.className = 'row';
+      novoCampo.style.marginBottom = '10px';
+      
+      novoCampo.innerHTML = `
+          <div class="col-md-3">
+              <label for="ano">Ano:</label>
+              <input type="number" name="ano[]" required style="width: 100%;">
+          </div>
+          <div class="col-md-3">
+              <label for="semestre">Semestre:</label>
+              <select name="semestre[]" required style="width: 100%;">
+                  <option value="">-- Selecione --</option>
+                  <option value="1">1º Semestre (Jan-Jun)</option>
+                  <option value="2">2º Semestre (Jul-Dez)</option>
+              </select>
+          </div>
+          <div class="col-md-3">
+              <label for="valor">Valor:</label>
+              <input type="number" step="0.01" name="valor[]" required style="width: 100%;">
+          </div>
+      `;
+      container.appendChild(novoCampo);
+  }
+
+  function cancelar() {
+      window.location.href = "{{ url_for('login.get_coordenador') }}";
+  }
+</script>
+
 <style>
 .alert-success {
     color: #155724;
@@ -146,6 +178,7 @@
     margin-right: 10px;
 }
 </style>
+
 <div class="form-group" style="text-align: center;">
   <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
 </div>

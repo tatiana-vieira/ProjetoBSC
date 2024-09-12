@@ -11,6 +11,8 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib import colors
 from sqlalchemy.orm import joinedload
+from datetime import datetime
+from flask import get_flashed_messages
 
 
 planejamento_route = Blueprint('planejamento', __name__)
@@ -193,6 +195,7 @@ def associar_acaope():
                     acoes.extend(AcaoPE.query.filter_by(meta_pe_id=meta.id).all())
 
         if request.method == 'POST':
+            # Capturar os dados do formulário
             meta_pe_id = request.form['meta_pe_id']
             nome = request.form['nome']
             porcentagem_execucao = request.form['porcentagem_execucao']
@@ -202,31 +205,41 @@ def associar_acaope():
             status = request.form['status']
             observacao = request.form['observacao']
 
+            # Obter a meta relacionada
             meta_pe = MetaPE.query.get(meta_pe_id)
             if meta_pe is None:
                 flash('Meta não encontrada!', 'error')
                 return redirect(url_for('planejamento.associar_acaope'))
 
+            # Criar uma nova ação
             nova_acao = AcaoPE(
-                nome=nome, 
-                meta_pe_id=meta_pe_id, 
-                porcentagem_execucao=porcentagem_execucao, 
-                data_inicio=data_inicio, 
+                nome=nome,
+                meta_pe_id=meta_pe_id,
+                porcentagem_execucao=porcentagem_execucao,
+                data_inicio=data_inicio,
                 data_termino=data_termino,
-                responsavel=responsavel, 
-                status=status, 
+                responsavel=responsavel,
+                status=status,
                 observacao=observacao
             )
             db.session.add(nova_acao)
             db.session.commit()
 
-            flash('Ação cadastrada com sucesso!', 'success')
+            # Função para calcular a previsão de impacto
+            previsao = calcular_previsao(meta_pe, int(porcentagem_execucao), 
+                                         datetime.strptime(data_inicio, '%Y-%m-%d'), 
+                                         datetime.strptime(data_termino, '%Y-%m-%d'))
+
+            # Exibir uma mensagem de sucesso com a previsão de impacto
+            flash(f'Ação cadastrada com sucesso! {previsao}', 'success')
             return redirect(url_for('planejamento.associar_acaope'))
 
         return render_template('acaope.html', metas_pe=metas_pe_associadas, acoes=acoes)
     else:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('login.get_coordenador'))
+
+
 ########################################## Alterar ação #####################################################
 @planejamento_route.route('/alterar_acaope/<int:acao_id>', methods=['GET', 'POST'])
 @login_required
@@ -246,6 +259,7 @@ def alterar_acaope(acao_id):
 
     return render_template('alterar_acaope.html', acao=acao)
 ################################################################################################
+
 ################################################# Pro -reitor ###################################
 @planejamento_route.route('/visualizar_programaspe', methods=['GET', 'POST'])
 def visualizar_programaspe():
@@ -297,7 +311,10 @@ def associar_indicadorespe():
             descricao = request.form['descricao']
             frequencia_coleta = request.form['frequencia_coleta']
             peso = request.form['peso']
-            valor_meta = request.form['valor_meta']
+            responsavel = request.form['responsavel']
+            data_inicio = request.form['data_inicio']
+            data_fim = request.form['data_fim']
+            comentarios = request.form.get('comentarios', '')
 
             meta_pe = MetaPE.query.get(meta_pe_id)
             if meta_pe is None:
@@ -315,18 +332,20 @@ def associar_indicadorespe():
                     descricao=descricao,
                     frequencia_coleta=frequencia_coleta,
                     peso=peso,
-                    valor_meta=valor_meta
+                    responsavel=responsavel,
+                    data_inicio=data_inicio,
+                    data_fim=data_fim,
+                    comentarios=comentarios
                 )
                 db.session.add(novo_indicador)
                 db.session.commit()
                 indicador_id = novo_indicador.id
 
             ano = request.form.getlist('ano[]')
-            semestre = request.form.getlist('semestre[]')
             valor = request.form.getlist('valor[]')
 
-            for ano, semestre, valor in zip(ano, semestre, valor):
-                novo_valor = Valorindicador(indicadorpe_id=indicador_id, ano=ano, semestre=semestre, valor=valor)
+            for ano, valor in zip(ano, valor):
+                novo_valor = Valorindicador(indicadorpe_id=indicador_id, ano=ano, valor=valor)
                 db.session.add(novo_valor)
 
             db.session.commit()
@@ -335,12 +354,14 @@ def associar_indicadorespe():
 
         indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas_pe_associadas])).all()
         return render_template('indicadorpe.html', metas_pe=metas_pe_associadas, indicadores=indicadores)
-    
+
     else:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('get_coordenador'))
 
-#########################################################################################################3
+
+#############################################################################################################
+
 @planejamento_route.route('/alterar_indicadorpe/<int:indicador_id>', methods=['GET', 'POST'])
 @login_required
 def alterar_indicadorpe(indicador_id):
@@ -352,32 +373,50 @@ def alterar_indicadorpe(indicador_id):
         descricao = request.form.get('descricao')
         frequencia_coleta = request.form.get('frequencia_coleta')
         peso = request.form.get('peso')
-        valor_meta = request.form.get('valor_meta')
+        responsavel = request.form.get('responsavel')
+        data_inicio = request.form.get('data_inicio')  # Novo campo
+        data_fim = request.form.get('data_fim')  # Novo campo
         semestres = request.form.getlist('semestres[]')
         anos = request.form.getlist('anos[]')
         valores = request.form.getlist('valores[]')
 
-        if nome:
+        # Validar se os campos estão preenchidos
+        if nome and descricao and frequencia_coleta and peso and responsavel:
             indicador.nome = nome
-        if descricao:
             indicador.descricao = descricao
-        if frequencia_coleta:
             indicador.frequencia_coleta = frequencia_coleta
-        if peso:
             indicador.peso = peso
-        if valor_meta:
-            indicador.valor_meta = valor_meta
+            indicador.responsavel = responsavel
+            indicador.data_inicio = data_inicio  # Atualiza data de início
+            indicador.data_fim = data_fim  # Atualiza data de fim
 
-        for i, valorindicador in enumerate(valores_indicadores):
-            valorindicador.semestre = semestres[i]
-            valorindicador.ano = anos[i]
-            valorindicador.valor = valores[i]
+            # Atualizar os valores associados ao indicador
+            if len(valores_indicadores) == len(semestres) == len(anos) == len(valores):
+                for i, valorindicador in enumerate(valores_indicadores):
+                    valorindicador.semestre = semestres[i]
+                    valorindicador.ano = anos[i]
+                    valorindicador.valor = valores[i]
+            else:
+                flash('Erro: Quantidade de valores, anos ou semestres está incorreta.', 'error')
+                return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
 
-        db.session.commit()
-        flash('Indicador e valores atualizados com sucesso.', 'success')
-        return redirect(url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id))
+            # Fazer o commit das mudanças no banco de dados
+            try:
+                db.session.commit()
+                flash('Indicador e valores atualizados com sucesso.', 'success')
+            except Exception as e:
+                db.session.rollback()  # Reverter em caso de erro
+                print(f"Erro ao salvar no banco: {str(e)}")
+                flash(f'Erro ao salvar as alterações: {str(e)}', 'error')
+
+            return redirect(url_for('planejamento.associar_indicadorespe'))
+        else:
+            flash('Por favor, preencha todos os campos obrigatórios.', 'error')
 
     return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
+
+       
+
 ##############################################################################################################################
 @planejamento_route.route('/associar_metaspe', methods=['GET', 'POST'])
 @login_required
@@ -407,9 +446,9 @@ def associar_metaspe():
                 flash('Objetivo não encontrado!', 'error')
                 return redirect(url_for('planejamento.associar_metaspe'))
 
-            # Verifica se a meta já existe na tabela MetaPE
+            # Verifica se a meta já existe
             meta_existente = MetaPE.query.filter_by(nome=nome_meta, objetivo_pe_id=objetivo_pe_id).first()
-            meta_id = None  # Inicializa a variável meta_id
+            meta_id = None
 
             if meta_existente:
                 meta_id = meta_existente.id
@@ -428,20 +467,12 @@ def associar_metaspe():
                 db.session.add(nova_meta)
                 db.session.commit()
                 meta_id = nova_meta.id
-                print(f"Nova Meta criada com ID: {meta_id}")
 
-            # Verifique se a meta foi criada com sucesso
             if not meta_id:
                 flash('Erro ao criar a meta!', 'error')
                 return redirect(url_for('planejamento.associar_metaspe'))
 
-            # Adiciona uma verificação para garantir que o meta_id é válido
-            meta = MetaPE.query.get(meta_id)
-            if not meta:
-                flash('Erro: Meta não encontrada após criação!', 'error')
-                return redirect(url_for('planejamento.associar_metaspe'))
-
-            # Se a meta foi criada com sucesso, cadastrar os valores da meta
+            # Cadastrar os valores da meta
             try:
                 anos = request.form.getlist('ano[]')
                 semestres = request.form.getlist('semestre[]')
@@ -460,7 +491,7 @@ def associar_metaspe():
             
             return redirect(url_for('planejamento.associar_metaspe'))
 
-        # Obter todas as metas cadastradas para exibição
+        # Obter todas as metas cadastradas
         metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos_pe_associados])).all()
         return render_template('metaspe.html', objetivos_pe=objetivos_pe_associados, metas=metas)
 
@@ -469,7 +500,30 @@ def associar_metaspe():
         return redirect(url_for('planejamento.associar_metaspe'))
 #################################################################################################
 
-
+def sugerir_ajustes(meta, progresso, restante):
+    """Sugere ajustes com base nos dados da meta e progresso."""
+    sugestoes = []
+    
+    # Verifica se a data_termino está definida e converte corretamente
+    if meta.data_termino:
+        dias_restantes = (meta.data_termino - datetime.now().date()).days
+    else:
+        dias_restantes = None  # Define como None se a data de término não estiver definida
+    
+    # Verifica se o valor_alvo está definido e converte para float
+    valor_alvo = float(meta.valor_alvo) if meta.valor_alvo else 0
+    
+    # Regras de sugestão baseadas no progresso e nos dias restantes
+    if progresso < 0.5 * valor_alvo and (dias_restantes is not None and dias_restantes < 30):
+        sugestoes.append(f"A meta '{meta.nome}' está com progresso lento. Considere aumentar os recursos ou estender o prazo.")
+    
+    if progresso > 0.8 * valor_alvo and (dias_restantes is not None and dias_restantes > 30):
+        sugestoes.append(f"A meta '{meta.nome}' está no caminho certo. Continue monitorando.")
+    
+    if not sugestoes:
+        sugestoes.append("Não há sugestões no momento.")
+    
+    return sugestoes
 #######################################################################################################################    
 @planejamento_route.route('/get_objetivosplano/<int:planejamento_id>')
 def get_objetivos(planejamento_id):
@@ -480,39 +534,58 @@ def get_objetivos(planejamento_id):
     
     
 ##############################################################################################################################
+
 @planejamento_route.route('/alterar_metape/<int:metape_id>', methods=['GET', 'POST'])
 def alterar_metape(metape_id):
-    # Busca a meta PE a ser alterada pelo ID
     meta_pe = MetaPE.query.get_or_404(metape_id)
-    mensagem = None  # Inicializa a mensagem como None
+    mensagem = None
 
     if request.method == 'POST':
-        # Atualiza os campos da meta PE com os dados do formulário, se fornecidos
-        if 'nome' in request.form:
-            meta_pe.nome = request.form['nome']
-        if 'descricao' in request.form:
-            meta_pe.descricao = request.form['descricao']
-        if 'responsavel' in request.form:
-            meta_pe.responsavel = request.form['responsavel']
-        if 'recursos' in request.form:
-            meta_pe.recursos_necessarios = request.form['recursos']
-        if 'data_inicio' in request.form:
-            meta_pe.data_inicio = request.form['data_inicio']
-        if 'data_termino' in request.form:
-            meta_pe.data_termino = request.form['data_termino']
-        if 'status_inicial' in request.form:
-            meta_pe.status_inicial = request.form['status_inicial']
-        if 'valor_alvo' in request.form:
-            meta_pe.valor_alvo = request.form['valor_alvo']
-                
-        # Salva as alterações no banco de dados
-        db.session.commit()
+        meta_pe.nome = request.form.get('nome', meta_pe.nome)
+        meta_pe.descricao = request.form.get('descricao', meta_pe.descricao)
+        meta_pe.responsavel = request.form.get('responsavel', meta_pe.responsavel)
+        meta_pe.recursos_necessarios = request.form.get('recursos', meta_pe.recursos_necessarios)
+        
+        data_inicio = request.form.get('data_inicio')
+        if data_inicio:
+            try:
+                datetime.strptime(data_inicio, '%Y-%m-%d')
+                meta_pe.data_inicio = data_inicio
+            except ValueError:
+                flash('Formato de data de início inválido. Use o formato YYYY-MM-DD.', 'danger')
 
-        flash('Meta alterada com sucesso!', 'success')
-        return redirect(url_for('planejamento.associar_metaspe'))  # Redireciona para a página de metas
+        data_termino = request.form.get('data_termino')
+        if data_termino:
+            try:
+                datetime.strptime(data_termino, '%Y-%m-%d')
+                meta_pe.data_termino = data_termino
+            except ValueError:
+                flash('Formato de data de término inválido. Use o formato YYYY-MM-DD.', 'danger')
 
-    # Passa a variável 'meta' para o template
+        meta_pe.status_inicial = request.form.get('status_inicial', meta_pe.status_inicial)
+        meta_pe.valor_alvo = request.form.get('valor_alvo', meta_pe.valor_alvo)
+
+        # Cadastrar ou atualizar os valores da meta
+        try:
+            anos = request.form.getlist('ano[]')
+            semestres = request.form.getlist('semestre[]')
+            valores = request.form.getlist('valor[]')
+
+            for ano, semestre, valor in zip(anos, semestres, valores):
+                valor = valor.replace(',', '.')
+                novo_valor = Valormeta(metape_id=metape_id, ano=int(ano), semestre=int(semestre), valor=float(valor))
+                db.session.add(novo_valor)
+
+            db.session.commit()
+            flash('Meta e valores atualizados com sucesso!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao atualizar valores da meta: {str(e)}', 'error')
+
+        return redirect(url_for('planejamento.associar_metaspe'))
+
     return render_template('alterarmetas.html', meta=meta_pe, mensagem=mensagem)
+
 #############################################################################
 #################################################################################
 @planejamento_route.route('/sucesso', methods=['GET'])

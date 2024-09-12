@@ -27,6 +27,42 @@
     {% endif %}
 </div>
 
+{% if dados_graficos %}
+<div style="margin-top: 40px;">
+    <h3>Sugestões de Ajustes</h3>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Meta</th>
+                <th>Progresso</th>
+                <th>Restante</th>
+                <th>Sugestões</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dado in dados_graficos %}
+                <tr>
+                    <td>{{ dado.meta }}</td>
+                    <td>{{ dado.progresso }}</td>
+                    <td>{{ dado.restante }}</td>
+                    <td>
+                        {% if dado.sugestoes %}
+                            <ul>
+                                {% for sugestao in dado.sugestoes %}
+                                    <li>{{ sugestao }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>Não há sugestões no momento.</p>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
 <script>
     function fechar() {
         window.location.href = "{{ url_for('login.get_coordenador') }}";

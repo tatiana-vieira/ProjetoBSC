@@ -375,6 +375,9 @@ class IndicadorPlan(db.Model):
     frequencia_coleta = db.Column(db.String(50), nullable=False)
     valor_meta = db.Column(db.Float, nullable=False)
     peso = db.Column(db.Float, nullable=False, default=1.0)
+    data_inicio = db.Column(db.Date, nullable=True)  # Campo para Data de Início
+    data_fim = db.Column(db.Date, nullable=True)  # Campo para Data de Fim
+    responsavel = db.Column(db.String(255), nullable=False)  # Novo campo
 
     meta_pe = db.relationship('MetaPE', backref="indicador_pe")
     variaveis = db.relationship('VariavelPE', backref='indicador', lazy=True)
