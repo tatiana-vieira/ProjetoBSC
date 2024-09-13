@@ -14,23 +14,30 @@ from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from datetime import datetime
 
 
 relatorioacao_route = Blueprint('relatorioacao', __name__)
 
 def calcular_previsao(meta_pe, porcentagem_execucao, data_inicio, data_termino):
-    # Calcular a duração esperada da meta
+    # Calcular a duração esperada e a duração atual da ação
     duracao_esperada = (meta_pe.data_termino - meta_pe.data_inicio).days
     duracao_atual = (data_termino - data_inicio).days
+    dias_restantes = (meta_pe.data_termino - datetime.now().date()).days
     
     # Calcular a eficiência com base na porcentagem de execução e na duração
     eficiencia = (porcentagem_execucao / 100) / (duracao_atual / duracao_esperada)
-    
-    # Gerar uma previsão com base na eficiência
+
+    # Criar previsões com base em diferentes cenários
     if eficiencia >= 1:
-        return "Ação no caminho certo para atingir a meta."
+        if dias_restantes > 0:
+            return "Ação no caminho certo para atingir a meta no prazo."
+        else:
+            return "Ação atingiu a meta, mas ultrapassou o prazo."
+    elif eficiencia < 1 and dias_restantes > 0:
+        return "Ação pode não atingir a meta no tempo previsto. Considere ajustar os recursos ou prazos."
     else:
-        return "Ação pode não atingir a meta no tempo previsto."
+        return "Ação atrasada. Revise urgentemente o planejamento."
 
 
 @relatorioacao_route.route('/relatacao', methods=['GET'])

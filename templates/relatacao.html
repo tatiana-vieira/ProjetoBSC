@@ -105,8 +105,9 @@
                         <td>{{ acao.responsavel }}</td>
                         <td>{{ acao.status }}</td>
                         <td>{{ acao.observacao }}</td>
-                        <td>{{ acao.previsao }}</td> <!-- Exibir a previsão aqui -->
-                        
+                        <td style="color: {% if 'caminho certo' in acao.previsao %}green{% else %}red{% endif %};">
+                            {{ acao.previsao }}
+                        </td>                        
                     </tr>
                 {% endfor %}
             {% endfor %}
