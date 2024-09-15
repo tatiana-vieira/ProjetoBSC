@@ -1,0 +1,36 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+    Relatório de Autoavaliação
+{% endblock %}
+
+{% block conteudo %}
+<body>
+    <h1>Formulário de Autoavaliação</h1>
+    
+    <form method="POST">
+        <!-- Seção 1: Dados Pessoais/Programa -->
+        <h3>Dados Pessoais</h3>
+        <label for="ano_ingresso">Ano de Ingresso:</label>
+        <input type="number" id="ano_ingresso" name="ano_ingresso" required><br><br>
+
+        <label for="programa_vinculado">Programa ao qual está vinculado:</label>
+        <input type="text" id="programa_vinculado" name="programa_vinculado" required><br><br>
+
+        <!-- Seção 2: Avaliação da Qualidade -->
+        <h3>Avaliação da Qualidade</h3>
+        <label for="qualidade_aulas">Como você avalia a qualidade das aulas? (1 a 5):</label>
+        <input type="number" id="qualidade_aulas" name="qualidade_aulas" min="1" max="5" required><br><br>
+
+        <label for="material_didatico">Como você avalia o material didático? (1 a 5):</label>
+        <input type="number" id="material_didatico" name="material_didatico" min="1" max="5" required><br><br>
+
+        <!-- Seção 3: Comentários -->
+        <h3>Comentários</h3>
+        <label for="comentario_programa">Gostaria de adicionar algum comentário sobre o programa?</label><br>
+        <textarea id="comentario_programa" name="comentario_programa" rows="4" cols="50"></textarea><br><br>
+
+        <input type="submit" value="Enviar">
+    </form>
+</body>
+{% endblock %}

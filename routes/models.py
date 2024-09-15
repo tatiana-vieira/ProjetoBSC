@@ -10,6 +10,8 @@ from sqlalchemy.orm import relationship
 from passlib.hash import scrypt
 from bcrypt import gensalt
 from flask_login import UserMixin, LoginManager
+from datetime import datetime  # Correção
+
 
 
 login_manager = LoginManager()
@@ -278,9 +280,10 @@ class Risco(db.Model):
     descricao = db.Column(db.String(255), nullable=False)
     objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'))
     meta_pe_id = db.Column(db.Integer, db.ForeignKey('meta_pe.id'))
-    probabilidade = db.Column(db.String(50))  # Adicionando o campo probabilidade
-    impacto = db.Column(db.String(50))        # Adicionando o campo impacto
-
+    probabilidade = db.Column(db.String(50))  # Campo probabilidade
+    impacto = db.Column(db.String(50))        # Campo impacto
+    acao_preventiva = db.Column(db.String(255))  # Campo acao_preventiva adicionado
+    
     objetivo_pe = db.relationship('ObjetivoPE', backref='riscos')
     meta_pe = db.relationship('MetaPE', backref='riscos')
 
@@ -448,3 +451,11 @@ class User(UserMixin, db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+class Avaliacao(db.Model):
+    __tablename__ = 'avaliacoes'  # Defina o nome da tabela
+    id = db.Column(db.Integer, primary_key=True)  # Correta indentação
+    data_avaliacao = db.Column(db.DateTime, default=datetime.utcnow)  # Correta indentação
+    qualidade_aulas = db.Column(db.Float, nullable=False)  # Correta indentação
+    infraestrutura = db.Column(db.Float, nullable=False)  # Correta indentação
+    sentimento_geral = db.Column(db.Float, nullable=True)  # Correta indentação

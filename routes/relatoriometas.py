@@ -203,11 +203,13 @@ def exibir_graficometas():
                 })
 
             # Gerar gráfico se houver dados
+            # Gerar gráfico se houver dados
             if dados_graficos:
-                plt.figure(figsize=(14, 8))
+                plt.figure(figsize=(10, 6))  # Ajuste o tamanho do gráfico para caber melhor na página
                 for dado in dados_graficos:
                     plt.barh(dado['meta'], dado['progresso'], color='skyblue', label='Progresso')
                     plt.barh(dado['meta'], dado['restante'], left=dado['progresso'], color='lightcoral', label='Restante')
+                
                 plt.xlabel('Valor')
                 plt.title('Progresso das Metas')
                 plt.tight_layout()
@@ -218,6 +220,7 @@ def exibir_graficometas():
                 plt.close()
 
                 graph_base64 = base64.b64encode(img.getvalue()).decode()  # Gerar base64 do gráfico
+
 
         return render_template('graficometas.html', 
                                objetivos=objetivospe, 

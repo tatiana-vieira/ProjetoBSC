@@ -1,4 +1,4 @@
-from flask import render_template, flash, request, redirect, session, url_for, make_response
+from flask import render_template, flash, request, redirect, session, url_for, make_response  # Certifique-se de que request esteja aqui
 from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, AcaoPE, Programa, db
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
@@ -15,6 +15,10 @@ from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from datetime import datetime
+import matplotlib.pyplot as plt
+import base64  # Certifique-se de importar base64
+
+
 
 
 relatorioacao_route = Blueprint('relatorioacao', __name__)
@@ -40,6 +44,7 @@ def calcular_previsao(meta_pe, porcentagem_execucao, data_inicio, data_termino):
         return "Ação atrasada. Revise urgentemente o planejamento."
 
 
+###################################################################################3
 @relatorioacao_route.route('/relatacao', methods=['GET'])
 @login_required
 def exibir_relatorioacao():
@@ -57,6 +62,7 @@ def exibir_relatorioacao():
         objetivospe = []
         metaspe = []
         acoespe = []
+        graph_base64 = None  # Inicializar a variável aqui
 
         if planejamento_selecionado_id:
             planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
@@ -64,17 +70,36 @@ def exibir_relatorioacao():
                 flash('Planejamento não encontrado.', 'warning')
                 return redirect(url_for('relatorioacao.exibir_relatorioacao'))
 
+            # Obter metas e ações associadas
             objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
             metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
             acoespe = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()
 
-            # Calcular a previsão para cada ação e incluir no relatório
-            for acao in acoespe:
-                meta_pe = MetaPE.query.get(acao.meta_pe_id)
-                previsao = calcular_previsao(meta_pe, acao.porcentagem_execucao, acao.data_inicio, acao.data_termino)
-                acao.previsao = previsao  # Adiciona a previsão ao objeto da ação
+            # Gerar gráfico se houver ações
+            if acoespe:
+                plt.figure(figsize=(10, 6))  # Defina um tamanho menor para o gráfico
+                for acao in acoespe:
+                    plt.barh(acao.nome, acao.porcentagem_execucao, color='orange')
+                
+                plt.xlabel('Progresso (%)')
+                plt.ylabel('Ação')
+                plt.title('Período de execução das Ações')
+                plt.tight_layout()
 
-        return render_template('relatacao.html', planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado, objetivos=objetivospe, metas=metaspe, acoes=acoespe)
+                # Gerar gráfico em base64
+                img = BytesIO()
+                plt.savefig(img, format='png')
+                img.seek(0)
+                plt.close()
+
+                graph_base64 = base64.b64encode(img.getvalue()).decode()
+
+        return render_template('relatacao.html', 
+                               planejamentos=planejamentos, 
+                               planejamento_selecionado=planejamento_selecionado, 
+                               objetivos=objetivospe, metas=metaspe, acoes=acoespe, 
+                               graph_base64=graph_base64)
+
     else:
         flash('Você não tem permissão para acessar esta página.', 'danger')
         return redirect(url_for('login.login_page'))

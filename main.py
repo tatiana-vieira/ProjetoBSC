@@ -16,6 +16,7 @@ from routes.relatorioplanejamento import relatorioplanejamento_route
 from routes.relatorioacao import relatorioacao_route
 from routes.relatoriometas import relatoriometas_route
 from routes.altpdi import altpdi_route
+from routes.avaliacaodiscente import avaliacaodiscente_route
 from routes.graficogrant import graficogrant_route
 from routes.graficoacaope import graficoacaope_route
 from routes.calculoindicadores import calculoindicadores_route
@@ -129,6 +130,7 @@ app.register_blueprint(autoavaliacaodiscente_route)
 app.register_blueprint(autoavaliacaoegresso_route)
 app.register_blueprint(autoavaliacaodocente_route)
 app.register_blueprint(autoavaliacaocoordenador_route)
+app.register_blueprint(avaliacaodiscente_route)
 
 @app.route('/')
 def index():

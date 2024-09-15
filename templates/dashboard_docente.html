@@ -1,66 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Dashboard Docente</title>
+    <title>Relatório de Autoavaliação Docente</title>
     <style>
-        .dashboard-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-around;
-        }
-        .dashboard-item {
-            flex: 0 0 48%;
-            margin: 10px;
+        h1 {
             text-align: center;
         }
-        img {
-            width: 100%;
-            height: auto;
-        }
-        .button-container {
+        .grafico {
             text-align: center;
             margin-top: 20px;
         }
-        .logo {
-            width: 150px;
-            height: auto;
-            margin-bottom: 20px;
-        }
-        .btn {
-            padding: 15px 30px;
-            font-size: 18px;
-            border: none;
-            cursor: pointer;
-            margin: 10px;
-            text-decoration: none;
-        }
-        .btn-primary {
-            background-color: #003366;
-            color: black;
-        }
-        .btn-danger {
-            background-color: red;
-            color: black;
+        img {
+            max-width: 80%;
         }
     </style>
 </head>
 <body>
-    <!-- Logo -->
-    <div style="text-align: center; margin-bottom: 20px;">
-        <img src="{{ url_for('static', filename='PPG.png') }}" alt="Logo" class="logo">
+    <h1>Relatório de Autoavaliação Docente</h1>
+    <h2>Gráficos Gerados</h2>
+    <!-- Template HTML para o PDF ou o dashboard -->
+    <div class="grafico">
+        <img src="{{ url_for('static', filename='uploads/' + plot_url_1) }}" alt="Gráfico de Pizza">
     </div>
-    <h1>Dashboard Docente</h1>
-    <div class="dashboard-container">
-        {% for plot_url in plot_urls %}
-            <div class="dashboard-item">
-                <img src="{{ plot_url }}" alt="Plot">
-            </div>
+    <div class="grafico">
+        <img src="{{ url_for('static', filename='uploads/' + plot_url_2) }}" alt="Gráfico de Barra">
+    </div>
+
+    <h2>Sugestões de Melhoria Baseadas em IA</h2>
+    <ul>
+        {% for recomendacao in recomendacoes %}
+            <li>{{ recomendacao }}</li>
         {% endfor %}
-    </div>
-    <div class="button-container">
-        <a href="{{ url_for('autoavaliacaodocente.gerar_pdf_docente') }}" class="btn btn-primary">Gerar PDF</a>
-        <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-danger">Fechar</a>
-    </div>
+    </ul>
 </body>
 </html>

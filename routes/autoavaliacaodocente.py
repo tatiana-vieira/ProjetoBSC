@@ -1,12 +1,17 @@
 import os
-from flask import Blueprint, request, redirect, url_for, flash, render_template, session, current_app, send_file
+from flask import Blueprint, request, redirect, url_for, flash, render_template, session, current_app, send_file,make_response
 from flask_login import login_required, current_user
 import pandas as pd
-import matplotlib
-matplotlib.use('Agg')  # Configurando o backend do Matplotlib para evitar problemas de GUI
 import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeClassifier
+from wordcloud import WordCloud
+from textblob import TextBlob
 import uuid
-from fpdf import FPDF
+from xhtml2pdf import pisa
+from io import BytesIO
+import base64
 
 autoavaliacaodocente_route = Blueprint('autoavaliacaodocente', __name__)
 
@@ -37,8 +42,9 @@ def importar_planilha_docente():
 
             try:
                 docente_data = pd.read_excel(filename)
-                plot_filenames = generate_docente_dashboard(docente_data)
+                plot_filenames, recomendacoes = generate_docente_dashboard(docente_data)
                 session['plot_filenames'] = plot_filenames
+                session['recomendacoes'] = recomendacoes
                 return redirect(url_for('autoavaliacaodocente.dashboard_docente'))
             except Exception as e:
                 flash(f'Erro ao processar a planilha: {str(e)}', 'danger')
@@ -46,54 +52,186 @@ def importar_planilha_docente():
 
     return render_template('importar_planilha_docente.html')
 
-def generate_docente_dashboard(dataframe):
-    plot_filenames = []
-    upload_folder = current_app.config['UPLOAD_FOLDER']
-
-    for column in dataframe.columns[1:]:
-        if dataframe[column].dropna().empty:
-            continue
-
-        filename = os.path.join(upload_folder, f'{uuid.uuid4()}.png')
-        try:
-            plt.figure(figsize=(8, 6))  # Ajuste o tamanho da figura conforme necessário
-            dataframe[column].value_counts().plot(kind='bar')
-            plt.title(column, fontsize=10, wrap=True)  # Ajuste o tamanho do título e permita a quebra de linha
-            plt.xlabel('Categorias', fontsize=8)
-            plt.ylabel('Valores', fontsize=8)
-            plt.xticks(rotation=45, fontsize=6, ha='right', wrap=True)  # Ajuste o tamanho e rotação dos rótulos das categorias
-            plt.yticks(fontsize=6)
-            plt.tight_layout()
-            plt.savefig(filename, bbox_inches='tight')  # Use bbox_inches='tight' para ajustar a figura ao conteúdo
-            plt.close()
-            plot_filenames.append(filename)
-        except Exception as e:
-            print(f'Erro ao gerar gráfico para a coluna {column}: {str(e)}')
-
-    return plot_filenames
-
 @autoavaliacaodocente_route.route('/dashboard_docente')
 @login_required
 def dashboard_docente():
     plot_filenames = session.get('plot_filenames', [])
-    plot_urls = [url_for('static', filename=f'uploads/{os.path.basename(filename)}') for filename in plot_filenames]
-    return render_template('dashboard_docente.html', plot_urls=plot_urls)
+    plot_urls = [os.path.basename(filename) for filename in plot_filenames]  # Pegando apenas o nome do arquivo
+    recomendacoes = session.get('recomendacoes', [])
+    return render_template('dashboard_docente.html', plot_url_1=plot_urls[0], plot_url_2=plot_urls[1], recomendacoes=recomendacoes)
 
-@autoavaliacaodocente_route.route('/gerar_pdf_docente')
-@login_required
+
+
+def generate_docente_dashboard(dataframe):
+    """
+    Função para gerar os gráficos e as sugestões de melhoria
+    """
+    plot_filenames = []
+
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+
+    # Definir o caminho completo onde os gráficos serão salvos
+    caminho_pizza = os.path.join(upload_folder, f'{uuid.uuid4()}.png')
+    caminho_barra = os.path.join(upload_folder, f'{uuid.uuid4()}.png')
+
+    # Gerar gráficos de pizza e barra
+    gerar_grafico_pizza(dataframe, 'Como você avalia a qualidade das aulas e do material utilizado? [Qualidade das aulas]', caminho_pizza)
+    gerar_grafico_barra(dataframe, 'Como você avalia a infraestrutura do programa? [Infraestrutura geral]', caminho_barra)
+    
+    # Adicionar os caminhos dos gráficos gerados à lista
+    plot_filenames.append(caminho_pizza)
+    plot_filenames.append(caminho_barra)
+
+    # Analisar sentimentos dos comentários
+    if 'Gostaria de adicionar algum comentário referente ao Programa de Pós-Graduação em questão?' in dataframe.columns:
+        nuvem_palavras = gerar_nuvem_palavras(dataframe['Gostaria de adicionar algum comentário referente ao Programa de Pós-Graduação em questão?'])
+        plot_filenames.append(nuvem_palavras)
+
+    # Aplicar K-Means Clustering
+    if 'Infraestrutura' in dataframe.columns and 'Qualidade das Aulas' in dataframe.columns:
+        dataframe = aplicar_clustering(dataframe, ['Infraestrutura', 'Qualidade das Aulas'])
+
+    # Gerar recomendações automáticas
+    recomendacoes = sugerir_melhorias(dataframe)
+
+    return plot_filenames, recomendacoes
+
+
+def gerar_grafico_pizza(data, coluna):
+    fig, ax = plt.subplots()
+    data[coluna].value_counts().plot.pie(autopct='%1.1f%%', ax=ax)
+    ax.set_ylabel('')
+    
+    # Caminho para salvar o gráfico na pasta uploads
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+    filename = os.path.join(upload_folder, f'{uuid.uuid4()}.png')  # Nome do arquivo gerado
+    fig.savefig(filename)  # Salvando o gráfico no arquivo
+    plt.close(fig)
+
+    return filename  # Retorna o caminho do arquivo
+
+def gerar_grafico_pizza(data, coluna, caminho_saida):
+    fig, ax = plt.subplots()
+    data[coluna].value_counts().plot.pie(autopct='%1.1f%%', ax=ax)
+    ax.set_ylabel('')
+    fig.savefig(caminho_saida)  # Salvando o gráfico no caminho especificado
+    plt.close(fig)
+
+    return caminho_saida  # Retorna o caminho do gráfico gerado
+
+
+def gerar_nuvem_palavras(comentarios):
+    """Gera uma nuvem de palavras com base nos comentários fornecidos."""
+    all_comments = ' '.join(comentarios.dropna())  # Juntando todos os comentários
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(all_comments)
+    
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+    filename = os.path.join(upload_folder, f'{uuid.uuid4()}.png')
+    plt.savefig(filename)
+    plt.close()
+
+    return filename
+
+def aplicar_clustering(dataframe, colunas):
+    kmeans = KMeans(n_clusters=3)
+    dataframe['Cluster'] = kmeans.fit_predict(dataframe[colunas])
+    return dataframe
+
+def sugerir_melhorias(dataframe):
+    recomendacoes = []
+
+    # Exemplo de análise de 'Qualidade das Aulas'
+    if 'Qualidade das Aulas' in dataframe.columns:
+        media_qualidade = dataframe['Qualidade das Aulas'].mean()
+        if media_qualidade < 4:
+            recomendacoes.append('Revisar os métodos de ensino para melhorar a qualidade das aulas.')
+        else:
+            recomendacoes.append('A qualidade das aulas está acima da média, continuar monitorando.')
+
+    # Análise de sentimentos
+    if 'Sentimentos' in dataframe.columns:
+        media_sentimentos = dataframe['Sentimentos'].mean()
+        if media_sentimentos < 0:
+            recomendacoes.append('Os comentários indicam insatisfação. Sugerimos melhorar a comunicação com os docentes.')
+        else:
+            recomendacoes.append('Comentários gerais positivos, manter a comunicação atual.')
+
+    # Infraestrutura
+    if 'Infraestrutura' in dataframe.columns:
+        media_infraestrutura = dataframe['Infraestrutura'].mean()
+        if media_infraestrutura < 3:
+            recomendacoes.append('Investir em melhorias na infraestrutura do programa.')
+        else:
+            recomendacoes.append('Infraestrutura satisfatória.')
+
+    return recomendacoes
+
+
 def gerar_pdf_docente():
-    plot_filenames = session.get('plot_filenames', [])
-    if not plot_filenames:
-        flash('Nenhum gráfico disponível para gerar PDF', 'danger')
-        return redirect(url_for('autoavaliacaodocente.dashboard_docente'))
+    # Processar a planilha e gerar gráficos
+    caminho_grafico_pizza, caminho_grafico_barra = processar_planilha('caminho_para_sua_planilha.xlsx')
 
-    pdf = FPDF()
-    pdf.add_page()
+    # Renderizar o template HTML com os gráficos
+    html = render_template('pdf_template.html', 
+                           plot_url_1=caminho_grafico_pizza, 
+                           plot_url_2=caminho_grafico_barra)
 
-    for filename in plot_filenames:
-        pdf.image(filename, x=10, y=None, w=pdf.w - 20)
+    # Gerar o PDF
+    response = make_response()
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'inline; filename=relatorio_docente.pdf'
 
-    pdf_filename = os.path.join(current_app.config['UPLOAD_FOLDER'], 'dashboard_docente.pdf')
-    pdf.output(pdf_filename)
+    pisa_status = pisa.CreatePDF(html, dest=response)
 
-    return send_file(pdf_filename, as_attachment=True)
+    if pisa_status.err:
+        return "Erro ao gerar PDF", 500
+    return response
+
+def gerar_grafico_barra(data, coluna, caminho_saida):
+    fig, ax = plt.subplots()
+    data[coluna].value_counts().plot(kind='bar', ax=ax)
+    ax.set_ylabel('Frequência')
+    ax.set_title(coluna)
+    fig.savefig(caminho_saida)  # Salvando o gráfico no caminho especificado
+    plt.close(fig)
+
+    return caminho_saida  # Retorna o caminho do gráfico gerado
+
+
+def processar_planilha(planilha_path):
+    # Carregar os dados da planilha
+    dataframe = pd.read_excel(planilha_path)
+
+    # Definir o caminho completo onde os gráficos serão salvos
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+    caminho_pizza = os.path.join(upload_folder, f'{uuid.uuid4()}.png')
+    caminho_barra = os.path.join(upload_folder, f'{uuid.uuid4()}.png')
+
+    # Gerar gráficos de pizza e barra
+    gerar_grafico_pizza(dataframe, 'Como você avalia a qualidade das aulas e do material utilizado? [Qualidade das aulas]', caminho_pizza)
+    gerar_grafico_barra(dataframe, 'Como você avalia a infraestrutura do programa? [Infraestrutura geral]', caminho_barra)
+
+    # Retornar os caminhos dos gráficos para usar no PDF ou no dashboard
+    return caminho_pizza, caminho_barra
+
+
+
+
+def gerar_grafico_base64():
+    # Exemplo simples de gráfico
+    fig, ax = plt.subplots()
+    ax.plot([1, 2, 3, 4], [1, 4, 2, 3])
+
+    # Salvar o gráfico em um buffer de bytes
+    buf = BytesIO()
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+    plt.close(fig)
+
+    # Codificar a imagem em base64
+    image_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+    return image_base64

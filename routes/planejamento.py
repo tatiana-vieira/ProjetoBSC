@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session,jsonify,send_file
-from .models import Users, Programa,CadeiaValor, PlanejamentoEstrategico,Risco, PDI,Objetivo,ObjetivoPE,MetaPE,AcaoPE,IndicadorPlan,Valorindicador,Valormeta # Certifique-se de importar seus modelos corretamente
+from .models import Users, Programa,CadeiaValor, PlanejamentoEstrategico,AcaoPE,Risco, PDI,Objetivo,ObjetivoPE,MetaPE,IndicadorPlan,Valorindicador,Valormeta # Certifique-se de importar seus modelos corretamente
 from routes.db import db
 from flask_bcrypt import Bcrypt
 import io
@@ -13,12 +13,17 @@ from reportlab.lib import colors
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 from flask import get_flashed_messages
+import matplotlib.pyplot as plt
+import base64
+# Certifique-se de que AcaoPE está importado corretamente
 
 
 planejamento_route = Blueprint('planejamento', __name__)
 login_manager = LoginManager(planejamento_route)
 
 # Implemente o decorador coordenador_required
+
+
 
 def coordenador_required(f):
     @wraps(f)
@@ -28,6 +33,16 @@ def coordenador_required(f):
             return redirect(url_for('login.login_page'))
         return f(*args, **kwargs)
     return decorated_function
+
+@planejamento_route.route('/get_coordenador', methods=['GET'])
+def get_coordenador():
+    # Calcular o percentual de ações concluídas
+    percentual_acoes_concluidas = calcular_percentual_acoes_concluidas()  # Função que você já implementou
+
+    # Renderizar o template passando a variável percentual_acoes_concluidas
+    return render_template('indexcord.html', 
+                           percentual_acoes_concluidas=percentual_acoes_concluidas,
+                           programa_id=session.get('programa_id'))  # Certifique-se de que 'programa_id' está disponível na sessão
 ##################################################################33
 @planejamento_route.route('/editar/<int:id>', methods=['GET', 'POST'])
 def editar_planejamento(id):
@@ -175,7 +190,10 @@ def editar_objetivope(id):
         objetivos_pdi=objetivos_pdi
     )
 ########################################################################
-
+def calcular_previsao(meta, porcentagem_execucao, data_inicio, data_termino):
+    # Lógica para calcular a previsão de impacto
+    previsao = (porcentagem_execucao / 100) * (data_termino - data_inicio).days
+    return previsao
 ####################################################################################################################
 @planejamento_route.route('/associar_acaope', methods=['GET', 'POST'])
 @coordenador_required
@@ -314,7 +332,6 @@ def associar_indicadorespe():
             responsavel = request.form['responsavel']
             data_inicio = request.form['data_inicio']
             data_fim = request.form['data_fim']
-            comentarios = request.form.get('comentarios', '')
 
             meta_pe = MetaPE.query.get(meta_pe_id)
             if meta_pe is None:
@@ -335,7 +352,6 @@ def associar_indicadorespe():
                     responsavel=responsavel,
                     data_inicio=data_inicio,
                     data_fim=data_fim,
-                    comentarios=comentarios
                 )
                 db.session.add(novo_indicador)
                 db.session.commit()
@@ -756,3 +772,53 @@ def associar_cadeiavalor():
         return render_template('cadeia_valor.html', planejamentos=planejamentos)
     
 ###########################################################################################################3
+# Route for the summarized dashboard
+@planejamento_route.route('/dashboard_resumido')
+@login_required
+def dashboard_resumido():
+    percentual_metas_atingidas = calcular_percentual_metas_atingidas()
+    percentual_acoes_concluidas = calcular_percentual_acoes_concluidas()
+    graph_base64 = gerar_grafico_base64(percentual_acoes_concluidas)
+
+    return render_template(
+        'dashboard_resumido.html', 
+        percentual_metas_atingidas=percentual_metas_atingidas,
+        percentual_acoes_concluidas=percentual_acoes_concluidas,
+        graph_base64=graph_base64
+    )
+
+def calcular_percentual_metas_atingidas():
+    total_metas = MetaPE.query.count()  # Supondo que MetaPE é o seu modelo para metas
+    metas_atingidas = MetaPE.query.filter(MetaPE.status == 'Concluída').count()
+    
+    if total_metas > 0:
+        return round((metas_atingidas / total_metas) * 100, 2)
+    return 0
+
+def calcular_percentual_acoes_concluidas():
+    total_acoes = AcaoPE.query.count()  # Supondo que AcaoPE é o seu modelo para ações
+    acoes_concluidas = AcaoPE.query.filter(AcaoPE.status == 'Concluída').count()
+    
+    if total_acoes > 0:
+        return round((acoes_concluidas / total_acoes) * 100, 2)
+    return 0
+
+
+def gerar_grafico_base64(percentual_concluidas):
+    # Função para gerar um gráfico de status e retorná-lo como string base64
+    labels = ['Concluído', 'Em Andamento']
+    sizes = [percentual_concluidas, 100 - percentual_concluidas]
+    colors = ['#36a2eb', '#ff6384']
+
+    fig, ax = plt.subplots()
+    ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
+    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+    # Converter gráfico para imagem base64
+    img = io.BytesIO()
+    plt.savefig(img, format='png')
+    img.seek(0)
+    graph_base64 = base64.b64encode(img.getvalue()).decode('utf8')
+    plt.close(fig)
+
+    return graph_base64
