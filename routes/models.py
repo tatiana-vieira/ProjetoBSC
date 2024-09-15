@@ -356,6 +356,7 @@ class MetaPE(db.Model):
     data_termino = db.Column(db.Date, nullable=True)
     status_inicial = db.Column(db.Numeric(5, 2), nullable=True)
     valor_alvo = db.Column(db.Numeric(5, 2), nullable=True)
+    status = db.Column(db.String(50), nullable=True)  # Novo campo de status (ex: 'Concluída', 'Em Andamento')
     objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'), nullable=False)
 
     objetivo_pe = db.relationship('ObjetivoPE', backref='meta_pe')

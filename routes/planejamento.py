@@ -788,12 +788,18 @@ def dashboard_resumido():
     )
 
 def calcular_percentual_metas_atingidas():
-    total_metas = MetaPE.query.count()  # Supondo que MetaPE é o seu modelo para metas
-    metas_atingidas = MetaPE.query.filter(MetaPE.status == 'Concluída').count()
-    
+    total_metas = MetaPE.query.count()
+    metas_concluidas = MetaPE.query.filter(MetaPE.status == 'Concluída').count()
+
     if total_metas > 0:
-        return round((metas_atingidas / total_metas) * 100, 2)
+        return round((metas_concluidas / total_metas) * 100, 2)
     return 0
+
+def calcular_metas_prazo():
+    hoje = datetime.now().date()
+    metas_no_prazo = MetaPE.query.filter(MetaPE.data_termino >= hoje, MetaPE.status != 'Concluída').all()
+    metas_atrasadas = MetaPE.query.filter(MetaPE.data_termino < hoje, MetaPE.status != 'Concluída').all()
+    return metas_no_prazo, metas_atrasadas
 
 def calcular_percentual_acoes_concluidas():
     total_acoes = AcaoPE.query.count()  # Supondo que AcaoPE é o seu modelo para ações
@@ -822,3 +828,34 @@ def gerar_grafico_base64(percentual_concluidas):
     plt.close(fig)
 
     return graph_base64
+
+##################################################################################333
+@planejamento_route.route('/indicadores_chave')
+@login_required
+def indicadores_chave():
+    # Calcula o % de metas atingidas
+    percentual_metas_atingidas = calcular_percentual_metas_atingidas()
+
+    # Calcula as ações com maior impacto (ordenadas pela maior porcentagem de execução)
+    acoes_maior_impacto = AcaoPE.query.order_by(AcaoPE.porcentagem_execucao.desc()).limit(5).all()
+
+    # Calcula metas no prazo e metas atrasadas
+    metas_no_prazo, metas_atrasadas = calcular_metas_prazo()
+
+    return render_template(
+        'indicadores_chave.html', 
+        percentual_metas_atingidas=percentual_metas_atingidas,
+        acoes_maior_impacto=acoes_maior_impacto,
+        metas_no_prazo=metas_no_prazo,
+        metas_atrasadas=metas_atrasadas
+    )
+
+def calcular_metas_prazo():
+    hoje = datetime.now().date()
+    
+    # Filtra metas que têm data_termino definida e compara as datas
+    metas_no_prazo = MetaPE.query.filter(MetaPE.data_termino != None, MetaPE.data_termino >= hoje, MetaPE.status != 'Concluída').all()
+    metas_atrasadas = MetaPE.query.filter(MetaPE.data_termino != None, MetaPE.data_termino < hoje, MetaPE.status != 'Concluída').all()
+
+    return metas_no_prazo, metas_atrasadas
+
