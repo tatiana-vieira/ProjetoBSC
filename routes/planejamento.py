@@ -772,20 +772,24 @@ def associar_cadeiavalor():
         return render_template('cadeia_valor.html', planejamentos=planejamentos)
     
 ###########################################################################################################3
-# Route for the summarized dashboard
 @planejamento_route.route('/dashboard_resumido')
 @login_required
 def dashboard_resumido():
     percentual_metas_atingidas = calcular_percentual_metas_atingidas()
     percentual_acoes_concluidas = calcular_percentual_acoes_concluidas()
     graph_base64 = gerar_grafico_base64(percentual_acoes_concluidas)
+    alertas = carregar_alertas()
+
+    print("Renderizando alertas: ", alertas)  # Verifique se os alertas estão sendo passados para o template
 
     return render_template(
-        'dashboard_resumido.html', 
+        'dashboard_resumido.html',
         percentual_metas_atingidas=percentual_metas_atingidas,
         percentual_acoes_concluidas=percentual_acoes_concluidas,
-        graph_base64=graph_base64
+        graph_base64=graph_base64,
+        alertas=alertas  # Passando alertas para o template
     )
+
 
 def calcular_percentual_metas_atingidas():
     total_metas = MetaPE.query.count()
@@ -859,3 +863,63 @@ def calcular_metas_prazo():
 
     return metas_no_prazo, metas_atrasadas
 
+
+
+#####################################################################33
+@planejamento_route.route('/avisos_alertas')
+@login_required
+def carregar_avisos():
+    coordenador_programa_id = session.get('programa_id')
+    programa = Programa.query.get(coordenador_programa_id)
+    alertas = []
+
+    if programa:
+        # Obter metas e ações relacionadas
+        planejamentos = programa.planejamentos
+        for planejamento in planejamentos:
+            metas = planejamento.metas
+            for meta in metas:
+                dias_restantes = (meta.data_termino - datetime.now().date()).days
+                if dias_restantes <= 7:
+                    alertas.append({
+                        'mensagem': f"Meta '{meta.nome}' está a {dias_restantes} dias do vencimento!",
+                        'tipo': 'urgente' if dias_restantes <= 3 else 'aviso'
+                    })
+
+                acoes = meta.acoes
+                for acao in acoes:
+                    dias_restantes_acao = (acao.data_termino - datetime.now().date()).days
+                    if dias_restantes_acao <= 7:
+                        alertas.append({
+                            'mensagem': f"Ação '{acao.nome}' da meta '{meta.nome}' está a {dias_restantes_acao} dias do vencimento!",
+                            'tipo': 'urgente' if dias_restantes_acao <= 3 else 'aviso'
+                        })
+
+    # Renderiza a página principal com os alertas
+    return render_template('basecord.html', alertas=alertas)
+
+def carregar_alertas():
+    alertas = []
+    coordenador_programa_id = session.get('programa_id')
+    programa = Programa.query.get(coordenador_programa_id)
+
+    if programa:
+        planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa.id).all()
+        for planejamento in planejamentos:
+            metas = MetaPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+            for meta in metas:
+                dias_restantes = (meta.data_termino - datetime.now().date()).days
+                if dias_restantes <= 7:
+                    alertas.append({
+                        'mensagem': f"Meta '{meta.nome}' está a {dias_restantes} dias do vencimento!",
+                        'tipo': 'urgente' if dias_restantes <= 3 else 'aviso'
+                    })
+                acoes = AcaoPE.query.filter_by(meta_pe_id=meta.id).all()
+                for acao in acoes:
+                    dias_restantes_acao = (acao.data_termino - datetime.now().date()).days
+                    if dias_restantes_acao <= 7:
+                        alertas.append({
+                            'mensagem': f"Ação '{acao.nome}' está a {dias_restantes_acao} dias do vencimento!",
+                            'tipo': 'urgente' if dias_restantes_acao <= 3 else 'aviso'
+                        })
+    return alertas

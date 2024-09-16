@@ -78,16 +78,7 @@
             <li><a class="dropdown-item" href="/importar_planilha_egresso">Egressos</a></li>
         </ul>
         </li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Avaliação
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-            <li><a class="dropdown-item" href="/autoavaliacao">Discentes</a></li>
-            <li><a class="dropdown-item" href="/importar_planilha_docente">Docentes</a></li>
-            <li><a class="dropdown-item" href="/importar_planilha_egresso">Egressos</a></li>
-        </ul>
-        </li>
+        
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('planejamento.indicadores_chave') }}">Indicadores do Planejamento</a>
         </li>
@@ -100,6 +91,15 @@
     </div>
   </div>
 </nav>
+{% if alertas %}
+   <div class="alert-container">
+       {% for alerta in alertas %}
+           <div class="alert {% if alerta.tipo == 'urgente' %}alert-danger{% else %}alert-warning{% endif %}" role="alert">
+               {{ alerta.mensagem }}
+           </div>
+       {% endfor %}
+   </div>
+{% endif %}
 
 <br>
 <div class="container">
