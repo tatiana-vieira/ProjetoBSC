@@ -377,7 +377,6 @@ def associar_indicadorespe():
 
 
 #############################################################################################################
-
 @planejamento_route.route('/alterar_indicadorpe/<int:indicador_id>', methods=['GET', 'POST'])
 @login_required
 def alterar_indicadorpe(indicador_id):
@@ -429,9 +428,7 @@ def alterar_indicadorpe(indicador_id):
         else:
             flash('Por favor, preencha todos os campos obrigatórios.', 'error')
 
-    return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
-
-       
+    return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)       
 
 ##############################################################################################################################
 @planejamento_route.route('/associar_metaspe', methods=['GET', 'POST'])
@@ -550,7 +547,6 @@ def get_objetivos(planejamento_id):
     
     
 ##############################################################################################################################
-
 @planejamento_route.route('/alterar_metape/<int:metape_id>', methods=['GET', 'POST'])
 def alterar_metape(metape_id):
     meta_pe = MetaPE.query.get_or_404(metape_id)
@@ -777,17 +773,14 @@ def associar_cadeiavalor():
 def dashboard_resumido():
     percentual_metas_atingidas = calcular_percentual_metas_atingidas()
     percentual_acoes_concluidas = calcular_percentual_acoes_concluidas()
-    graph_base64 = gerar_grafico_base64(percentual_acoes_concluidas)
-    alertas = carregar_alertas()
-
-    print("Renderizando alertas: ", alertas)  # Verifique se os alertas estão sendo passados para o template
+    
+    print(f'Percentual de Metas Atingidas: {percentual_metas_atingidas}')
+    print(f'Percentual de Ações Concluídas: {percentual_acoes_concluidas}')
 
     return render_template(
         'dashboard_resumido.html',
         percentual_metas_atingidas=percentual_metas_atingidas,
-        percentual_acoes_concluidas=percentual_acoes_concluidas,
-        graph_base64=graph_base64,
-        alertas=alertas  # Passando alertas para o template
+        percentual_acoes_concluidas=percentual_acoes_concluidas
     )
 
 
@@ -815,14 +808,13 @@ def calcular_percentual_acoes_concluidas():
 
 
 def gerar_grafico_base64(percentual_concluidas):
-    # Função para gerar um gráfico de status e retorná-lo como string base64
     labels = ['Concluído', 'Em Andamento']
     sizes = [percentual_concluidas, 100 - percentual_concluidas]
     colors = ['#36a2eb', '#ff6384']
 
     fig, ax = plt.subplots()
     ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
-    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    ax.axis('equal')
 
     # Converter gráfico para imagem base64
     img = io.BytesIO()
@@ -902,7 +894,6 @@ def carregar_alertas():
     alertas = []
     coordenador_programa_id = session.get('programa_id')
     programa = Programa.query.get(coordenador_programa_id)
-
     if programa:
         planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa.id).all()
         for planejamento in planejamentos:
@@ -923,3 +914,132 @@ def carregar_alertas():
                             'tipo': 'urgente' if dias_restantes_acao <= 3 else 'aviso'
                         })
     return alertas
+
+def sugerir_ajustes(meta, progresso, restante):
+    """Sugere ajustes com base nos dados da meta e progresso."""
+    sugestoes = []
+    if meta.data_termino:
+        dias_restantes = (meta.data_termino - datetime.now().date()).days
+    else:
+        dias_restantes = None
+
+    valor_alvo = float(meta.valor_alvo) if meta.valor_alvo else 0
+
+    if progresso < 0.5 * valor_alvo and (dias_restantes is not None and dias_restantes < 30):
+        sugestoes.append(f"A meta '{meta.nome}' está com progresso lento. Considere aumentar os recursos ou estender o prazo.")
+
+    if progresso > 0.8 * valor_alvo and (dias_restantes is not None and dias_restantes > 30):
+        sugestoes.append(f"A meta '{meta.nome}' está no caminho certo. Continue monitorando.")
+
+    if not sugestoes:
+        sugestoes.append("Não há sugestões no momento.")
+
+    return sugestoes
+
+
+####################################################################################
+@planejamento_route.route('/atualizar_metas', methods=['POST'])
+@login_required
+def atualizar_metas():
+    meta_id = request.form.get('meta_id')
+    novo_status = request.form.get('status')
+
+    # Busca a meta no banco de dados
+    meta = MetaPE.query.get(meta_id)
+
+    if meta:
+        meta.status = novo_status
+        db.session.commit()
+        flash('Status atualizado com sucesso!', 'success')
+    else:
+        flash('Meta não encontrada.', 'danger')
+
+    return redirect(url_for('planejamento.acompanhamento_metas'))
+
+
+@planejamento_route.route('/acompanhamento_metas', methods=['GET', 'POST'])
+@login_required
+def acompanhamento_metas():
+    programa_id = current_user.programa_id
+    planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+    metas = []
+
+    if request.method == 'POST':
+        planejamento_id = request.form.get('planejamento_id')
+        print(f"Planejamento ID selecionado: {planejamento_id}")  # Verifique se o ID está sendo enviado
+
+        if planejamento_id:
+            objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
+            metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
+
+            if not metas:
+                flash('Nenhuma meta encontrada para o planejamento selecionado.', 'warning')
+        else:
+            flash('Por favor, selecione um planejamento.', 'danger')
+
+    return render_template('acompanhamento_metas.html', metas=metas, planejamentos=planejamentos)
+
+
+@planejamento_route.route('/atualizar_status_meta/<int:meta_id>', methods=['POST'])
+@login_required
+def atualizar_status_meta(meta_id):
+    planejamento_id = request.form.get('planejamento_id')  # Obtém o ID do planejamento filtrado
+
+    # Lógica para atualizar o status da meta
+    meta = MetaPE.query.get(meta_id)
+    if meta:
+        novo_status = request.form.get('status')
+        meta.status = novo_status
+        db.session.commit()
+        flash('Status atualizado com sucesso!', 'success')
+    else:
+        flash('Meta não encontrada.', 'danger')
+
+    # Redireciona de volta para a página com o planejamento filtrado
+    return redirect(url_for('planejamento.acompanhamento_metas', planejamento_id=planejamento_id))
+
+
+
+def calcular_progresso_parcial(meta):
+    if meta.data_inicio and meta.data_termino:
+        # Convertendo datas para o formato de cálculo
+        data_inicio = meta.data_inicio
+        data_termino = meta.data_termino
+        hoje = datetime.now().date()
+
+        # Verifica se a meta ainda está no prazo
+        if hoje < data_inicio:
+            return 0
+        elif hoje > data_termino:
+            return 100
+
+        # Cálculo do progresso parcial
+        duracao_total = (data_termino - data_inicio).days
+        duracao_decorrida = (hoje - data_inicio).days
+
+        progresso_parcial = (duracao_decorrida / duracao_total) * 100
+        return round(progresso_parcial, 2)
+    else:
+        # Caso a meta não tenha datas definidas
+        return 0
+
+
+def calcular_progresso(meta):
+    if meta.status == "Não iniciado":
+        return 0
+    elif meta.status == "Em andamento":
+        # Calcular progresso parcial com base em algum critério (datas, ações realizadas, etc.)
+        return calcular_progresso_parcial(meta)
+    elif meta.status == "Atrasada":
+        # Atrasada, mas o progresso pode ter sido feito
+        return calcular_progresso_parcial(meta)
+    elif meta.status == "Concluída":
+        return 100
+    elif meta.status == "Cancelada":
+        return 0
+    elif meta.status == "Pausada":
+        # Retorna o progresso atual sem incrementá-lo
+        return meta.progresso_atual
+    elif meta.status == "Revisão":
+        # Pode colocar em espera até a revisão ser concluída
+        return meta.progresso_atual

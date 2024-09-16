@@ -99,3 +99,16 @@ tbody tr:nth-child(even) {
     background-color: #fff3cd;
     color: #856404;
 }
+
+.navbar-nav .nav-link {
+    font-size: 1.25rem; /* Aumentar o tamanho da fonte */
+    padding: 10px 15px;
+}
+
+.form-block .row {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+}
+
+

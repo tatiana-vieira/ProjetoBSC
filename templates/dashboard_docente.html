@@ -1,20 +1,10 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Relatório de Autoavaliação Docente</title>
-    <style>
-        h1 {
-            text-align: center;
-        }
-        .grafico {
-            text-align: center;
-            margin-top: 20px;
-        }
-        img {
-            max-width: 80%;
-        }
-    </style>
-</head>
+{% extends 'basecorden.html' %}
+
+{% block titulo %}
+    Autoavaliação de Egressos
+{% endblock %}
+
+{% block conteudo %}
 <body>
     <h1>Relatório de Autoavaliação Docente</h1>
     <h2>Gráficos Gerados</h2>
@@ -33,4 +23,4 @@
         {% endfor %}
     </ul>
 </body>
-</html>
+{% endblock %}

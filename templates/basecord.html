@@ -10,12 +10,14 @@
   </title>
   <style>
     .navbar-custom {
-        background-color: darkblue; /* Define a cor de fundo da barra de navegação */
+        background-color: darkblue;
     }
     .card {
         background-color: #f8f9fa;
         border-radius: 15px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 90%; /* Ajuste para expandir as caixas */
+        margin: 0 auto;
     }
     .card-title {
         font-size: 1.5rem;
@@ -23,6 +25,18 @@
     }
     .card-text {
         font-size: 1.25rem;
+    }
+    .navbar-nav .nav-link {
+        font-size: 1.25rem; /* Aumenta o tamanho da fonte dos botões */
+        padding: 10px 15px;
+    }
+    /* Modo Escuro */
+    .dark-mode {
+      background-color: #121212;
+      color: #ffffff;
+    }
+    .dark-mode .card {
+      background-color: #1e1e1e;
     }
   </style>
 </head>
@@ -60,6 +74,7 @@
           </a>
           <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
             <li><a class="dropdown-item" href="/relcadeia">Planejamento Estratégico</a></li>
+            <li><a class="dropdown-item" href="/acompanhamento_metas">Acompanhamento de Metas</a></li>
             <li><a class="dropdown-item" href="/graficometas">Metas</a></li>
             <li><a class="dropdown-item" href="/gantt">Gantt - Ação</a></li>
             <li><a class="dropdown-item" href="/relgraficosindicadores">Indicadores</a></li>
@@ -114,35 +129,47 @@
     </div>
   </div>
   <div class="row mt-4">
-    <div class="col-md-4">
+    <div class="col-md-6"> <!-- Ajustei a largura das colunas -->
       <div class="card">
         <div class="card-body">
           <h5 class="card-title">Metas Atingidas</h5>
           <p class="card-text">
             <strong>{{ percentual_metas_atingidas }}%</strong> das metas foram atingidas no último ciclo.
           </p>
+          <!-- Gráfico de Barras Simples -->
+          <canvas id="metasChart" width="100" height="50"></canvas>
         </div>
       </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-6">
       <div class="card">
         <div class="card-body">
           <h5 class="card-title">Ações Concluídas</h5>
           <p class="card-text">
             <strong>{{ percentual_acoes_concluidas }}%</strong> das ações estão concluídas.
           </p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Status Geral</h5>
-          <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Progresso" class="img-fluid">
+          <!-- Gráfico de Barras Simples -->
+          <canvas id="acoesChart" width="100" height="50"></canvas>
         </div>
       </div>
     </div>
   </div>
+  <div class="row mt-4">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Status Geral</h5>
+          <!-- Gráfico de Progresso -->
+          <canvas id="statusChart" width="100" height="100"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Botão para alternar modo escuro -->
+<div class="container text-center mt-4">
+  <button id="toggleTheme" class="btn btn-dark">Modo Escuro</button>
 </div>
 
 {% block conteudo %}
@@ -152,11 +179,40 @@
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
 
-<!-- Script to render progress graph using Chart.js -->
+<!-- Script para gráfico de progresso e gráficos de barras -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+  // Gráfico de Barras para Metas Atingidas
+  var ctxMetas = document.getElementById('metasChart').getContext('2d');
+  var metasChart = new Chart(ctxMetas, {
+    type: 'bar',
+    data: {
+        labels: ['Metas'],
+        datasets: [{
+            label: '% Metas Atingidas',
+            data: [{{ percentual_metas_atingidas }}],
+            backgroundColor: '#36a2eb'
+        }]
+    }
+  });
+
+  // Gráfico de Barras para Ações Concluídas
+  var ctxAcoes = document.getElementById('acoesChart').getContext('2d');
+  var acoesChart = new Chart(ctxAcoes, {
+    type: 'bar',
+    data: {
+        labels: ['Ações'],
+        datasets: [{
+            label: '% Ações Concluídas',
+            data: [{{ percentual_acoes_concluidas }}],
+            backgroundColor: '#ff6384'
+        }]
+    }
+  });
+
+  // Gráfico de Progresso para Status Geral
   var ctx = document.getElementById('statusChart').getContext('2d');
-  var percentualConcluidas = {{ percentual_acoes_concluidas | safe }};
+  var percentualConcluidas = {{ percentual_acoes_concluidas }};
   var percentualEmAndamento = 100 - percentualConcluidas;
 
   var myChart = new Chart(ctx, {
@@ -168,6 +224,11 @@
             backgroundColor: ['#36a2eb', '#ff6384'],
           }]
       },
+  });
+
+  // Alternar Modo Escuro
+  document.getElementById('toggleTheme').addEventListener('click', function() {
+    document.body.classList.toggle('dark-mode');
   });
 </script>
 </body>
