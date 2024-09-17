@@ -19,8 +19,11 @@
         {% endwith %}
     </div>
 
-  <div class="form-block">
-    <h1>Dashboard Discente</h1>
+    <!-- Título do Dashboard -->
+    <div class="form-block">
+        <h1>Dashboard Discente</h1>
+    </div>
+
     <style>
         .dashboard-container {
             display: flex;
@@ -53,7 +56,7 @@
     <div class="dashboard-container">
         {% for plot_url in plot_urls %}
             <div class="dashboard-item">
-                <img src="{{ plot_url }}" alt="Gráfico Discente" style="width: 100%; height: auto;">
+                <img src="{{ plot_url }}" alt="Gráfico Discente">
             </div>
         {% endfor %}
     </div>
@@ -71,44 +74,20 @@
             <p>Nenhuma recomendação foi gerada para os dados atuais.</p>
         {% endif %}
     </div>
-    <div class="recommendations-container">
-        <h3>Recomendações Automáticas</h3>
-        {% if recommendations %}
-            <ul>
-                {% for recommendation in recommendations %}
-                    <li>{{ recommendation }}</li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>Nenhuma recomendação foi gerada para os dados atuais.</p>
-        {% endif %}
-    </div>
-    <div class="dashboard-container">
-        <h2>Painel de Visualização de Dados</h2>
-        <div class="row">
-            <!-- Seção de Gráficos -->
-            {% for plot_url in plot_urls %}
-                <div class="col-md-6">
-                    <img src="{{ plot_url }}" alt="Gráfico" style="width: 100%; height: auto;">
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-
 
     <!-- Seção de Gráficos de Sentimentos -->
     {% if sentiment_analysis_plot %}
     <div class="dashboard-item">
         <h3>Distribuição de Sentimentos</h3>
-        <img src="{{ url_for('static', filename='uploads/' + sentiment_analysis_plot.split('/')[-1]) }}" alt="Gráfico de Sentimentos" style="width: 100%; height: auto;">
+        <img src="{{ url_for('static', filename='uploads/' + sentiment_analysis_plot.split('/')[-1]) }}" alt="Gráfico de Sentimentos">
     </div>
     {% endif %}
 
     <!-- Botões de Ação -->
     <div class="button-container">
-        <a href="{{ url_for('autoavaliacaodiscente.gerar_pdf') }}" class="btn btn-primary" style="background-color: #003366; border-color: #003366;">Gerar PDF</a>
+        <a href="{{ url_for('autoavaliacaodiscente.gerar_pdf') }}" class="btn btn-primary">Gerar PDF</a>
+
         <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-danger" style="background-color: red; border-color: red;">Fechar</a>
     </div>
-  </div>
 </div>
 {% endblock %}

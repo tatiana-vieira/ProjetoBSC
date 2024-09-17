@@ -82,19 +82,16 @@ def generate_docente_dashboard(dataframe):
     plot_filenames.append(caminho_pizza)
     plot_filenames.append(caminho_barra)
 
-    # Analisar sentimentos dos comentários
-    if 'Gostaria de adicionar algum comentário referente ao Programa de Pós-Graduação em questão?' in dataframe.columns:
-        nuvem_palavras = gerar_nuvem_palavras(dataframe['Gostaria de adicionar algum comentário referente ao Programa de Pós-Graduação em questão?'])
-        plot_filenames.append(nuvem_palavras)
-
     # Aplicar K-Means Clustering
     if 'Infraestrutura' in dataframe.columns and 'Qualidade das Aulas' in dataframe.columns:
         dataframe = aplicar_clustering(dataframe, ['Infraestrutura', 'Qualidade das Aulas'])
 
-    # Gerar recomendações automáticas
+    # Gerar recomendações automáticas com base na análise de sentimentos e nos clusters
     recomendacoes = sugerir_melhorias(dataframe)
 
     return plot_filenames, recomendacoes
+
+
 
 
 def gerar_grafico_pizza(data, coluna):
@@ -219,8 +216,6 @@ def processar_planilha(planilha_path):
     return caminho_pizza, caminho_barra
 
 
-
-
 def gerar_grafico_base64():
     # Exemplo simples de gráfico
     fig, ax = plt.subplots()
@@ -235,3 +230,21 @@ def gerar_grafico_base64():
     # Codificar a imagem em base64
     image_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
     return image_base64
+
+def analisar_sentimento(texto):
+    analysis = TextBlob(texto)
+    if analysis.sentiment.polarity > 0:
+        return 'Positivo'
+    elif analysis.sentiment.polarity == 0:
+        return 'Neutro'
+    else:
+        return 'Negativo'
+    
+def classificar_comentario(texto):
+    if any(palavra in texto.lower() for palavra in ['bom', 'excelente', 'ótimo']):
+        return 'Elogio'
+    elif any(palavra in texto.lower() for palavra in ['ruim', 'pior', 'péssimo']):
+        return 'Crítica'
+    else:
+        return 'Sugestão'
+

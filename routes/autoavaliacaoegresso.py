@@ -4,6 +4,8 @@ from flask_login import current_user, login_required
 import pandas as pd
 import matplotlib.pyplot as plt
 import uuid
+from fpdf import FPDF
+
 
 autoavaliacaoegresso_route = Blueprint('autoavaliacaoegresso', __name__)
 
@@ -16,7 +18,7 @@ def setup_upload_folder():
 @autoavaliacaoegresso_route.route('/importar_planilha_egresso', methods=['GET', 'POST'])
 @login_required
 def importar_planilha_egresso():
-    if request.method == 'POST':
+ if request.method == 'POST':
         if 'file' not in request.files:
             flash('Nenhum arquivo selecionado', 'danger')
             return redirect(request.url)
@@ -28,31 +30,35 @@ def importar_planilha_egresso():
 
         if file:
             upload_folder = current_app.config['UPLOAD_FOLDER']
-            filename = os.path.join(upload_folder, 'egresso.xlsx')
+            filename = os.path.join(upload_folder, 'docente.xlsx')
             file.save(filename)
             flash('Arquivo salvo com sucesso', 'success')
 
             try:
-                egresso_data = pd.read_excel(filename)
-                plot_filenames = generate_egresso_dashboard(egresso_data)
-                session['plot_filenames_egresso'] = plot_filenames
-                return redirect(url_for('autoavaliacaoegresso.dashboard_egresso'))
+                docente_data = pd.read_excel(filename)
+                plot_filenames, recomendacoes = generate_egresso_dashboard(docente_data)
+                session['plot_filenames'] = plot_filenames
+                session['recomendacoes'] = recomendacoes
+                return redirect(url_for('autoavaliacaodocente.dashboard_docente'))
             except Exception as e:
                 flash(f'Erro ao processar a planilha: {str(e)}', 'danger')
                 return redirect(request.url)
 
-    return render_template('importar_planilhaegresso.html')
+ return render_template('importar_planilhaegresso.html')
 
 def generate_egresso_dashboard(dataframe):
     plot_filenames = []
     upload_folder = current_app.config['UPLOAD_FOLDER']
 
-    for column in dataframe.columns[1:]:
+    # Iterando pelas colunas
+    for column in dataframe.columns:  # Não há necessidade de desempacotar
+        # Verificar se a coluna contém dados antes de tentar gerar um gráfico
         if dataframe[column].dropna().empty:
             continue
 
         filename = os.path.join(upload_folder, f'{uuid.uuid4()}.png')
         try:
+            # Gerar gráfico de barras
             plt.figure(figsize=(5, 4))
             dataframe[column].value_counts().plot(kind='bar')
             plt.title(column, fontsize=7)
@@ -67,7 +73,13 @@ def generate_egresso_dashboard(dataframe):
         except Exception as e:
             print(f'Erro ao gerar gráfico para a coluna {column}: {str(e)}')
 
-    return plot_filenames
+    # Adicione a variável recomendacoes (pode ser uma lista vazia, caso não esteja implementada)
+    recomendacoes = []  # Esta variável deve ser retornada junto com plot_filenames
+
+    return plot_filenames, recomendacoes  # Sempre retornando dois valores
+
+
+
 
 @autoavaliacaoegresso_route.route('/dashboard_egresso')
 @login_required
@@ -84,7 +96,6 @@ def gerar_pdf_egresso():
         flash('Nenhum gráfico para gerar PDF', 'danger')
         return redirect(url_for('autoavaliacaoegresso.dashboard_egresso'))
 
-    from fpdf import FPDF
 
     pdf = FPDF()
     pdf.add_page()

@@ -1,14 +1,14 @@
+<!-- dashboard_docente.html -->
 {% extends 'basecorden.html' %}
 
 {% block titulo %}
-    Autoavaliação de Egressos
+    Autoavaliação de Docentes
 {% endblock %}
 
 {% block conteudo %}
 <body>
     <h1>Relatório de Autoavaliação Docente</h1>
     <h2>Gráficos Gerados</h2>
-    <!-- Template HTML para o PDF ou o dashboard -->
     <div class="grafico">
         <img src="{{ url_for('static', filename='uploads/' + plot_url_1) }}" alt="Gráfico de Pizza">
     </div>

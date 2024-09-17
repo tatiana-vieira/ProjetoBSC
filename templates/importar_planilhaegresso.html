@@ -21,10 +21,10 @@
         <form action="{{ url_for('autoavaliacaoegresso.importar_planilha_egresso') }}" method="POST" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="file" style="color: #003366;">Selecionar Arquivo</label>
-                <input type="file" class="form-control-file" id="file" name="file" style="display: none;">
-                <label for="file" class="btn btn-primary" style="background-color: #003366; border-color: #003366; margin-bottom: 20px;">Escolher arquivo</label>
+                <!-- Campo de upload de arquivo visível -->
+                <input type="file" class="form-control-file" id="file" name="file" required>
             </div>
-            <div>
+            <div style="margin-top: 20px;">
                 <button type="submit" class="btn btn-primary" style="background-color: #003366; border-color: #003366; width: 150px;">Upload</button>
                 <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-danger" style="width: 150px;">Fechar</a>
             </div>
