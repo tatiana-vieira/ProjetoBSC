@@ -7,9 +7,9 @@
 {% block conteudo %}
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <div class="container">
-        <h2 style="text-align: center; color: #003366; margin-top: 20px;">Dados do Planejamento</h2><br>
-
+    <div class="container monitoramento-container">
+        <h2 class="monitoramento-titulo">Dados do Planejamento</h2><br>
+    
         <section>
             <div class="form-container" style="text-align: center;">
                 <h5>Selecione um Planejamento Estratégico</h5>
@@ -21,15 +21,15 @@
                             <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
                         {% endfor %}
                     </select>
-                    <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Exibir dados</button>
+                    <button type="submit" class="btn-custom-monitoramento">Exibir dados</button>
                 </form>
             </div>
         </section>
-
+    
         {% if planejamento_selecionado %}
         <section class="dados-planejamento">
-            <h3>Objetivos</h3>
-            <table class="table-objetivos">
+            <h3 class="monitoramento-titulo">Objetivos</h3>
+            <table class="monitoramento-tabela">
                 <thead>
                     <tr>
                         <th>Nome</th>
@@ -43,9 +43,9 @@
                     {% endfor %}
                 </tbody>
             </table>
-
-            <h3>Metas</h3>
-            <table class="table-metas">
+    
+            <h3 class="monitoramento-titulo">Metas</h3>
+            <table class="monitoramento-tabela">
                 <thead>
                     <tr>
                         <th>Nome</th>
@@ -63,9 +63,9 @@
                     {% endfor %}
                 </tbody>
             </table>
-
-            <h3>Indicadores</h3>
-            <table class="table-indicadores">
+    
+            <h3 class="monitoramento-titulo">Indicadores</h3>
+            <table class="monitoramento-tabela">
                 <thead>
                     <tr>
                         <th>Nome</th>
@@ -83,9 +83,9 @@
                     {% endfor %}
                 </tbody>
             </table>
-
-            <h3>Ações</h3>
-            <table class="table-acoes">
+    
+            <h3 class="monitoramento-titulo">Ações</h3>
+            <table class="monitoramento-tabela">
                 <thead>
                     <tr>
                         <th>Nome</th>
@@ -105,9 +105,9 @@
                     {% endfor %}
                 </tbody>
             </table>
-
-            <h3>Riscos</h3>
-            <table class="table-riscos">
+    
+            <h3 class="monitoramento-titulo">Riscos</h3>
+            <table class="monitoramento-tabela">
                 <thead>
                     <tr>
                         <th>Descrição</th>
@@ -128,12 +128,13 @@
         </section>
         <div style="text-align: center; margin-top: 20px;">
             <a href="{{ url_for('gerar_pdf', planejamento_id=planejamento_selecionado.id) }}" target="_blank">
-                <button style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Gerar PDF</button>
+                <button class="btn-custom-monitoramento">Gerar PDF</button>
             </a>
-            <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
+            <button type="button" onclick="fechar()" class="btn-danger-monitoramento">Fechar</button>
         </div>
         {% endif %}
-    </div>
+    </div>  
+ 
 
     <script>
         function fechar() {

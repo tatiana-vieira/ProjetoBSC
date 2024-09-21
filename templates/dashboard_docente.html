@@ -1,4 +1,3 @@
-<!-- dashboard_docente.html -->
 {% extends 'basecorden.html' %}
 
 {% block titulo %}
@@ -8,6 +7,8 @@
 {% block conteudo %}
 <body>
     <h1>Relatório de Autoavaliação Docente</h1>
+
+    <!-- Seção de Gráficos Gerados -->
     <h2>Gráficos Gerados</h2>
     <div class="grafico">
         <img src="{{ url_for('static', filename='uploads/' + plot_url_1) }}" alt="Gráfico de Pizza">
@@ -16,11 +17,30 @@
         <img src="{{ url_for('static', filename='uploads/' + plot_url_2) }}" alt="Gráfico de Barra">
     </div>
 
+    <!-- Seção de Sugestões de Melhoria -->
     <h2>Sugestões de Melhoria Baseadas em IA</h2>
     <ul>
         {% for recomendacao in recomendacoes %}
             <li>{{ recomendacao }}</li>
         {% endfor %}
     </ul>
+
+    <!-- Seção de Análise de Sentimentos e Classificação de Comentários -->
+    <h2>Análise de Sentimentos e Classificação de Comentários</h2>
+    <table>
+        <tr>
+            <th>Comentário</th>
+            <th>Sentimento</th>
+            <th>Classificação</th>
+        </tr>
+        {% for row in dataframe %}
+        <tr>
+            <td>{{ row['Gostaria de adicionar algum comentário referente ao Programa de Pós-Graduação em questão?'] }}</td>
+            <td>{{ row['Sentimento'] }}</td>
+            <td>{{ row['Classificação'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
 </body>
 {% endblock %}

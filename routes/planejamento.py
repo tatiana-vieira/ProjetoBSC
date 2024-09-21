@@ -15,6 +15,10 @@ from datetime import datetime
 from flask import get_flashed_messages
 import matplotlib.pyplot as plt
 import base64
+import logging
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
 # Certifique-se de que AcaoPE está importado corretamente
 
 
@@ -767,15 +771,16 @@ def associar_cadeiavalor():
 
         return render_template('cadeia_valor.html', planejamentos=planejamentos)
     
-###########################################################################################################3
+
+###################################  Dashboard  ########################################################################3
 @planejamento_route.route('/dashboard_resumido')
 @login_required
 def dashboard_resumido():
     percentual_metas_atingidas = calcular_percentual_metas_atingidas()
     percentual_acoes_concluidas = calcular_percentual_acoes_concluidas()
     
-    print(f'Percentual de Metas Atingidas: {percentual_metas_atingidas}')
-    print(f'Percentual de Ações Concluídas: {percentual_acoes_concluidas}')
+    print(f'Metas Atingidas: {percentual_metas_atingidas}')  # Debug
+    print(f'Ações Concluídas: {percentual_acoes_concluidas}')  # Debug
 
     return render_template(
         'dashboard_resumido.html',
@@ -783,28 +788,39 @@ def dashboard_resumido():
         percentual_acoes_concluidas=percentual_acoes_concluidas
     )
 
-
-def calcular_percentual_metas_atingidas():
-    total_metas = MetaPE.query.count()
-    metas_concluidas = MetaPE.query.filter(MetaPE.status == 'Concluída').count()
-
-    if total_metas > 0:
-        return round((metas_concluidas / total_metas) * 100, 2)
-    return 0
-
 def calcular_metas_prazo():
     hoje = datetime.now().date()
     metas_no_prazo = MetaPE.query.filter(MetaPE.data_termino >= hoje, MetaPE.status != 'Concluída').all()
     metas_atrasadas = MetaPE.query.filter(MetaPE.data_termino < hoje, MetaPE.status != 'Concluída').all()
     return metas_no_prazo, metas_atrasadas
 
+def log_mensagem(mensagem):
+    with open('log.txt', 'a') as f:
+        f.write(mensagem + '\n')
+
+
+def calcular_percentual_metas_atingidas():
+    total_metas = MetaPE.query.count()
+    metas_concluidas = MetaPE.query.filter(MetaPE.status == 'Concluída').count()
+
+    logging.info(f'Total de Metas: {total_metas}, Metas Concluídas: {metas_concluidas}')  # Usar logging
+
+    if total_metas > 0:
+        return round((metas_concluidas / total_metas) * 100, 2)
+    else:
+        return 0
+
 def calcular_percentual_acoes_concluidas():
-    total_acoes = AcaoPE.query.count()  # Supondo que AcaoPE é o seu modelo para ações
+    total_acoes = AcaoPE.query.count()
     acoes_concluidas = AcaoPE.query.filter(AcaoPE.status == 'Concluída').count()
-    
+
+    logging.info(f'Total de Ações: {total_acoes}, Ações Concluídas: {acoes_concluidas}')  # Usar logging
+
     if total_acoes > 0:
         return round((acoes_concluidas / total_acoes) * 100, 2)
-    return 0
+    else:
+        return 0
+
 
 
 def gerar_grafico_base64(percentual_concluidas):
@@ -845,17 +861,6 @@ def indicadores_chave():
         metas_no_prazo=metas_no_prazo,
         metas_atrasadas=metas_atrasadas
     )
-
-def calcular_metas_prazo():
-    hoje = datetime.now().date()
-    
-    # Filtra metas que têm data_termino definida e compara as datas
-    metas_no_prazo = MetaPE.query.filter(MetaPE.data_termino != None, MetaPE.data_termino >= hoje, MetaPE.status != 'Concluída').all()
-    metas_atrasadas = MetaPE.query.filter(MetaPE.data_termino != None, MetaPE.data_termino < hoje, MetaPE.status != 'Concluída').all()
-
-    return metas_no_prazo, metas_atrasadas
-
-
 
 #####################################################################33
 @planejamento_route.route('/avisos_alertas')
@@ -966,11 +971,12 @@ def acompanhamento_metas():
 
     if request.method == 'POST':
         planejamento_id = request.form.get('planejamento_id')
-        print(f"Planejamento ID selecionado: {planejamento_id}")  # Verifique se o ID está sendo enviado
+        print(f"Planejamento ID selecionado: {planejamento_id}")  # Debugging print
 
         if planejamento_id:
             objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
             metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
+            print(f"Metas encontradas: {metas}")  # Debugging print
 
             if not metas:
                 flash('Nenhuma meta encontrada para o planejamento selecionado.', 'warning')
@@ -978,6 +984,7 @@ def acompanhamento_metas():
             flash('Por favor, selecione um planejamento.', 'danger')
 
     return render_template('acompanhamento_metas.html', metas=metas, planejamentos=planejamentos)
+
 
 
 @planejamento_route.route('/atualizar_status_meta/<int:meta_id>', methods=['POST'])
@@ -997,7 +1004,6 @@ def atualizar_status_meta(meta_id):
 
     # Redireciona de volta para a página com o planejamento filtrado
     return redirect(url_for('planejamento.acompanhamento_metas', planejamento_id=planejamento_id))
-
 
 
 def calcular_progresso_parcial(meta):

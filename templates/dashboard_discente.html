@@ -1,93 +1,50 @@
+{% extends 'basecorden.html' %}
+
+{% block titulo %}
+    Dashboard de Autoavaliação Discente
+{% endblock %}
+
 {% block conteudo %}
-<div style="margin: auto; width: 80%; text-align: center;">
+<div class="container" style="text-align: center; padding-top: 50px;">
+    <h2 style="text-align: center; color: #003366; padding-bottom: 20px;">Gráficos da Autoavaliação</h2>
 
-    <!-- Logo -->
-    <div style="text-align: center; margin-bottom: 20px;">
-        <img src="{{ url_for('static', filename='PPG.png') }}" alt="Logo" style="width: 150px; height: auto;">
+    <div style="display: flex; justify-content: space-around; align-items: center;">
+        <!-- Gráfico de Pizza: Distribuição da Qualidade das Aulas -->
+        <div>
+            <h3>Distribuição da Qualidade das Aulas</h3>
+            <img src="{{ url_for('static', filename=pizza_path) }}" alt="Gráfico de Pizza">
+        </div>
+        <div>
+            <h3>Média de Infraestrutura Geral por Ano de Ingresso</h3>
+            <img src="{{ url_for('static', filename=barras_path) }}" alt="Gráfico de Barras">
+        </div>
+        <div>
+            <h3>Tendência da Qualidade das Aulas</h3>
+            <img src="{{ url_for('static', filename=linha_path) }}" alt="Gráfico de Linha">
+        </div>
+        <div>
+            <h3>Histograma da Qualidade das Aulas</h3>
+            <img src="{{ url_for('static', filename=histograma_path) }}" alt="Histograma">
+        </div>
+        <div>
+            <h3>Infraestrutura Geral vs. Qualidade das Aulas</h3>
+            <img src="{{ url_for('static', filename=scatter_path) }}" alt="Gráfico de Dispersão">
+        </div>
+        
+
+    <!-- Botões de Fechar e Gerar PDF -->
+    <div style="text-align: center; margin-top: 40px;">
+        <!-- Botão vermelho para fechar -->
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+
+        <!-- Botão azul para gerar PDF -->
+        <a href="{{ url_for('gerar_pdf', planejamento_id=planejamento_id) }}" class="btn btn-primary">Gerar PDF</a>
     </div>
-
-    <!-- Mensagens Flash -->
-    <div style="text-align: center;">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div>
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} text-center">{{ message }}</div>
-            {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
-    </div>
-
-    <!-- Título do Dashboard -->
-    <div class="form-block">
-        <h1>Dashboard Discente</h1>
-    </div>
-
-    <style>
-        .dashboard-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-around;
+    <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
         }
-        .dashboard-item {
-            flex: 0 0 48%; /* Configuração padrão: 2 gráficos por linha */
-            margin: 10px;
-            text-align: center;
-        }
-        img {
-            width: 100%; /* Ajusta a largura da imagem para 100% do contêiner */
-            height: auto; /* Mantém a proporção */
-        }
-        .button-container {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .recommendations-container {
-            margin-top: 30px;
-            padding: 20px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-    </style>
-
-    <!-- Seção de Gráficos -->
-    <div class="dashboard-container">
-        {% for plot_url in plot_urls %}
-            <div class="dashboard-item">
-                <img src="{{ plot_url }}" alt="Gráfico Discente">
-            </div>
-        {% endfor %}
-    </div>
-
-    <!-- Seção de Recomendações -->
-    <div class="recommendations-container">
-        <h3>Recomendações Automáticas</h3>
-        {% if recommendations %}
-            <ul>
-                {% for recommendation in recommendations %}
-                    <li>{{ recommendation }}</li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>Nenhuma recomendação foi gerada para os dados atuais.</p>
-        {% endif %}
-    </div>
-
-    <!-- Seção de Gráficos de Sentimentos -->
-    {% if sentiment_analysis_plot %}
-    <div class="dashboard-item">
-        <h3>Distribuição de Sentimentos</h3>
-        <img src="{{ url_for('static', filename='uploads/' + sentiment_analysis_plot.split('/')[-1]) }}" alt="Gráfico de Sentimentos">
-    </div>
-    {% endif %}
-
-    <!-- Botões de Ação -->
-    <div class="button-container">
-        <a href="{{ url_for('autoavaliacaodiscente.gerar_pdf') }}" class="btn btn-primary">Gerar PDF</a>
-
-        <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-danger" style="background-color: red; border-color: red;">Fechar</a>
-    </div>
+    </script>
 </div>
 {% endblock %}
+

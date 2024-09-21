@@ -14,7 +14,6 @@ from reportlab.lib.units import cm
 from reportlab.platypus import Spacer
 
 
-
 relatorioplanejamento_route = Blueprint('relatorioplanejamento', __name__)
 
 @relatorioplanejamento_route.route('/relplano', methods=['GET'])
@@ -106,6 +105,7 @@ def gerar_pdf(planejamento_id):
     response.headers['Content-Type'] = 'application/pdf'
     return response
 
+#################################################################################3
 @relatorioplanejamento_route.route('/gerar_excel/<int:planejamento_id>', methods=['GET'])
 @login_required
 def gerar_excel(planejamento_id):
@@ -262,6 +262,7 @@ def gerarrel_pdf(planejamento_id):
     response.headers['Content-Disposition'] = 'inline; filename=planejamentos.pdf'
     response.headers['Content-Type'] = 'application/pdf'
     return response
+
 
 ########################################################################################################################
 @relatorioplanejamento_route.route('/gerarrel_excel/<int:planejamento_id>', methods=['GET'])

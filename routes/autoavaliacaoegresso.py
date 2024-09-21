@@ -109,3 +109,6 @@ def gerar_pdf_egresso():
     pdf.output(pdf_filename)
 
     return send_file(pdf_filename, as_attachment=True)
+
+
+

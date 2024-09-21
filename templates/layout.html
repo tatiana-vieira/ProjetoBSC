@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Meu Sistema{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+    <!-- Cabeçalho -->
+    <header>
+        <h1>Meu Sistema de Dashboard</h1>
+    </header>
+
+    <!-- Conteúdo da página -->
+    <main>
+        {% block conteudo %}
+        <!-- Aqui será inserido o conteúdo de outras páginas -->
+        {% endblock %}
+    </main>
+
+    <!-- Rodapé -->
+    <footer>
+        <p>&copy; 2024 Meu Sistema</p>
+    </footer>
+
+</body>
+</html>

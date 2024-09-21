@@ -19,8 +19,6 @@ import matplotlib.pyplot as plt
 import base64  # Certifique-se de importar base64
 
 
-
-
 relatorioacao_route = Blueprint('relatorioacao', __name__)
 
 def calcular_previsao(meta_pe, porcentagem_execucao, data_inicio, data_termino):
