@@ -1,100 +1,122 @@
 {% extends 'basecorden.html' %}
 
 {% block titulo %}
-    Cadastro de Riscos - PRPPG
+  Ação - Metas PE
 {% endblock %}
 
 {% block conteudo %}
-{% with messages = get_flashed_messages(with_categories=true) %}
+<div style="margin: auto; width: 80%; text-align: left;">
+  <!-- Mensagens Flash -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }}" role="alert">
-                {{ message }}
-            </div>
-        {% endfor %}
+      <div>
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} text-center">{{ message }}</div>
+      {% endfor %}
+      </div>
     {% endif %}
-{% endwith %}
+  {% endwith %}
+  <!-- Fim das Mensagens Flash -->
 
-<div style="margin: auto; width: 80%; text-align: center;">
-  <div class="form-block">
-    <h3>Cadastro de Riscos</h3><br>
-    <form method="POST" action="{{ url_for('relatoriometas.cadastrar_risco') }}">
-      <label for="planejamento_id">Selecione o Planejamento:</label><br>
-      <select name="planejamento_id" id="planejamento_id" required style="width: 90%; margin-bottom: 10px;">
-          <option value="" disabled selected>Selecione um planejamento</option>
-          {% for planejamento in planejamentos %}
-              <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
+  <div class="form-block"><br>
+    <h2 style="text-align: center;">Cadastro de Ação</h2><br>
+    <form method="POST" action="{{ url_for('planejamento.associar_acaope') }}">
+
+      <div class="form-group">
+        <label for="meta_pe_id">Selecione a Meta cadastrada:</label>
+        <select name="meta_pe_id" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+          {% for meta in metas_pe %}
+            <option value="{{ meta.id }}">{{ meta.nome }}</option>
           {% endfor %}
-      </select>
-      <br>
+        </select>
+      </div>
 
-      <label for="objetivo_pe_id">Selecione o Objetivo:</label><br>
-      <select name="objetivo_pe_id" id="objetivo_pe_id" required style="width: 90%; margin-bottom: 10px;" disabled>
-          <option value="" disabled selected>Selecione um objetivo</option>
-      </select>
-      <br>
+      <div class="form-group">
+        <label for="nome">Nome da Ação:</label>
+        <input type="text" id="nome" name="nome" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+      </div>
 
-      <label for="meta_pe_id">Selecione a Meta:</label><br>
-      <select name="meta_pe_id" id="meta_pe_id" required style="width: 90%; margin-bottom: 10px;" disabled>
-          <option value="" disabled selected>Selecione uma meta</option>
-      </select>
-      <br>
+      <div class="form-group">
+        <label for="porcentagem_execucao">Porcentagem da Execução:</label>
+        <input type="text" id="porcentagem_execucao" name="porcentagem_execucao" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+      </div>
 
-      <label for="descricao">Descrição do Risco:</label><br>
-      <input type="text" id="descricao" name="descricao" required style="width: 90%; margin-bottom: 10px;"><br>
+      <div class="form-group">
+        <label for="data_inicio">Data de Início:</label>
+        <input type="date" id="data_inicio" name="data_inicio" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+      </div>
 
-      <label for="probabilidade">Probabilidade:</label>
-      <select id="probabilidade" name="probabilidade" required style="width: 90%; margin-bottom: 10px;">
-          <option value="Baixa">Baixa</option>
-          <option value="Média">Média</option>
-          <option value="Alta">Alta</option>
-      </select><br>
-      <br>
+      <div class="form-group">
+        <label for="data_termino">Data de Término:</label>
+        <input type="date" id="data_termino" name="data_termino" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+      </div>
 
-      <label for="impacto">Impacto:</label><br>
-      <select id="impacto" name="impacto" required style="width: 90%; margin-bottom: 10px;">
-          <option value="Insignificante">Insignificante</option>
-          <option value="Moderado">Moderado</option>
-          <option value="Catastrófico">Catastrófico</option>
-      </select><br>
-      <br>
+      <div class="form-group">
+        <label for="responsavel">Responsável:</label>
+        <input type="text" id="responsavel" name="responsavel" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+      </div>
 
-      <div style="margin-top: 20px;">
-          <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
-          <button type="button" onclick="cancelar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
+      <div class="form-group">
+        <label for="status">Status:</label>
+        <select id="status" name="status" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+          <option value="planejada">Planejada</option>
+          <option value="em_andamento">Em Andamento</option>
+          <option value="concluída">Concluída</option>
+          <option value="atrasada">Atrasada</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+      </div>
 
-     </div>
+      <div class="form-group">
+        <label for="observacao">Observação:</label>
+        <input type="text" id="observacao" name="observacao" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+      </div>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <button type="submit" class="btn btn-primary" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Cadastrar</button>
+        <button type="button" onclick="cancelar()" class="btn btn-danger" style="padding: 10px 20px; margin-left: 10px; border: none; border-radius: 4px;">Cancelar</button>
+      </div>
+
     </form>
+
     <script>
-        function cancelar() {
-            window.location.href = "{{ url_for('login.get_coordenador') }}";
-        }
-      </script>
+      function cancelar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+      }
+    </script>
   </div>
 
   <div class="form-block" style="margin-top: 50px;">
-    <h3>Riscos Cadastrados</h3><br>
+    <h3>Ações Cadastradas</h3><br>
     <table class="table table-striped">
       <thead>
         <tr>
           <th>ID</th>
-          <th>Descrição</th>
-          <th>Meta</th>   
-          <th>Probabilidade</th>
-          <th>Impacto</th>
+          <th>Nome</th>
+          <th>Meta</th>
+          <th>Porcentagem Execução</th>
+          <th>Data Início</th>
+          <th>Data Término</th>
+          <th>Responsável</th>
+          <th>Status</th>
+          <th>Observação</th>
           <th>Ações</th>
         </tr>
       </thead>
       <tbody>
-        {% for risco in riscos %}
+        {% for acao in acoes %}
         <tr>
-          <td>{{ risco.id }}</td>
-          <td>{{ risco.descricao }}</td>
-          <td>{{ risco.meta_pe.nome }}</td>       
-          <td>{{ risco.probabilidade }}</td>
-          <td>{{ risco.impacto }}</td>
+          <td>{{ acao.id }}</td>
+          <td>{{ acao.nome }}</td>
+          <td>{{ acao.meta_pe.nome }}</td>
+          <td>{{ acao.porcentagem_execucao }}</td>
+          <td>{{ acao.data_inicio }}</td>
+          <td>{{ acao.data_termino }}</td>
+          <td>{{ acao.responsavel }}</td>
+          <td>{{ acao.status }}</td>
+          <td>{{ acao.observacao }}</td>
           <td>
-            <a href="{{ url_for('relatoriometas.editar_risco', risco_id=risco.id) }}" class="btn btn-warning btn-sm">Editar</a>
+            <a href="{{ url_for('planejamento.alterar_acaope', acao_id=acao.id) }}" class="btn btn-success btn-sm" style="background-color: #28a745;">Editar</a>
           </td>
         </tr>
         {% endfor %}
@@ -103,70 +125,13 @@
   </div>
 </div>
 
-<style>
-.alert-success {
-    color: #155724;
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-}
-
-.alert-error {
-    color: #721c24;
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-}
-
-.form-block .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.form-block .row .col-md-3 {
-    flex: 1;
-    margin-right: 10px;
-}
-</style>
 <div class="form-group" style="text-align: center;">
-    <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+  <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px;">Fechar</button>
 </div>
+
 <script>
   function fechar() {
-      window.location.href = "{{ url_for('login.get_coordenador') }}";
+    window.location.href = "{{ url_for('login.get_coordenador') }}";
   }
-
-  document.getElementById('planejamento_id').addEventListener('change', function() {
-      var planejamentoId = this.value;
-      fetch(`/objetivos_por_planejamento/${planejamentoId}`)
-          .then(response => response.json())
-          .then(data => {
-              var objetivoSelect = document.getElementById('objetivo_pe_id');
-              objetivoSelect.innerHTML = '<option value="" disabled selected>Selecione um objetivo</option>';
-              data.forEach(function(objetivo) {
-                  var option = document.createElement('option');
-                  option.value = objetivo.id;
-                  option.text = objetivo.nome;
-                  objetivoSelect.add(option);
-              });
-              objetivoSelect.disabled = false;
-          });
-  });
-
-  document.getElementById('objetivo_pe_id').addEventListener('change', function() {
-      var objetivoId = this.value;
-      fetch(`/metas_por_objetivo/${objetivoId}`)
-          .then(response => response.json())
-          .then(data => {
-              var metaSelect = document.getElementById('meta_pe_id');
-              metaSelect.innerHTML = '<option value="" disabled selected>Selecione uma meta</option>';
-              data.forEach(function(meta) {
-                  var option = document.createElement('option');
-                  option.value = meta.id;
-                  option.text = meta.nome;
-                  metaSelect.add(option);
-              });
-              metaSelect.disabled = false;
-          });
-  });
 </script>
 {% endblock %}

@@ -86,7 +86,6 @@
           </div>
         </div>
 
-       
         <!-- Agrupar Ano e Valor em uma linha -->
         <div class="row">
           <div class="col-md-6">
@@ -104,9 +103,9 @@
         </div>
 
         <!-- Botões de Ação -->
-        <div class="form-group text-center">
-          <button type="submit" class="btn btn-success btn-lg">Cadastrar</button>
-          <button type="button" onclick="cancelar()" class="btn btn-danger btn-lg">Cancelar</button>
+        <div class="form-group text-center" style="margin-top: 20px;">
+          <button type="submit" class="btn btn-primary btn-lg" style="background-color: #0056b3;">Cadastrar</button>
+          <button type="button" onclick="cancelar()" class="btn btn-danger btn-lg" style="margin-left: 10px;">Cancelar</button>
         </div>
       </form>
     </div>
@@ -135,24 +134,17 @@
         <tbody>
           {% for indicador in indicadores %}
           <tr>
-            <tbody>
-              {% for indicador in indicadores %}
-              <tr>
-                <td>{{ indicador.id }}</td>
-                <td>{{ indicador.nome }}</td>
-                <td>{{ indicador.descricao }}</td>
-                <td>{{ indicador.frequencia_coleta }}</td>
-                <td>{{ indicador.peso }}</td>
-                <td>{{ indicador.responsavel }}</td> <!-- Aqui deve aparecer o responsável -->
-                <td>{{ indicador.data_inicio }}</td>
-                <td>{{ indicador.data_fim }}</td>
-                <td>
-                  <a href="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}" class="btn btn-warning btn-sm">Editar</a>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-                      
+            <td>{{ indicador.id }}</td>
+            <td>{{ indicador.nome }}</td>
+            <td>{{ indicador.descricao }}</td>
+            <td>{{ indicador.frequencia_coleta }}</td>
+            <td>{{ indicador.peso }}</td>
+            <td>{{ indicador.responsavel }}</td>
+            <td>{{ indicador.data_inicio }}</td>
+            <td>{{ indicador.data_fim }}</td>
+            <td>
+              <a href="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}" class="btn btn-success btn-sm" style="background-color: #28a745;">Editar</a>
+            </td>
           </tr>
           {% endfor %}
         </tbody>

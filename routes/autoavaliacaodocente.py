@@ -1,295 +1,208 @@
 import os
-from flask import Blueprint, request, redirect, url_for, flash, render_template, session, current_app, send_file,make_response
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, send_file
 from flask_login import login_required, current_user
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
-from sklearn.linear_model import LinearRegression
-from sklearn.tree import DecisionTreeClassifier
-from wordcloud import WordCloud
-from textblob import TextBlob
-import uuid
-from xhtml2pdf import pisa
-from io import BytesIO
-import base64
-import tempfile
+import numpy as np
+import pdfkit
+from werkzeug.utils import secure_filename
+import uuid  # Adicionar este import
 import pickle
+import tempfile
 
 autoavaliacaodocente_route = Blueprint('autoavaliacaodocente', __name__)
 
-@autoavaliacaodocente_route.before_app_request
-def setup_upload_folder():
-    current_app.config['UPLOAD_FOLDER'] = 'static/uploads'
-    if not os.path.exists(current_app.config['UPLOAD_FOLDER']):
-        os.makedirs(current_app.config['UPLOAD_FOLDER'])
+# Defina o caminho para o upload de arquivos
+UPLOAD_FOLDER = 'static/uploads'
+GRAPH_FOLDER = 'static/graficos'
+
+# Certifique-se de que os diretórios para uploads e gráficos existam
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+if not os.path.exists(GRAPH_FOLDER):
+    os.makedirs(GRAPH_FOLDER)
+
+# Definir a função para verificar a extensão do arquivo
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'xlsx'}  # Defina as extensões permitidas
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@autoavaliacaodocente_route.route('/dashboard_docente/<int:planejamento_id>')
+def mostrar_dashboard_docente(planejamento_id):
+    try:
+        # Carregar os dados relevantes do CSV salvo
+        csv_path = os.path.join(UPLOAD_FOLDER, 'dados_relevantes_docente.csv')
+        if not os.path.exists(csv_path):
+            flash('Arquivo de dados não encontrado. Importe a planilha primeiro.', 'danger')
+            return redirect(url_for('autoavaliacaodocente.importar_planilha_docente'))
+
+        df = pd.read_csv(csv_path)
+
+        # Exibir as colunas disponíveis no DataFrame para verificar a formatação
+        print("Colunas disponíveis no DataFrame:", df.columns)
+
+        # Padronizar as colunas removendo espaços e convertendo para letras minúsculas
+        df.columns = df.columns.str.strip().str.lower()
+
+        # Verificar se as colunas de proficiência e capacitação estão presentes após a padronização
+        prof_col_name = 'qual o seu nível de proficiência em língua inglesa?'.lower().strip()
+        capacitado_col_name = 'sinto-me capacitado para oferecer disciplinas em língua inglesa:'.lower().strip()
+
+        if prof_col_name in df.columns:
+            df['proficiencia_ingles'] = pd.to_numeric(df[prof_col_name], errors='coerce')
+        else:
+            print("Colunas disponíveis no DataFrame:", df.columns)  # Imprimir as colunas disponíveis para verificar
+            flash('A coluna de proficiência em inglês não foi encontrada.', 'danger')
+            return redirect(url_for('autoavaliacaodocente.importar_planilha_docente'))
+
+        if capacitado_col_name in df.columns:
+            df['capacitado_em_ingles'] = pd.to_numeric(df[capacitado_col_name], errors='coerce')
+        else:
+            flash('A coluna de capacitação para ensinar em inglês não foi encontrada.', 'danger')
+            return redirect(url_for('autoavaliacaodocente.importar_planilha_docente'))
+
+        # Remover linhas com valores NaN nas colunas importantes
+        df.dropna(subset=['proficiencia_ingles', 'capacitado_em_ingles'], inplace=True)
+
+        # Criar gráficos e salvar nas pastas correspondentes
+
+        # Gráfico 1: Pizza - Qualidade das aulas
+        plt.figure(figsize=(6, 6))
+        df['proficiencia_ingles'].value_counts().plot(kind='pie', autopct='%1.1f%%', startangle=90)
+        plt.title('Distribuição da Qualidade das Aulas')
+        pizza_path = os.path.join(GRAPH_FOLDER, 'pizza_qualidade_aulas_docente.png')
+        plt.savefig(pizza_path)
+        plt.close()
+
+        # Gráfico 2: Barras - Infraestrutura geral
+        plt.figure(figsize=(6, 6))
+        df.groupby('proficiencia_ingles')['capacitado_em_ingles'].mean().plot(kind='bar', color='purple')
+        plt.title('Infraestrutura Geral')
+        barras_path = os.path.join(GRAPH_FOLDER, 'barras_infraestrutura_docente.png')
+        plt.savefig(barras_path)
+        plt.close()
+
+        # Gráfico 3: Pizza - Proficiência em inglês
+        plt.figure(figsize=(6, 6))
+        df['proficiencia_ingles'].value_counts().plot(kind='pie', autopct='%1.1f%%', startangle=90)
+        plt.title('Distribuição da Proficiência em Inglês')
+        pizza_ingles_path = os.path.join(GRAPH_FOLDER, 'pizza_proficiencia_ingles.png')
+        plt.savefig(pizza_ingles_path)
+        plt.close()
+
+        # Gráfico 4: Barras - Capacitado para ensinar em inglês
+        plt.figure(figsize=(6, 6))
+        df['capacitado_em_ingles'].value_counts().plot(kind='bar', color='orange')
+        plt.title('Capacitação para Ensinar em Inglês')
+        barras_ingles_path = os.path.join(GRAPH_FOLDER, 'barras_capacitacao_ingles.png')
+        plt.savefig(barras_ingles_path)
+        plt.close()
+
+        # Passar os caminhos dos gráficos para o template
+        return render_template('dashboard_docente.html',
+                       pizza_path='graficos/pizza_qualidade_aulas_docente.png',  # Para o primeiro gráfico de pizza
+                       barras_path='graficos/barras_infraestrutura_docente.png',  # Para o segundo gráfico de barras
+                       plot_url_3='graficos/pizza_proficiencia_ingles.png',  # Para o terceiro gráfico de pizza
+                       plot_url_4='graficos/barras_capacitacao_ingles.png',  # Para o quarto gráfico de barras
+                       planejamento_id=planejamento_id)
+
+    except Exception as e:
+        print(f"Erro ao carregar os dados: {e}")
+        flash(f"Ocorreu um erro ao gerar os gráficos: {e}", 'danger')
+        return redirect(url_for('autoavaliacaodocente.importar_planilha_docente'))
+
 
 
 @autoavaliacaodocente_route.route('/importar_planilha_docente', methods=['GET', 'POST'])
-@login_required
 def importar_planilha_docente():
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            flash('Nenhum arquivo selecionado', 'danger')
-            return redirect(request.url)
-
-        file = request.files['file']
-        if file.filename == '':
-            flash('Nenhum arquivo selecionado', 'danger')
-            return redirect(request.url)
-
-        if file:
-            upload_folder = current_app.config['UPLOAD_FOLDER']
-            filename = os.path.join(upload_folder, 'docente.xlsx')
-
-            try:
-                file.save(filename)
-                print(f"Arquivo salvo com sucesso em {filename}")
-            except Exception as e:
-                print(f"Erro ao salvar o arquivo: {e}")
-                flash(f'Erro ao salvar o arquivo: {e}', 'danger')
+    try:
+        if request.method == 'POST':
+            if 'file' not in request.files:
+                flash('Nenhum arquivo foi enviado.', 'danger')
                 return redirect(request.url)
 
-            try:
-                # Ler e processar a planilha
-                docente_data = pd.read_excel(filename)
-                print(f"Colunas disponíveis no dataframe: {docente_data.columns}")
-                plot_filenames, recomendacoes = generate_docente_dashboard(docente_data)
+            file = request.files['file']
 
-                # Salvar o dataframe em um arquivo temporário
-                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pkl')
-                with open(temp_file.name, 'wb') as f:
-                    pickle.dump(docente_data, f)
-                print(f"Dataframe salvo temporariamente em {temp_file.name}")
-
-                # Armazenar o caminho do arquivo temporário na sessão
-                session['dataframe_file'] = temp_file.name
-                session['plot_filenames'] = plot_filenames
-                session['recomendacoes'] = recomendacoes
-
-                return redirect(url_for('autoavaliacaodocente.dashboard_docente'))
-
-            except Exception as e:
-                print(f"Erro ao processar a planilha: {e}")
-                flash(f'Erro ao processar a planilha: {e}', 'danger')
+            if file.filename == '':
+                flash('Nenhum arquivo selecionado.', 'danger')
                 return redirect(request.url)
+
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+                # Verifica se a pasta de upload existe, e cria se necessário
+                if not os.path.exists(UPLOAD_FOLDER):
+                    os.makedirs(UPLOAD_FOLDER)
+
+                # Salva o arquivo no caminho especificado
+                file.save(filepath)
+
+                # Carrega a planilha em um DataFrame Pandas
+                df = pd.read_excel(filepath)
+
+                # Padronizar as colunas removendo espaços e convertendo para letras minúsculas
+                df.columns = df.columns.str.strip().str.lower()
+
+                # Verifique se as colunas necessárias estão presentes, incluindo proficiência e capacitação
+                required_columns = [
+                    'como você avalia a qualidade das aulas e do material utilizado? [qualidade das aulas]', 
+                    'como você avalia a infraestrutura do programa? [infraestrutura geral]',
+                    'qual o seu nível de proficiência em língua inglesa?',
+                    'sinto-me capacitado para oferecer disciplinas em língua inglesa:'
+                ]
+
+                missing_columns = [col for col in required_columns if col not in df.columns]
+
+                if missing_columns:
+                    flash(f"Erro: As seguintes colunas estão ausentes na planilha: {', '.join(missing_columns)}", 'danger')
+                    return redirect(request.url)
+
+                # Processar os dados necessários e salvar em CSV
+                dados_relevantes = df[required_columns]
+                dados_relevantes.to_csv(os.path.join(UPLOAD_FOLDER, 'dados_relevantes_docente.csv'), index=False)
+
+                flash('Arquivo importado com sucesso!', 'success')
+
+                # Certifique-se de passar o planejamento_id correto ao redirecionar
+                planejamento_id = 1  # Troque para o valor correto
+                return redirect(url_for('autoavaliacaodocente.mostrar_dashboard_docente', planejamento_id=planejamento_id))
+            else:
+                flash('Tipo de arquivo não permitido. Envie um arquivo .xlsx', 'danger')
+                return redirect(request.url)
+
+    except Exception as e:
+        print(f"Erro ao processar a planilha: {e}")
+        flash(f"Ocorreu um erro ao processar o arquivo: {e}", 'danger')
+        return redirect(request.url)
 
     return render_template('importar_planilha_docente.html')
 
 
-@autoavaliacaodocente_route.route('/dashboard_docente')
+@autoavaliacaodocente_route.route('/gerar_pdf_docente')
 @login_required
-def dashboard_docente():
-    plot_filenames = session.get('plot_filenames', [])
-    recomendacoes = session.get('recomendacoes', [])
-
-    # Verificar o conteúdo de plot_filenames
-    if len(plot_filenames) < 2:
-        flash('Não foram gerados gráficos suficientes.', 'danger')
-        return render_template('erro_graficos.html', recomendacoes=recomendacoes)
-
-    # Gerar URLs para os gráficos
-    plot_urls = [os.path.basename(filename) for filename in plot_filenames]
-
-    # Carregar o dataframe do arquivo temporário
-    dataframe_file = session.get('dataframe_file')
-    if dataframe_file:
-        with open(dataframe_file, 'rb') as f:
-            docente_data = pickle.load(f)
-        dataframe_dict = docente_data.to_dict(orient='records')
-    else:
-        dataframe_dict = []
-
-    return render_template('dashboard_docente.html', plot_url_1=plot_urls[0], plot_url_2=plot_urls[1], recomendacoes=recomendacoes, dataframe=dataframe_dict)
-
-
-def generate_docente_dashboard(dataframe):
-    """
-    Função para gerar gráficos e recomendações com base nos dados da planilha docente.
-    """
-    plot_filenames = []
-    recomendacoes = []
-
-    print("Iniciando a geração de gráficos...")
-
-    upload_folder = current_app.config['UPLOAD_FOLDER']
-
-    # Gerar gráfico de pizza para 'Qualidade das Aulas'
-    if 'Como você avalia a qualidade das aulas e do material utilizado? [Qualidade das aulas]' in dataframe.columns:
-        caminho_pizza = os.path.join(upload_folder, f'{uuid.uuid4()}.png')
-        gerar_grafico_pizza(dataframe, 'Como você avalia a qualidade das aulas e do material utilizado? [Qualidade das aulas]', caminho_pizza)
-        plot_filenames.append(caminho_pizza)
-        print(f"Gráfico de pizza gerado: {caminho_pizza}")
-    else:
-        print("Coluna 'Qualidade das Aulas' não encontrada no dataframe")
-
-    # Gerar gráfico de barra para 'Infraestrutura geral'
-    if 'Como você avalia a infraestrutura do programa? [Infraestrutura geral]' in dataframe.columns:
-        caminho_barra = os.path.join(upload_folder, f'{uuid.uuid4()}.png')
-        gerar_grafico_barra(dataframe, 'Como você avalia a infraestrutura do programa? [Infraestrutura geral]', caminho_barra)
-        plot_filenames.append(caminho_barra)
-        print(f"Gráfico de barra gerado: {caminho_barra}")
-    else:
-        print("Coluna 'Infraestrutura geral' não encontrada no dataframe")
-
-    # Adicionar recomendações baseadas nos dados
-    recomendacoes.append('Sugestões de melhoria baseadas nos dados...')
-
-    return plot_filenames, recomendacoes
-
-
-def gerar_grafico_pizza(data, coluna, caminho_saida):
-    fig, ax = plt.subplots()
-    data[coluna].value_counts().plot.pie(autopct='%1.1f%%', ax=ax)
-    ax.set_ylabel('')
-    fig.savefig(caminho_saida)  # Salvando o gráfico no caminho especificado
-    plt.close(fig)
-
-    return caminho_saida  # Retorna o caminho do gráfico gerado
-
-
-def gerar_grafico_barra(data, coluna, caminho_saida):
-    fig, ax = plt.subplots()
-    data[coluna].value_counts().plot(kind='bar', ax=ax)
-    ax.set_ylabel('Frequência')
-    ax.set_title(coluna)
-    fig.savefig(caminho_saida)  # Salvando o gráfico no caminho especificado
-    plt.close(fig)
-
-    return caminho_saida  # Retorna o caminho do gráfico gerado
-
-
-
-def gerar_nuvem_palavras(comentarios):
-    """Gera uma nuvem de palavras com base nos comentários fornecidos."""
-    all_comments = ' '.join(comentarios.dropna())  # Juntando todos os comentários
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(all_comments)
-    
-    plt.figure(figsize=(10, 5))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    
-    upload_folder = current_app.config['UPLOAD_FOLDER']
-    filename = os.path.join(upload_folder, f'{uuid.uuid4()}.png')
-    plt.savefig(filename)
-    plt.close()
-
-    return filename
-
-def aplicar_clustering(dataframe, colunas):
-    kmeans = KMeans(n_clusters=3)
-    dataframe['Cluster'] = kmeans.fit_predict(dataframe[colunas])
-    return dataframe
-
-def sugerir_melhorias(dataframe):
-    recomendacoes = []
-
-    # Exemplo de análise de 'Qualidade das Aulas'
-    if 'Qualidade das Aulas' in dataframe.columns:
-        media_qualidade = dataframe['Qualidade das Aulas'].mean()
-        if media_qualidade < 4:
-            recomendacoes.append('Revisar os métodos de ensino para melhorar a qualidade das aulas.')
-        else:
-            recomendacoes.append('A qualidade das aulas está acima da média, continuar monitorando.')
-
-    # Análise de sentimentos
-    if 'Sentimentos' in dataframe.columns:
-        media_sentimentos = dataframe['Sentimentos'].mean()
-        if media_sentimentos < 0:
-            recomendacoes.append('Os comentários indicam insatisfação. Sugerimos melhorar a comunicação com os docentes.')
-        else:
-            recomendacoes.append('Comentários gerais positivos, manter a comunicação atual.')
-
-    # Infraestrutura
-    if 'Infraestrutura' in dataframe.columns:
-        media_infraestrutura = dataframe['Infraestrutura'].mean()
-        if media_infraestrutura < 3:
-            recomendacoes.append('Investir em melhorias na infraestrutura do programa.')
-        else:
-            recomendacoes.append('Infraestrutura satisfatória.')
-
-    return recomendacoes
-
-
 def gerar_pdf_docente():
-    # Processar a planilha e gerar gráficos
-    caminho_grafico_pizza, caminho_grafico_barra = processar_planilha('caminho_para_sua_planilha.xlsx')
+    try:
+        # Recuperar os gráficos e recomendações da sessão
+        plot_filenames = session.get('plot_filenames', [])
+        recomendacoes = session.get('recomendacoes', [])
 
-    # Renderizar o template HTML com os gráficos
-    html = render_template('pdf_template.html', 
-                           plot_url_1=caminho_grafico_pizza, 
-                           plot_url_2=caminho_grafico_barra)
+        # Renderizar o template HTML com os gráficos e as recomendações
+        rendered_html = render_template('dashboard_docente.html',
+                                        plot_url_1=plot_filenames[0],
+                                        plot_url_2=plot_filenames[1],
+                                        recomendacoes=recomendacoes)
 
-    # Gerar o PDF
-    response = make_response()
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = 'inline; filename=relatorio_docente.pdf'
+        # Gerar o PDF a partir do HTML renderizado
+        pdf_path = f'static/relatorios/autoavaliacao_docente.pdf'
+        pdfkit.from_string(rendered_html, pdf_path)
 
-    pisa_status = pisa.CreatePDF(html, dest=response)
+        # Enviar o PDF gerado para download
+        return send_file(pdf_path, as_attachment=True)
 
-    if pisa_status.err:
-        return "Erro ao gerar PDF", 500
-    return response
-
-def gerar_grafico_barra(data, coluna, caminho_saida):
-    fig, ax = plt.subplots()
-    data[coluna].value_counts().plot(kind='bar', ax=ax)
-    ax.set_ylabel('Frequência')
-    ax.set_title(coluna)
-    fig.savefig(caminho_saida)  # Salvando o gráfico no caminho especificado
-    plt.close(fig)
-
-    return caminho_saida  # Retorna o caminho do gráfico gerado
-
-
-def processar_planilha(planilha_path):
-    # Carregar os dados da planilha
-    dataframe = pd.read_excel(planilha_path)
-
-    # Definir o caminho completo onde os gráficos serão salvos
-    upload_folder = current_app.config['UPLOAD_FOLDER']
-    caminho_pizza = os.path.join(upload_folder, f'{uuid.uuid4()}.png')
-    caminho_barra = os.path.join(upload_folder, f'{uuid.uuid4()}.png')
-
-    # Gerar gráficos de pizza e barra
-    gerar_grafico_pizza(dataframe, 'Como você avalia a qualidade das aulas e do material utilizado? [Qualidade das aulas]', caminho_pizza)
-    gerar_grafico_barra(dataframe, 'Como você avalia a infraestrutura do programa? [Infraestrutura geral]', caminho_barra)
-
-    # Retornar os caminhos dos gráficos para usar no PDF ou no dashboard
-    return caminho_pizza, caminho_barra
-
-
-def gerar_grafico_base64():
-    # Exemplo simples de gráfico
-    fig, ax = plt.subplots()
-    ax.plot([1, 2, 3, 4], [1, 4, 2, 3])
-
-    # Salvar o gráfico em um buffer de bytes
-    buf = BytesIO()
-    fig.savefig(buf, format='png')
-    buf.seek(0)
-    plt.close(fig)
-
-    # Codificar a imagem em base64
-    image_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
-    return image_base64
-
-def analisar_sentimento(texto):
-    if pd.isna(texto) or texto == "":
-        return 'Neutro'  # Se o texto estiver vazio ou for NaN, retorna "Neutro"
-    analysis = TextBlob(texto)
-    if analysis.sentiment.polarity > 0:
-        return 'Positivo'
-    elif analysis.sentiment.polarity == 0:
-        return 'Neutro'
-    else:
-        return 'Negativo'
-
-    
-def classificar_comentario(texto):
-    if any(palavra in texto.lower() for palavra in ['bom', 'excelente', 'ótimo']):
-        return 'Elogio'
-    elif any(palavra in texto.lower() for palavra in ['ruim', 'pior', 'péssimo']):
-        return 'Crítica'
-    else:
-        return 'Sugestão'
-
+    except Exception as e:
+        print(f"Erro ao gerar PDF: {e}")
+        flash(f"Ocorreu um erro ao gerar o PDF: {e}", 'danger')
+        return redirect(url_for('autoavaliacaodocente.dashboard_docente'))

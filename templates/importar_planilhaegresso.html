@@ -8,6 +8,7 @@
     <div class="container" style="text-align: center; padding-top: 50px;">
         <h2 style="text-align: center; color: #003366; padding-bottom: 20px;">Importar Planilha Egresso</h2>
 
+        <!-- Exibe mensagens flash de sucesso ou erro -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -18,16 +19,34 @@
             {% endif %}
         {% endwith %}
 
+        <!-- Formulário para upload da planilha -->
         <form action="{{ url_for('autoavaliacaoegresso.importar_planilha_egresso') }}" method="POST" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="file" style="color: #003366;">Selecionar Arquivo</label>
-                <!-- Campo de upload de arquivo visível -->
-                <input type="file" class="form-control-file" id="file" name="file" required>
+                <input type="file" class="form-control-file" id="file" name="file" style="display: none;" onchange="updateFileName(this)">
+                <label for="file" class="btn btn-primary" style="background-color: #003366; border-color: #003366; margin-bottom: 20px;">Escolher arquivo</label>
+                <!-- Exibir o nome do arquivo aqui -->
+                <span id="file-name" style="color: #003366; margin-left: 10px;"></span>
             </div>
-            <div style="margin-top: 20px;">
-                <button type="submit" class="btn btn-primary" style="background-color: #003366; border-color: #003366; width: 150px;">Upload</button>
-                <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-danger" style="width: 150px;">Fechar</a>
-            </div>
+
+            <!-- Botão para fazer o upload -->
+            <button type="submit" class="btn btn-primary" style="background-color: #003366; width: 150px;">Upload</button>
+
+            <!-- Botão para fechar a página -->
+            <a href="{{ url_for('login.get_coordenador') }}" class="btn btn-danger" style="width: 150px;">Fechar</a>
         </form>
     </div>
+
+    <!-- Script para fazer o clique no input de arquivo ao clicar no botão estilizado -->
+    <script>
+        document.querySelector('label[for="file"]').addEventListener('click', function() {
+            document.getElementById('file').click();
+        });
+
+        // Script para mostrar o nome do arquivo selecionado
+        function updateFileName(input) {
+            var fileName = input.files[0].name;
+            document.getElementById('file-name').textContent = fileName;
+        }
+    </script>
 {% endblock %}

@@ -1,46 +1,43 @@
 {% extends 'basecorden.html' %}
 
 {% block titulo %}
-    Autoavaliação de Docentes
+    <div style="text-align: center;">
+        Relatório de Autoavaliação Docente
+    </div>
 {% endblock %}
 
 {% block conteudo %}
-<body>
-    <h1>Relatório de Autoavaliação Docente</h1>
+    <h2 style="text-align: center;">Gráficos Gerados</h2>
 
-    <!-- Seção de Gráficos Gerados -->
-    <h2>Gráficos Gerados</h2>
-    <div class="grafico">
-        <img src="{{ url_for('static', filename='uploads/' + plot_url_1) }}" alt="Gráfico de Pizza">
+    <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+        <div class="grafico" style="margin: 20px;">
+            <h3 style="text-align: center;">Distribuição da Qualidade das Aulas</h3>
+            <img src="{{ url_for('static', filename=pizza_path) }}" alt="Gráfico de Pizza" style="width: 400px; height: 400px;">
+        </div>
+        <div class="grafico" style="margin: 20px;">
+            <h3 style="text-align: center;">Infraestrutura Geral</h3>
+            <img src="{{ url_for('static', filename=barras_path) }}" alt="Gráfico de Barra" style="width: 400px; height: 400px;">
+        </div>
+        <div class="grafico" style="margin: 20px;">
+            <h3 style="text-align: center;">Distribuição da Proficiência em Inglês</h3>
+            <img src="{{ url_for('static', filename=plot_url_3) }}" alt="Gráfico de Pizza" style="width: 400px; height: 400px;">
+        </div>
+        <div class="grafico" style="margin: 20px;">
+            <h3 style="text-align: center;">Capacitação para Ensinar em Inglês</h3>
+            <img src="{{ url_for('static', filename='graficos/barras_capacitacao_ingles.png') }}" alt="Gráfico de Barra" style="width: 400px; height: 400px;">
+        </div>
     </div>
-    <div class="grafico">
-        <img src="{{ url_for('static', filename='uploads/' + plot_url_2) }}" alt="Gráfico de Barra">
+
+    <div style="text-align: center; margin-top: 40px;">
+        <!-- Botão vermelho para fechar -->
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+
+        <!-- Botão azul para gerar PDF -->
+        <a href="{{ url_for('gerar_pdf', planejamento_id=planejamento_id) }}" class="btn btn-primary">Gerar PDF</a>
     </div>
-
-    <!-- Seção de Sugestões de Melhoria -->
-    <h2>Sugestões de Melhoria Baseadas em IA</h2>
-    <ul>
-        {% for recomendacao in recomendacoes %}
-            <li>{{ recomendacao }}</li>
-        {% endfor %}
-    </ul>
-
-    <!-- Seção de Análise de Sentimentos e Classificação de Comentários -->
-    <h2>Análise de Sentimentos e Classificação de Comentários</h2>
-    <table>
-        <tr>
-            <th>Comentário</th>
-            <th>Sentimento</th>
-            <th>Classificação</th>
-        </tr>
-        {% for row in dataframe %}
-        <tr>
-            <td>{{ row['Gostaria de adicionar algum comentário referente ao Programa de Pós-Graduação em questão?'] }}</td>
-            <td>{{ row['Sentimento'] }}</td>
-            <td>{{ row['Classificação'] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-
-</body>
+    <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
+        }
+    </script>
 {% endblock %}

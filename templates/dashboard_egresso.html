@@ -1,36 +1,84 @@
 {% extends 'basecorden.html' %}
 
 {% block titulo %}
-    Importar Planilha de Egressos
+    Dashboard Egressos
 {% endblock %}
 
 {% block conteudo %}
-<div class="container" style="text-align: center; padding-top: 20px;">
-    <h1 style="color: #003366;">Importar Planilha de Autoavaliação de Egressos</h1>
-    
+<div class="container" style="text-align: center; padding-top: 50px;">
+    <h2 style="text-align: center; color: #003366; padding-bottom: 20px;">Análise dos Egressos</h2>
+
+    <!-- Exibe mensagens flash (sucesso ou erro) -->
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}" role="alert">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
     {% endwith %}
-    
-    <form method="POST" action="{{ url_for('autoavaliacaoegresso.importar_planilha_egresso') }}" enctype="multipart/form-data">
-        <div class="mb-3">
-            <label for="formFile" class="form-label">Escolha a planilha de egressos (.xlsx)</label>
-            <input class="form-control" type="file" id="formFile" name="file" required>
+
+    <!-- Exibe os gráficos, se existirem -->
+    <div class="row">
+        {% if barras_ano_path %}
+        <div class="col-md-6">
+            <img src="{{ barras_ano_path }}" alt="Gráfico Barras por Ano de Conclusão" class="img-fluid">
         </div>
-        <button type="submit" class="btn btn-primary" style="background-color: #003366;">Fazer Upload</button>
-    </form>
+        {% endif %}
+
+        {% if pizza_recomendacao_path %}
+        <div class="col-md-6">
+            <img src="{{ pizza_recomendacao_path }}" alt="Gráfico Pizza de Recomendação" class="img-fluid">
+        </div>
+        {% endif %}
+
+        {% if scatter_path %}
+        <div class="col-md-6">
+            <img src="{{ scatter_path }}" alt="Gráfico de Dispersão de Qualidade das Aulas vs Faixa Salarial" class="img-fluid">
+        </div>
+        {% endif %}
+
+        {% if barras_avanco_path %}
+        <div class="col-md-6">
+            <img src="{{ barras_avanco_path }}" alt="Gráfico Barras de Avanço Científico" class="img-fluid">
+        </div>
+        {% endif %}
+
+        {% if barras_insumos_path %}
+        <div class="col-md-6">
+            <img src="{{ barras_insumos_path }}" alt="Gráfico Barras de Avaliação dos Insumos para Pesquisa" class="img-fluid">
+        </div>
+        {% endif %}
+
+        {% if barras_gestao_path %}
+        <div class="col-md-6">
+            <img src="{{ barras_gestao_path }}" alt="Gráfico Barras de Avaliação do Processo de Gestão" class="img-fluid">
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Caso não haja gráficos disponíveis -->
+    {% if not barras_ano_path and not pizza_recomendacao_path and not scatter_path and not barras_avanco_path and not barras_insumos_path and not barras_gestao_path %}
+        <div class="alert alert-warning" role="alert">
+            Nenhum gráfico disponível. Por favor, realize o upload da planilha de egressos para gerar os gráficos.
+        </div>
+    {% endif %}
 </div>
 
-<style>
-    .container {
-        max-width: 600px;
-        margin: auto;
+<!-- Botões centralizados -->
+<div style="text-align: center; margin-top: 40px;">
+    <!-- Botão vermelho para fechar -->
+    <button type="button" onclick="fechar()" class="btn btn-danger" style="width: 150px; padding: 10px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+
+    <!-- Botão azul para gerar PDF -->
+    <a href="{{ url_for('autoavaliacaoegresso.gerar_pdf_egresso') }}" class="btn btn-primary" style="width: 150px; padding: 10px; border: none; border-radius: 4px;">Gerar PDF</a>
+</div>
+
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
     }
-</style>
+</script>
+
 {% endblock %}
