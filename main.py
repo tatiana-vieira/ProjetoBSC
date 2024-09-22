@@ -1027,7 +1027,7 @@ def mostrar_resultado_feedback():
     else:
         flash('Nenhum dado de feedback encontrado', 'danger')
         return redirect(url_for('importar_planilha_feedback'))
-
+    
 
 #######################################################################################################33333
 if __name__ == "__main__":

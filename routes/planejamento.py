@@ -38,15 +38,27 @@ def coordenador_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
+
 @planejamento_route.route('/get_coordenador', methods=['GET'])
 def get_coordenador():
-    # Calcular o percentual de ações concluídas
-    percentual_acoes_concluidas = calcular_percentual_acoes_concluidas()  # Função que você já implementou
+    programa_id = session.get('programa_id')  # Pegando o ID do programa da sessão
+    planejamento = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).first()
 
-    # Renderizar o template passando a variável percentual_acoes_concluidas
+    if not planejamento:
+        return render_template('indexcord.html', planejamento=None, percentual_metas_atingidas=0, percentual_acoes_concluidas=0)
+
+    # Calculando os percentuais das metas e ações atingidas
+    percentual_metas_atingidas = calcular_percentual_metas_atingidas(planejamento)
+    percentual_acoes_concluidas = calcular_percentual_acoes_concluidas(planejamento)
+
     return render_template('indexcord.html', 
+                           planejamento=planejamento, 
+                           percentual_metas_atingidas=percentual_metas_atingidas,
                            percentual_acoes_concluidas=percentual_acoes_concluidas,
-                           programa_id=session.get('programa_id'))  # Certifique-se de que 'programa_id' está disponível na sessão
+                           programa_id=programa_id)
+
+
 ##################################################################33
 @planejamento_route.route('/editar/<int:id>', methods=['GET', 'POST'])
 def editar_planejamento(id):
@@ -772,21 +784,46 @@ def associar_cadeiavalor():
         return render_template('cadeia_valor.html', planejamentos=planejamentos)
     
 
-###################################  Dashboard  ########################################################################3
-@planejamento_route.route('/dashboard_resumido')
+###################################  Dashboard  principal ########################################################################3
+@planejamento_route.route('/tela_principal')
 @login_required
-def dashboard_resumido():
-    percentual_metas_atingidas = calcular_percentual_metas_atingidas()
-    percentual_acoes_concluidas = calcular_percentual_acoes_concluidas()
-    
-    print(f'Metas Atingidas: {percentual_metas_atingidas}')  # Debug
-    print(f'Ações Concluídas: {percentual_acoes_concluidas}')  # Debug
+def tela_principal():
+    programa_id = current_user.programa_id
+    planejamento = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).first()
+
+    if planejamento:
+        # Busque os objetivos associados ao planejamento
+        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+
+        # Busque as metas associadas aos objetivos do planejamento
+        metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
+        total_metas = len(metas)
+        metas_atingidas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Concluída').count()
+
+        percentual_metas_atingidas = (metas_atingidas / total_metas) * 100 if total_metas > 0 else 0
+
+        # Busque as ações associadas às metas
+        total_acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).count()
+        acoes_concluidas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Concluída').count()
+
+        percentual_acoes_concluidas = (acoes_concluidas / total_acoes) * 100 if total_acoes > 0 else 0
+    else:
+        percentual_metas_atingidas = 0
+        percentual_acoes_concluidas = 0
 
     return render_template(
-        'dashboard_resumido.html',
+        'basecord.html',  # O template da tela principal
+        planejamento=planejamento,
         percentual_metas_atingidas=percentual_metas_atingidas,
         percentual_acoes_concluidas=percentual_acoes_concluidas
     )
+
+
+
+def obter_planejamento():
+    # Supondo que você esteja buscando o primeiro planejamento cadastrado no banco de dados
+    planejamento = PlanejamentoEstrategico.query.first()
+    return planejamento
 
 def calcular_metas_prazo():
     hoje = datetime.now().date()
@@ -799,29 +836,24 @@ def log_mensagem(mensagem):
         f.write(mensagem + '\n')
 
 
-def calcular_percentual_metas_atingidas():
-    total_metas = MetaPE.query.count()
-    metas_concluidas = MetaPE.query.filter(MetaPE.status == 'Concluída').count()
-
-    logging.info(f'Total de Metas: {total_metas}, Metas Concluídas: {metas_concluidas}')  # Usar logging
-
-    if total_metas > 0:
-        return round((metas_concluidas / total_metas) * 100, 2)
-    else:
+def calcular_percentual_metas_atingidas(planejamento):
+    metas = planejamento.metas  # Verifique se a relação está definida corretamente
+    if not metas:
         return 0
+    metas_atingidas = [meta for meta in metas if meta.status.lower() == 'concluída']  # Considere status como 'Concluída'
+    percentual = (len(metas_atingidas) / len(metas)) * 100
+    return round(percentual, 2)
 
-def calcular_percentual_acoes_concluidas():
-    total_acoes = AcaoPE.query.count()
-    acoes_concluidas = AcaoPE.query.filter(AcaoPE.status == 'Concluída').count()
-
-    logging.info(f'Total de Ações: {total_acoes}, Ações Concluídas: {acoes_concluidas}')  # Usar logging
-
-    if total_acoes > 0:
-        return round((acoes_concluidas / total_acoes) * 100, 2)
-    else:
+def calcular_percentual_acoes_concluidas(planejamento):
+    acoes = planejamento.acoes  # Verifique se a relação está definida corretamente
+    if not acoes:
         return 0
+    acoes_concluidas = [acao for acao in acoes if acao.status.lower() == 'concluída']  # Considere status como 'Concluída'
+    percentual = (len(acoes_concluidas) / len(acoes)) * 100
+    return round(percentual, 2)
 
 
+##########################################################################################################3
 
 def gerar_grafico_base64(percentual_concluidas):
     labels = ['Concluído', 'Em Andamento']
@@ -1049,3 +1081,40 @@ def calcular_progresso(meta):
     elif meta.status == "Revisão":
         # Pode colocar em espera até a revisão ser concluída
         return meta.progresso_atual
+
+
+@planejamento_route.route('/resumo_planejamento')
+@login_required
+def resumo_planejamento():
+    programa_id = current_user.programa_id
+    planejamento = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).first()
+    
+    if planejamento:
+        # Busque os objetivos associados ao planejamento
+        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+        
+        # Busque as metas associadas aos objetivos do planejamento
+        metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
+        total_metas = len(metas)
+        metas_atingidas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Concluída').count()
+
+        percentual_metas_atingidas = (metas_atingidas / total_metas) * 100 if total_metas > 0 else 0
+
+        # Busque as ações associadas às metas
+        total_acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).count()
+        acoes_concluidas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Concluída').count()
+
+        percentual_acoes_concluidas = (acoes_concluidas / total_acoes) * 100 if total_acoes > 0 else 0
+
+    else:
+        total_metas = 0
+        percentual_metas_atingidas = 0
+        percentual_acoes_concluidas = 0
+
+    return render_template(
+        'resumo_planejamento.html',
+        planejamento=planejamento,
+        percentual_metas_atingidas=percentual_metas_atingidas,
+        percentual_acoes_concluidas=percentual_acoes_concluidas
+    )
+

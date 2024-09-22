@@ -1,9 +1,9 @@
-{% extends 'basecord.html' %}
+{% extends 'basecorden.html' %}
 
 {% block conteudo %}
-<h3>Indicadores de Discentes</h3>
+<h3 style="text-align: center; color: #003366;">Indicadores de Discentes</h3>
 
-<h4>Taxa de Conclusão</h4>
+<h4 style="text-align: center;">Taxa de Conclusão</h4>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -21,7 +21,7 @@
     </tbody>
 </table>
 
-<h4>Taxa de Abandono</h4>
+<h4 style="text-align: center;">Taxa de Abandono</h4>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -39,9 +39,9 @@
     </tbody>
 </table>
 
-<h3>Indicadores de Docentes</h3>
+<h3 style="text-align: center; color: #003366;">Indicadores de Docentes</h3>
 
-<h4>Distribuição de Titulação</h4>
+<h4 style="text-align: center;">Distribuição de Titulação</h4>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -59,10 +59,10 @@
     </tbody>
 </table>
 
-<h4>Carga Horária Média</h4>
-<p>{{ "%.3f"|format(carga_horaria_media) }} horas</p>
+<h4 style="text-align: center;">Carga Horária Média</h4>
+<p style="text-align: center;">{{ "%.3f"|format(carga_horaria_media) }} horas</p>
 
-<h4>Atividades de Orientação Média</h4>
+<h4 style="text-align: center;">Atividades de Orientação Média</h4>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -80,7 +80,7 @@
     </tbody>
 </table>
 
-<h4>Distribuição por Regime de Trabalho</h4>
+<h4 style="text-align: center;">Distribuição por Regime de Trabalho</h4>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -98,7 +98,7 @@
     </tbody>
 </table>
 
-<h4>Distribuição por Sexo</h4>
+<h4 style="text-align: center;">Distribuição por Sexo</h4>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -116,7 +116,7 @@
     </tbody>
 </table>
 
-<h4>Distribuição por Categoria</h4>
+<h4 style="text-align: center;">Distribuição por Categoria</h4>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -134,10 +134,10 @@
     </tbody>
 </table>
 
-<h4>Idade Média dos Docentes</h4>
-<p>{{ "%.3f"|format(idade_media_docentes) }} anos</p>
+<h4 style="text-align: center;">Idade Média dos Docentes</h4>
+<p style="text-align: center;">{{ "%.3f"|format(idade_media_docentes) }} anos</p>
 
-<div style="text-align: center;">
+<div style="text-align: center; margin-top: 20px;">
     <a href="{{ url_for('calculoindicadores.exportar_graficos_pdf', programa_id=programa_id) }}" class="btn btn-primary">Exportar PDF</a>
     <a href="{{ url_for('calculoindicadores.gerar_excel_completo', programa_id=programa_id) }}" class="btn btn-primary">Exportar Excel</a>
     <button type="button" onclick="fechar()" class="btn btn-danger">Fechar</button>
@@ -145,7 +145,6 @@
 
 <script>
 function fechar() {
-    // Redirect to the coordinator page after login
     window.location.href = "{{ url_for('login.get_coordenador') }}";
 }
 </script>
