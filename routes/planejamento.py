@@ -1097,6 +1097,9 @@ def resumo_planejamento():
         metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
         total_metas = len(metas)
         metas_atingidas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Concluída').count()
+        metas_no_prazo = MetaPE.query.filter(MetaPE.status != 'Concluída', MetaPE.data_termino >= datetime.now().date()).count()
+        metas_atrasadas = MetaPE.query.filter(MetaPE.status != 'Concluída', MetaPE.data_termino < datetime.now().date()).count()
+        print(f"Metas no prazo: {metas_no_prazo}, Metas atrasadas: {metas_atrasadas}")
 
         percentual_metas_atingidas = (metas_atingidas / total_metas) * 100 if total_metas > 0 else 0
 
@@ -1115,6 +1118,35 @@ def resumo_planejamento():
         'resumo_planejamento.html',
         planejamento=planejamento,
         percentual_metas_atingidas=percentual_metas_atingidas,
-        percentual_acoes_concluidas=percentual_acoes_concluidas
-    )
+        percentual_acoes_concluidas=percentual_acoes_concluidas,
+        metas_no_prazo=metas_no_prazo,
+        metas_atrasadas=metas_atrasadas
+)
 
+
+
+######################################################################################################3
+@planejamento_route.route('/indicadores_desempenho')
+@login_required
+def indicadores_desempenho():
+    # Obtenha os planejamentos relacionados ao programa do usuário
+    planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=current_user.programa_id).all()
+    
+    metas = []
+    
+    # Itere pelos planejamentos para encontrar os objetivos e as metas associadas
+    for planejamento in planejamentos:
+        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+        for objetivo in objetivos:
+            metas.extend(MetaPE.query.filter_by(objetivo_pe_id=objetivo.id).all())
+    
+    historico_valores = {}
+
+    # Itere sobre as metas associadas e busque os indicadores e seus valores
+    for meta in metas:
+        for indicador in meta.indicador_pe:
+            valores = Valorindicador.query.filter_by(indicadorpe_id=indicador.id).all()
+            if valores:
+                historico_valores[indicador.nome] = [(valor.ano, valor.valor) for valor in valores]
+
+    return render_template('indicadores_desempenho.html', historico_valores=historico_valores)
