@@ -42,7 +42,6 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import os
-from analise_feedback import analisar_feedback
 import pandas as pd
 
 
