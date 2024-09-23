@@ -96,3 +96,4 @@ xhtml2pdf==0.2.16
 XlsxWriter==3.2.0
 xyzservices==2024.4.0
 zopfli==0.2.3
+pdfkit==1.0.0
