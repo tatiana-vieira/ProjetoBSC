@@ -6,6 +6,8 @@ from io import BytesIO
 from flask_login import login_required
 import csv
 import io
+import plotly.graph_objs as go
+from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib import colors
@@ -17,9 +19,13 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from datetime import datetime
 import matplotlib.pyplot as plt
 import base64  # Certifique-se de importar base64
+from plotly.utils import PlotlyJSONEncoder
+import json
 
 
 relatorioacao_route = Blueprint('relatorioacao', __name__)
+
+
 
 def calcular_previsao(meta_pe, porcentagem_execucao, data_inicio, data_termino):
     # Calcular a duração esperada e a duração atual da ação
@@ -43,6 +49,10 @@ def calcular_previsao(meta_pe, porcentagem_execucao, data_inicio, data_termino):
 
 
 ###################################################################################3
+from plotly.utils import PlotlyJSONEncoder
+import json
+from flask import render_template
+
 @relatorioacao_route.route('/relatacao', methods=['GET'])
 @login_required
 def exibir_relatorioacao():
@@ -60,7 +70,8 @@ def exibir_relatorioacao():
         objetivospe = []
         metaspe = []
         acoespe = []
-        graph_base64 = None  # Inicializar a variável aqui
+        graph_json = None  # Inicializando a variável para o gráfico interativo
+        traces = []  # Certifique-se de inicializar 'traces' no início
 
         if planejamento_selecionado_id:
             planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
@@ -73,34 +84,47 @@ def exibir_relatorioacao():
             metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
             acoespe = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()
 
-            # Gerar gráfico se houver ações
             if acoespe:
-                plt.figure(figsize=(10, 6))  # Defina um tamanho menor para o gráfico
-                for acao in acoespe:
-                    plt.barh(acao.nome, acao.porcentagem_execucao, color='orange')
-                
-                plt.xlabel('Progresso (%)')
-                plt.ylabel('Ação')
-                plt.title('Período de execução das Ações')
-                plt.tight_layout()
+                # Filtra ações únicas por ID
+                acoes_unicas = list({acao.id: acao for acao in acoespe}.values())
 
-                # Gerar gráfico em base64
-                img = BytesIO()
-                plt.savefig(img, format='png')
-                img.seek(0)
-                plt.close()
+                for acao in acoes_unicas:
+                    trace = go.Bar(
+                        x=[acao.porcentagem_execucao],
+                        y=[acao.nome],
+                        name=acao.nome,  # Adiciona o nome da ação como título da série
+                        text=f"Data Início: {acao.data_inicio}<br>Data Término: {acao.data_termino}<br>Status: {acao.status}",
+                        hoverinfo='text',
+                        marker=dict(
+                            color='green' if acao.porcentagem_execucao == 100 else ('red' if datetime.now().date() > acao.data_termino else 'yellow')
+                        ),
+                        orientation='h'
+                    )
+                    traces.append(trace)
 
-                graph_base64 = base64.b64encode(img.getvalue()).decode()
+        # Apenas criar o layout e a figura se houver algo em 'traces'
+        if traces:
+            layout = go.Layout(
+                title="Progresso das Ações",
+                xaxis=dict(title="Progresso (%)"),
+                yaxis=dict(title="Ação")
+            )
+
+            fig = go.Figure(data=traces, layout=layout)
+
+            # Converter gráfico em JSON
+            graph_json = json.dumps(fig, cls=PlotlyJSONEncoder)
 
         return render_template('relatacao.html', 
                                planejamentos=planejamentos, 
                                planejamento_selecionado=planejamento_selecionado, 
                                objetivos=objetivospe, metas=metaspe, acoes=acoespe, 
-                               graph_base64=graph_base64)
+                               graph_json=graph_json)
 
     else:
         flash('Você não tem permissão para acessar esta página.', 'danger')
         return redirect(url_for('login.login_page'))
+
 
 ########################################################################################
 @relatorioacao_route.route('/export/csv_acoes')
@@ -265,3 +289,27 @@ def export_pdf_acoes():
     response.headers['Content-Disposition'] = 'attachment; filename=acoes.pdf'
     response.headers['Content-Type'] = 'application/pdf'
     return response
+
+
+def verificar_alerta_prazo(data_termino):
+    dias_restantes = (data_termino - datetime.now().date()).days
+    if dias_restantes <= 0:
+        return "Ação atrasada!"
+    elif dias_restantes <= 7:
+        return "Ação próxima do prazo!"
+    else:
+        return "Ação no prazo."
+    
+def atualizar_status_automaticamente(acoespe):
+    for acao in acoespe:
+        if acao.porcentagem_execucao == 100 and acao.status != 'Concluída':
+            acao.status = 'Concluída'
+            db.session.commit()
+
+def gerar_notificacoes(acoespe):
+    notificacoes = []
+    for acao in acoespe:
+        alerta = verificar_alerta_prazo(acao.data_termino)
+        if 'atrasada' in alerta or 'próxima do prazo' in alerta:
+            notificacoes.append(f"Ação '{acao.nome}' está {alerta.lower()}.")
+    return notificacoes

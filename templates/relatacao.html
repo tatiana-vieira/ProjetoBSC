@@ -19,10 +19,15 @@
         <button type="submit" style="background-color: blue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Buscar</button>
     </form>
 
-    {% if graph_base64 %}
-        <div style="text-align: center; margin: 20px;">
-            <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Ações" style="max-width: 80%; height: auto;"> <!-- Limita a largura do gráfico -->
-        </div>
+    {% if graph_json %}
+    <div id="graph"></div>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        var plot_data = {{ graph_json | safe }};
+        Plotly.newPlot('graph', plot_data);
+    </script>
+    {% else %}
+    <p>Nenhum gráfico disponível para exibição.</p>
     {% endif %}
 
     {% if planejamento_selecionado %}
@@ -57,6 +62,7 @@
                     </tr>
                 {% endfor %}
             {% endfor %}
+            
         </tbody>
     </table>
 
