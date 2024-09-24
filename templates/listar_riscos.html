@@ -1,4 +1,4 @@
-{% extends 'basecord.html' %}
+{% extends 'basecorden.html' %}
 
 {% block titulo %}
     Lista de Riscos - PRPPG
@@ -31,35 +31,44 @@
     </form>
   </div>
 
-  {% if riscos %}
   <div class="riscos-list">
     <h3>Riscos Cadastrados</h3>
     <table style="width: 100%; border-collapse: collapse;">
       <thead>
         <tr>
-          <th style="border: 1px solid black; padding: 8px;">Meta</th>
+          <th style="border: 1px solid black; padding: 8px;">ID</th>
           <th style="border: 1px solid black; padding: 8px;">Descrição do Risco</th>
-          <th style="border: 1px solid black; padding: 8px;">Nível</th>
+          <th style="border: 1px solid black; padding: 8px;">Meta</th>
+          <th style="border: 1px solid black; padding: 8px;">Probabilidade</th>
+          <th style="border: 1px solid black; padding: 8px;">Impacto</th>
           <th style="border: 1px solid black; padding: 8px;">Ação Preventiva</th>
           <th style="border: 1px solid black; padding: 8px;">Ações</th>
         </tr>
       </thead>
       <tbody>
-        {% for risco in riscos %}
-        <tr>
-          <td style="border: 1px solid black; padding: 8px;">{{ risco.meta_pe.nome }}</td>
-          <td style="border: 1px solid black; padding: 8px;">{{ risco.descricao }}</td>
-          <td style="border: 1px solid black; padding: 8px;">{{ risco.nivel }}</td>
-          <td style="border: 1px solid black; padding: 8px;">{{ risco.acao_preventiva }}</td>
-          <td style="border: 1px solid black; padding: 8px;">
-            <a href="{{ url_for('relatoriometas.editar_risco', risco_id=risco.id) }}" class="btn btn-primary">Alterar</a>
-          </td>
-        </tr>
-        {% endfor %}
+        {% if riscos %}
+          {% for risco in riscos %}
+          <tr>
+            <td style="border: 1px solid black; padding: 8px;">{{ risco.id }}</td>
+            <td style="border: 1px solid black; padding: 8px;">{{ risco.descricao }}</td>
+            <td style="border: 1px solid black; padding: 8px;">{{ risco.meta_pe.nome }}</td>
+            <td style="border: 1px solid black; padding: 8px;">{{ risco.probabilidade }}</td>
+            <td style="border: 1px solid black; padding: 8px;">{{ risco.impacto }}</td>
+            <td style="border: 1px solid black; padding: 8px;">{{ risco.acao_preventiva }}</td>
+            <td style="border: 1px solid black; padding: 8px;">
+              <a href="{{ url_for('relatoriometas.editar_risco', risco_id=risco.id) }}" class="btn btn-primary">Alterar</a>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="border: 1px solid black; padding: 8px; text-align: center;">Nenhum risco encontrado.</td>
+          </tr>
+        {% endif %}
       </tbody>
     </table>
   </div>
-  {% endif %}
+  
   
   <div style="margin-top: 20px;">
     <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
@@ -72,59 +81,4 @@
   </script>
 </div>
 
-<style>
-.alert-success {
-    color: #155724;
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-}
-
-.alert-error {
-    color: #721c24;
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-}
-
-.form-block .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.form-block .row .col-md-3 {
-    flex: 1;
-    margin-right: 10px;
-}
-
-.riscos-list {
-    margin-top: 20px;
-}
-
-.riscos-list table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.riscos-list th, .riscos-list td {
-    border: 1px solid black;
-    padding: 8px;
-    text-align: left;
-}
-
-.btn {
-    background-color: darkblue;
-    color: white;
-    padding: 5px 10px;
-    text-decoration: none;
-    border-radius: 4px;
-}
-
-.btn-primary {
-    background-color: darkblue;
-}
-
-.btn-primary:hover {
-    background-color: navy;
-}
-</style>
 {% endblock %}

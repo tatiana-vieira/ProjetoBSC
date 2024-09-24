@@ -1,7 +1,7 @@
 {% extends 'basecorden.html' %}
 
 {% block titulo %}
-  Ação - Metas PE
+  Cadastrar Risco - Metas 
 {% endblock %}
 
 {% block conteudo %}
@@ -19,11 +19,29 @@
   <!-- Fim das Mensagens Flash -->
 
   <div class="form-block"><br>
-    <h2 style="text-align: center;">Cadastro de Ação</h2><br>
-    <form method="POST" action="{{ url_for('planejamento.associar_acaope') }}">
+    <h2 style="text-align: center;">Cadastro de Risco</h2><br>
+    <form method="POST" action="{{ url_for('relatoriometas.cadastrar_risco') }}">
 
       <div class="form-group">
-        <label for="meta_pe_id">Selecione a Meta cadastrada:</label>
+        <label for="planejamento_id">Selecione o Planejamento Estratégico:</label>
+        <select name="planejamento_id" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+          {% for planejamento in planejamentos %}
+            <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="objetivo_pe_id">Selecione o Objetivo Estratégico:</label>
+        <select name="objetivo_pe_id" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+          {% for objetivo in objetivos_pe %}
+            <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="meta_pe_id">Selecione a Meta:</label>
         <select name="meta_pe_id" required class="form-control" style="width: 80%; margin-bottom: 10px;">
           {% for meta in metas_pe %}
             <option value="{{ meta.id }}">{{ meta.nome }}</option>
@@ -32,44 +50,31 @@
       </div>
 
       <div class="form-group">
-        <label for="nome">Nome da Ação:</label>
-        <input type="text" id="nome" name="nome" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+        <label for="descricao">Descrição do Risco:</label>
+        <input type="text" id="descricao" name="descricao" required class="form-control" style="width: 80%; margin-bottom: 10px;">
       </div>
 
       <div class="form-group">
-        <label for="porcentagem_execucao">Porcentagem da Execução:</label>
-        <input type="text" id="porcentagem_execucao" name="porcentagem_execucao" required class="form-control" style="width: 80%; margin-bottom: 10px;">
-      </div>
-
-      <div class="form-group">
-        <label for="data_inicio">Data de Início:</label>
-        <input type="date" id="data_inicio" name="data_inicio" required class="form-control" style="width: 80%; margin-bottom: 10px;">
-      </div>
-
-      <div class="form-group">
-        <label for="data_termino">Data de Término:</label>
-        <input type="date" id="data_termino" name="data_termino" required class="form-control" style="width: 80%; margin-bottom: 10px;">
-      </div>
-
-      <div class="form-group">
-        <label for="responsavel">Responsável:</label>
-        <input type="text" id="responsavel" name="responsavel" required class="form-control" style="width: 80%; margin-bottom: 10px;">
-      </div>
-
-      <div class="form-group">
-        <label for="status">Status:</label>
-        <select id="status" name="status" required class="form-control" style="width: 80%; margin-bottom: 10px;">
-          <option value="planejada">Planejada</option>
-          <option value="em_andamento">Em Andamento</option>
-          <option value="concluída">Concluída</option>
-          <option value="atrasada">Atrasada</option>
-          <option value="cancelada">Cancelada</option>
+        <label for="probabilidade">Probabilidade:</label>
+        <select id="probabilidade" name="probabilidade" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+          <option value="Baixa">Baixa</option>
+          <option value="Média">Média</option>
+          <option value="Alta">Alta</option>
         </select>
       </div>
 
       <div class="form-group">
-        <label for="observacao">Observação:</label>
-        <input type="text" id="observacao" name="observacao" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+        <label for="impacto">Impacto:</label>
+        <select id="impacto" name="impacto" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+          <option value="Baixo">Baixo</option>
+          <option value="Médio">Médio</option>
+          <option value="Alto">Alto</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="acao_preventiva">Ação Preventiva:</label>
+        <input type="text" id="acao_preventiva" name="acao_preventiva" class="form-control" style="width: 80%; margin-bottom: 10px;">
       </div>
 
       <div style="text-align: center; margin-top: 20px;">
@@ -87,36 +92,30 @@
   </div>
 
   <div class="form-block" style="margin-top: 50px;">
-    <h3>Ações Cadastradas</h3><br>
+    <h3>Riscos Cadastrados</h3><br>
     <table class="table table-striped">
       <thead>
         <tr>
           <th>ID</th>
-          <th>Nome</th>
+          <th>Descrição</th>
           <th>Meta</th>
-          <th>Porcentagem Execução</th>
-          <th>Data Início</th>
-          <th>Data Término</th>
-          <th>Responsável</th>
-          <th>Status</th>
-          <th>Observação</th>
+          <th>Probabilidade</th>
+          <th>Impacto</th>
+          <th>Ação Preventiva</th>
           <th>Ações</th>
         </tr>
       </thead>
       <tbody>
-        {% for acao in acoes %}
+        {% for risco in riscos %}
         <tr>
-          <td>{{ acao.id }}</td>
-          <td>{{ acao.nome }}</td>
-          <td>{{ acao.meta_pe.nome }}</td>
-          <td>{{ acao.porcentagem_execucao }}</td>
-          <td>{{ acao.data_inicio }}</td>
-          <td>{{ acao.data_termino }}</td>
-          <td>{{ acao.responsavel }}</td>
-          <td>{{ acao.status }}</td>
-          <td>{{ acao.observacao }}</td>
+          <td>{{ risco.id }}</td>
+          <td>{{ risco.descricao }}</td>
+          <td>{{ risco.meta_pe.nome }}</td>
+          <td>{{ risco.probabilidade }}</td>
+          <td>{{ risco.impacto }}</td>
+          <td>{{ risco.acao_preventiva }}</td>
           <td>
-            <a href="{{ url_for('planejamento.alterar_acaope', acao_id=acao.id) }}" class="btn btn-success btn-sm" style="background-color: #28a745;">Editar</a>
+            <a href="{{ url_for('relatoriometas.editar_risco', risco_id=risco.id) }}" class="btn btn-success btn-sm" style="background-color: #28a745;">Editar</a>
           </td>
         </tr>
         {% endfor %}

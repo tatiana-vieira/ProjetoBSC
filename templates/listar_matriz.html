@@ -43,9 +43,9 @@
                                        {% if j == 0 %}#b1dfbb{% elif j == 1 %}#ffe08a{% elif j == 2 %}#f1b0b7{% endif %}
                                    {% endif %}; 
                                    padding: 15px; border: 1px solid #333;">
-                            {% for descricao in matriz_riscos[i][j] %}
-                                <div>{{ descricao }}</div>
-                            {% endfor %}
+                           {% for descricao in matriz_riscos[i][j] %}
+                             <div>{{ descricao }}</div>
+                           {% endfor %}
                         </td>
                     {% endfor %}
                 </tr>

@@ -435,57 +435,42 @@ def cadastrar_risco():
     programa_id = current_user.programa_id
     if programa_id:
         planejamentos_associados = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-        riscos = Risco.query.join(MetaPE, Risco.meta_pe_id == MetaPE.id).all()
 
         if request.method == 'POST':
-            planejamento_id = request.form['planejamento_id']
-            objetivo_pe_id = request.form['objetivo_pe_id']
-            meta_pe_id = request.form['meta_pe_id']
-            descricao = request.form['descricao']
-            probabilidade = request.form['probabilidade']
-            impacto = request.form['impacto']
+            planejamento_id = request.form.get('planejamento_id')
+            objetivo_pe_id = request.form.get('objetivo_pe_id')
+            meta_pe_id = request.form.get('meta_pe_id')
+            descricao = request.form.get('descricao')
+            probabilidade = request.form.get('probabilidade')
+            impacto = request.form.get('impacto')
+            acao_preventiva = request.form.get('acao_preventiva')
 
-            planejamento = PlanejamentoEstrategico.query.get(planejamento_id)
-            if not planejamento:
-                flash('Planejamento não encontrado!', 'error')
-                return redirect(url_for('relatoriometas.cadastrar_risco'))
-
-            objetivo_pe = ObjetivoPE.query.get(objetivo_pe_id)
-            if not objetivo_pe:
-                flash('Objetivo não encontrado!', 'error')
-                return redirect(url_for('relatoriometas.cadastrar_risco'))
-
-            meta_pe = MetaPE.query.get(meta_pe_id)
-            if not meta_pe:
-                flash('Meta não encontrada!', 'error')
-                return redirect(url_for('relatoriometas.cadastrar_risco'))
-
-            risco_existente = Risco.query.filter_by(descricao=descricao, objetivo_pe_id=objetivo_pe_id, meta_pe_id=meta_pe_id).first()
-            if risco_existente:
-                flash('Risco já cadastrado!', 'warning')
-                return redirect(url_for('relatoriometas.cadastrar_risco'))
+            novo_risco = Risco(
+                descricao=descricao,
+                objetivo_pe_id=objetivo_pe_id,
+                meta_pe_id=meta_pe_id,
+                probabilidade=probabilidade,
+                impacto=impacto,
+                acao_preventiva=acao_preventiva
+            )
 
             try:
-                novo_risco = Risco(
-                    descricao=descricao,                   
-                    objetivo_pe_id=objetivo_pe_id,
-                    meta_pe_id=meta_pe_id,
-                    probabilidade=probabilidade,
-                    impacto=impacto
-                )
                 db.session.add(novo_risco)
                 db.session.commit()
                 flash('Risco cadastrado com sucesso!', 'success')
             except Exception as e:
                 db.session.rollback()
-                flash('Erro ao cadastrar risco!', 'error')
-            
+                flash(f'Erro ao cadastrar risco: {str(e)}', 'error')
+
             return redirect(url_for('relatoriometas.cadastrar_risco'))
 
+        riscos = Risco.query.all()
         return render_template('cadastrar_risco.html', planejamentos=planejamentos_associados, riscos=riscos)
     else:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('relatoriometas.cadastrar_risco'))
+
+
 
 ########################################################################################################
 ##################################################################################################3
@@ -498,16 +483,23 @@ def listar_riscos():
         return redirect(url_for('relatoriometas.cadastrar_risco'))
 
     planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-    
+
+    riscos = None
     if request.method == 'POST':
         planejamento_id = request.form['planejamento_id']
         riscos = Risco.query.join(ObjetivoPE, Risco.objetivo_pe_id == ObjetivoPE.id)\
                             .join(PlanejamentoEstrategico, ObjetivoPE.planejamento_estrategico_id == PlanejamentoEstrategico.id)\
                             .filter(PlanejamentoEstrategico.id == planejamento_id).all()
-        return render_template('listar_riscos.html', riscos=riscos, planejamentos=planejamentos, selected_planejamento=planejamento_id)
-    
-    return render_template('listar_riscos.html', planejamentos=planejamentos, riscos=None)
 
+        print(riscos)  # Adiciona esta linha para depurar
+
+        if not riscos:
+            flash('Nenhum risco encontrado para o planejamento selecionado.', 'warning')
+
+    return render_template('listar_riscos.html', riscos=riscos, planejamentos=planejamentos)
+
+
+      
 
 @relatoriometas_route.route('/editar_risco/<int:risco_id>', methods=['GET', 'POST'])
 @login_required
@@ -633,7 +625,9 @@ def gerar_matriz_riscos(riscos):
             col_idx = col_labels.index(risco.impacto)
             matriz[row_idx][col_idx].append(risco.descricao)
         except ValueError as e:
-            print(f"Erro: {e}. Verifique os valores de probabilidade e impacto do 'Risco'.")
+            print(f"Erro ao processar risco '{risco.descricao}': {e}. Probabilidade: {risco.probabilidade}, Impacto: {risco.impacto}")
             continue
 
     return matriz
+
+
