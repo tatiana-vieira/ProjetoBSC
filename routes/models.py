@@ -343,7 +343,10 @@ class ObjetivoPE(db.Model):
     objetivo_pdi_id = db.Column(db.Integer, db.ForeignKey('objetivo_pdi.id'))
     
     planejamento_estrategico = db.relationship('PlanejamentoEstrategico', back_populates='objetivos_pe')
-    objetivo_pdi = db.relationship("Objetivo", back_populates="objetivos_pe")
+    objetivo_pdi = db.relationship('Objetivo', back_populates='objetivos_pe')
+
+    # Relacionamento com MetaPE usando back_populates
+    metas = db.relationship('MetaPE', back_populates='objetivo_pe')
 
 class MetaPE(db.Model):
     __tablename__ = 'meta_pe'
@@ -359,7 +362,8 @@ class MetaPE(db.Model):
     valor_alvo = db.Column(db.Numeric(5, 2), nullable=True)
     objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'), nullable=False)
 
-    objetivo_pe = db.relationship('ObjetivoPE', backref='meta_pe')
+    # Relacionamento com ObjetivoPE usando back_populates
+    objetivo_pe = db.relationship('ObjetivoPE', back_populates='metas')
 
 
 class Valormeta(db.Model):
