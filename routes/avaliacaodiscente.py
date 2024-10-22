@@ -12,10 +12,11 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_squared_error
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.model_selection import train_test_split
 from flask import jsonify
-from xgboost import XGBRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+
 
 # Função para substituir "Sim" e "Não" mesmo em frases maiores
 def substituir_sim_nao(valor):
@@ -102,55 +103,6 @@ def importar_planilhadiscente():
             return redirect(url_for('avaliacaodiscente.gerar_graficos_completos', filename=filename))
 
     return render_template('importar_planilhadiscente.html')
-
-def normalize_column_names(df):
-    df.columns = [unicodedata.normalize('NFKD', col).encode('ascii', 'ignore').decode('utf-8').strip().lower().replace('  ', ' ').replace(' ', '_').replace('[', '').replace(']', '') for col in df.columns]
-    return df
-
-# Função para calcular a média dos dígitos de uma string de números
-def calcular_media_digitos(valor):
-    try:
-        digitos = [int(digito) for digito in str(valor)]  # Converter cada caractere em um número
-        return sum(digitos) / len(digitos)  # Calcular a média dos dígitos
-    except (ValueError, TypeError):
-        return None  # Retornar None se houver erro na conversão
-
-# Função para limpar e aplicar a média dos dígitos nas colunas problemáticas
-def limpar_e_converter_para_numeric(df, colunas):
-    # Substituir os valores problemáticos por 0
-    df.replace("Sem condições de avaliar", 0, inplace=True)
-    df.replace("Sem condiÃ§Ãµes de avaliar", 0, inplace=True)
-    df.replace({'Sim': 1, 'NÃO': 0, 'Não': 0}, inplace=True)
-    
-    for col in colunas:
-        df[col] = df[col].apply(calcular_media_digitos)  # Aplicar a função de média dos dígitos
-    return df
-
-#@avaliacaodiscente_route.route('/importar_planilhadiscente', methods=['GET', 'POST'])
-def importar_planilhadiscente():
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            flash('Nenhum arquivo foi enviado', 'danger')
-            return redirect(request.url)
-
-        file = request.files['file']
-
-        if file.filename == '':
-            flash('Nenhum arquivo selecionado', 'danger')
-            return redirect(request.url)
-
-        if file and allowed_file(file.filename):
-            filename = file.filename
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
-            
-            # Salvar o arquivo
-            file.save(file_path)
-
-            # Redirecionar para a geração de gráficos passando o nome do arquivo
-            return redirect(url_for('avaliacaodiscente.gerar_graficos_completos', filename=filename))
-
-    return render_template('importar_planilhadiscente.html')
-
 
 @avaliacaodiscente_route.route('/gerar_graficos_completos')
 def gerar_graficos_completos():
@@ -493,7 +445,6 @@ def analisar_dados_ia():
 
         # Carregar os dados do CSV
         discentecurso = pd.read_csv(file_path, delimiter=';')
-
         # Renomear as colunas como no seu Colab
         discentecurso.rename({
             '1. Qual o seu nivel de formacao?':'formacao',
@@ -563,77 +514,31 @@ def analisar_dados_ia():
 
         discentecurso = converter_para_numerico(discentecurso, colunas_qualidade + colunas_organizacao + colunas_infraestrutura + colunas_relacionamentos+ colunas_internacionalizacao)
 
-        # Agrupar os dados por programa
-        agrupado_por_programa = discentecurso.groupby('programa')
+       # Definir variáveis independentes e dependentes
+        X = discentecurso.drop(['Qualidade das aulas'], axis=1)
+        y = discentecurso['Qualidade das aulas']
 
-        # Variáveis para armazenar as recomendações por programa
-        recomendacoes_por_programa = {}
+        # Dividir o conjunto de dados em treino e teste
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        for programa, dados_programa in agrupado_por_programa:
-            if len(dados_programa) < 2:
-                continue  # Pular grupos com poucos dados para evitar erro no treino/teste
+        # Treinar o modelo RandomForest
+        rf_model = RandomForestRegressor(random_state=42)
+        rf_model.fit(X_train, y_train)
+        y_pred_rf = rf_model.predict(X_test)
+        mse_rf = mean_squared_error(y_test, y_pred_rf)
 
-            # 2. Criar as médias por grupo de avaliação
-            media_qualidade = dados_programa['Qualidade das aulas'].mean()
-            media_infraestrutura = dados_programa['Infraestrutura geral'].mean()
+        # Treinar o modelo GradientBoosting
+        gb_model = GradientBoostingRegressor(random_state=42)
+        gb_model.fit(X_train, y_train)
+        y_pred_gb = gb_model.predict(X_test)
+        mse_gb = mean_squared_error(y_test, y_pred_gb)
 
-            # Verificar sentimentos nos comentários (se disponíveis)
-            df_comentarios = dados_programa[['comentario programa']].dropna()
-            media_sentimentos_programa = None  # valor padrão se não houver comentários
+        # Gerar recomendações com base nos resultados
+        recomendacoes = []
+        if mse_rf > 1.0:
+            recomendacoes.append("Aprimorar os métodos de ensino e avaliação.")
 
-            if not df_comentarios.empty:
-                df_comentarios['Sentimento_Programa_Score'] = df_comentarios['comentario programa'].apply(lambda x: analisar_sentimento(str(x))['compound'])
-                media_sentimentos_programa = df_comentarios['Sentimento_Programa_Score'].mean()
-
-            # 3. RandomForest e XGBoost para prever a qualidade das aulas
-            X = dados_programa.drop(['Qualidade das aulas'], axis=1)  # Variáveis independentes
-            y = dados_programa['Qualidade das aulas']  # Variável dependente
-
-            # Transformar variáveis categóricas em dummies
-            X = pd.get_dummies(X, drop_first=True)
-
-            # Substituir caracteres especiais nos nomes das colunas
-            X.columns = X.columns.str.replace(r'[\[\]<]', '', regex=True)
-
-            # Dividir o conjunto de dados em treino e teste, se houver dados suficientes
-            if len(X) < 2:
-                mse_rf = None
-                mse_xgb = None
-            else:
-                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-                # Treinar o modelo RandomForest
-                rf_model = RandomForestRegressor(random_state=42)
-                rf_model.fit(X_train, y_train)
-                y_pred_rf = rf_model.predict(X_test)
-                mse_rf = mean_squared_error(y_test, y_pred_rf)
-
-                # Treinar o modelo XGBoost
-                xgb_model = XGBRegressor(random_state=42)
-                xgb_model.fit(X_train, y_train)
-                y_pred_xgb = xgb_model.predict(X_test)
-                mse_xgb = mean_squared_error(y_test, y_pred_xgb)
-
-            # 4. Gerar recomendações com base nos resultados
-            recomendacoes = []
-            if mse_rf is not None and mse_rf > 1.0:
-                recomendacoes.append(f"Aprimorar os métodos de ensino e avaliação para melhorar a qualidade das aulas no programa {programa}.")
-
-            if media_sentimentos_programa is not None and media_sentimentos_programa < 0.0:
-                recomendacoes.append(f"Investir em ações de melhoria na satisfação dos alunos no programa {programa}.")
-            
-            recomendacoes.append(f"Aumentar os esforços de internacionalização no programa {programa} com base nos baixos índices de proficiência em inglês.")
-            
-            # Adicionar as recomendações ao dicionário por programa
-            recomendacoes_por_programa[programa] = {
-                'mse_rf': mse_rf,
-                'mse_xgb': mse_xgb,
-                'media_sentimentos_programa': media_sentimentos_programa,
-                'recomendacoes': recomendacoes
-            }
-
-        # Renderizar o template com as recomendações por programa
-        return render_template('recomendacaodiscente.html', recomendacoes_por_programa=recomendacoes_por_programa)
+        return render_template('recomendacaodiscente.html', recomendacoes=recomendacoes)
 
     except Exception as e:
         flash(f"Erro ao processar os dados: {e}", 'danger')

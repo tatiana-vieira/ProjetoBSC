@@ -15,7 +15,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from flask import jsonify
-from xgboost import XGBRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 
 # Função para substituir "Sim" e "Não" mesmo em frases maiores
 def substituir_sim_nao(valor):
@@ -626,17 +626,17 @@ def analisar_dados_ia():
             else:
                 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-                # Treinar o modelo RandomForest
+                 # Treinar o modelo RandomForest
                 rf_model = RandomForestRegressor(random_state=42)
                 rf_model.fit(X_train, y_train)
                 y_pred_rf = rf_model.predict(X_test)
                 mse_rf = mean_squared_error(y_test, y_pred_rf)
 
-                # Treinar o modelo XGBoost
-                xgb_model = XGBRegressor(random_state=42)
-                xgb_model.fit(X_train, y_train)
-                y_pred_xgb = xgb_model.predict(X_test)
-                mse_xgb = mean_squared_error(y_test, y_pred_xgb)
+                # Substituir XGBRegressor por GradientBoostingRegressor
+                gb_model = GradientBoostingRegressor(random_state=42)
+                gb_model.fit(X_train, y_train)
+                y_pred_gb = gb_model.predict(X_test)
+                mse_gb = mean_squared_error(y_test, y_pred_gb)
 
             # 4. Gerar recomendações com base nos resultados
             recomendacoes = []

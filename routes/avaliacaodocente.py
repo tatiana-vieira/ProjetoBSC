@@ -15,7 +15,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from flask import jsonify
-from xgboost import XGBRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 
 # Função para substituir "Sim" e "Não" mesmo em frases maiores
 def substituir_sim_nao(valor):
@@ -477,6 +477,7 @@ def visualizar_resultados():
 
 
 ################################################################################################
+# Função principal que substitui XGBRegressor por GradientBoostingRegressor
 @avaliacaodocente_route.route('/analisar_dados_ia', methods=['GET'])
 def analisar_dados_ia():
     try:
@@ -602,30 +603,36 @@ def analisar_dados_ia():
             else:
                 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-                # Treinar o modelo RandomForest
+               # Treinar o modelo RandomForest
                 rf_model = RandomForestRegressor(random_state=42)
                 rf_model.fit(X_train, y_train)
                 y_pred_rf = rf_model.predict(X_test)
                 mse_rf = mean_squared_error(y_test, y_pred_rf)
 
-                # Treinar o modelo XGBoost
-                xgb_model = XGBRegressor(random_state=42)
-                xgb_model.fit(X_train, y_train)
-                y_pred_xgb = xgb_model.predict(X_test)
-                mse_xgb = mean_squared_error(y_test, y_pred_xgb)
+                # Substituir XGBRegressor por GradientBoostingRegressor
+                gb_model = GradientBoostingRegressor(random_state=42)
+                gb_model.fit(X_train, y_train)
+                y_pred_gb = gb_model.predict(X_test)
+                mse_gb = mean_squared_error(y_test, y_pred_gb)
 
-            # 4. Gerar recomendações com base nos resultados
-            recomendacoes = []
-            if mse_rf is not None and mse_rf > 1.0:
+        # [Resto do código permanece inalterado]
+
+    except Exception as e:
+        flash(f"Erro ao processar os dados: {e}", 'danger')
+        return redirect(url_for('avaliacaodocente.importar_planilhadocente'))
+
+        # 4. Gerar recomendações com base nos resultados
+        recomendacoes = []
+        if mse_rf is not None and mse_rf > 1.0:
                 recomendacoes.append(f"Aprimorar os métodos de ensino e avaliação para melhorar a qualidade das aulas no programa {programa}.")
 
-            if media_sentimentos_programa is not None and media_sentimentos_programa < 0.0:
+        if media_sentimentos_programa is not None and media_sentimentos_programa < 0.0:
                 recomendacoes.append(f"Investir em ações de melhoria na satisfação dos alunos no programa {programa}.")
             
-            recomendacoes.append(f"Aumentar os esforços de internacionalização no programa {programa} com base nos baixos índices de proficiência em inglês.")
+        recomendacoes.append(f"Aumentar os esforços de internacionalização no programa {programa} com base nos baixos índices de proficiência em inglês.")
             
             # Adicionar as recomendações ao dicionário por programa
-            recomendacoes_por_programa[programa] = {
+        recomendacoes_por_programa[programa] = {
                 'mse_rf': mse_rf,
                 'mse_xgb': mse_xgb,
                 'media_sentimentos_programa': media_sentimentos_programa,
