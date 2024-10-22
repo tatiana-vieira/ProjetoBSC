@@ -110,18 +110,26 @@ def associar_objetivospe():
         flash('Objetivo cadastrado com sucesso!', 'success')
         return redirect(url_for('planejamento.associar_objetivospe'))
 
+    # Obter todos os planejamentos estratégicos associados ao programa
     planejamento_estrategico = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+    
     objetivos_por_planejamento = []
 
     for pe in planejamento_estrategico:
+        # Obter todos os objetivos do PDI associado ao planejamento estratégico
         objetivos = Objetivo.query.filter_by(pdi_id=pe.pdi_id).all()
+        objetivos_existentes = ObjetivoPE.query.filter_by(planejamento_estrategico_id=pe.id).all()
+        objetivos_existentes_ids = {obj.objetivo_pdi_id for obj in objetivos_existentes}
+        
         for objetivo in objetivos:
-            objetivos_pe = ObjetivoPE.query.filter_by(objetivo_pdi_id=objetivo.id).all()
-            for objetivo_pe in objetivos_pe:
-                objetivos_por_planejamento.append((pe, objetivo, objetivo_pe))
+            objetivos_por_planejamento.append((pe, objetivo, objetivo.id in objetivos_existentes_ids))
 
-    return render_template('objetivope.html', objetivos_por_planejamento=objetivos_por_planejamento)
+    # Remover duplicatas de Planejamentos Estratégicos
+    planejamento_estrategico_unicos = list({pe.id: pe for pe in planejamento_estrategico}.values())
 
+    return render_template('objetivope.html', 
+                           objetivos_por_planejamento=objetivos_por_planejamento,
+                           planejamento_estrategico=planejamento_estrategico_unicos)
 
 ################################################################333    
 @planejamento_route.route('/editar_objetivope/<int:id>', methods=['GET', 'POST'])
@@ -136,13 +144,19 @@ def editar_objetivope(id):
         db.session.commit()
 
         flash('Objetivo atualizado com sucesso!', 'success')
-        return redirect(url_for('planejamento.editar_objetivope', id=id))
+        return redirect(url_for('planejamento.associar_objetivospe'))
 
+    # Lista de todos os planejamentos estratégicos
     planejamento_estrategico = PlanejamentoEstrategico.query.all()
+    # Lista de todos os objetivos PDI
     objetivos_pdi = Objetivo.query.all()
 
-    return render_template('editar_objetivope.html', objetivo=objetivo, planejamento_estrategico=planejamento_estrategico, objetivos_pdi=objetivos_pdi)
-
+    return render_template(
+        'editar_objetivope.html', 
+        objetivo=objetivo, 
+        planejamento_estrategico=planejamento_estrategico, 
+        objetivos_pdi=objetivos_pdi
+    )
 ########################################################################
 
 ####################################################################################################################

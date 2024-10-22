@@ -6,81 +6,81 @@
 
 {% block conteudo %}
 <div class="container">
-   <h2 style="text-align: center; color: #003366; margin-top: 20px;">Cadastro dos Objetivos</h2>
-   <form method="POST" action="{{ url_for('planejamento.associar_objetivospe') }}" style="margin-top: 20px; font-size: 1.1em;">
-      <div class="form-group" style="margin-bottom: 20px;">
-         <label for="planejamento" style="color: #00060c;">Selecione o Planejamento Estratégico:</label>
-         <select name="planejamento_id" required style="width: 100%; margin-bottom: 20px; padding: 10px;">
-            <option value="">-- Selecione --</option>
-            {% for pe, objetivo, objetivo_pe in objetivos_por_planejamento %}
-                <option value="{{ pe.id }}">{{ pe.nome }}</option>
-            {% endfor %}
-         </select>
-      </div>
-      <div class="form-group" style="margin-bottom: 20px;">
-         <label for="objetivos" style="color: #00060c;">Selecione os Objetivos do PDI:</label>
-         <select name="objetivo_id" required style="width: 100%; margin-bottom: 20px; padding: 10px; white-space: normal;">
-            <option value="">-- Selecione --</option>
-            {% for pe, objetivo, objetivo_pe in objetivos_por_planejamento %}
-                {% for objetivo in objetivos %}
-                    <option value="{{ objetivo.id }}" title="{{ objetivo.nome }}">{{ objetivo.nome }}</option>
+    <h2 style="text-align: center; color: #003366; margin-top: 20px;">Cadastro dos Objetivos</h2>
+    <form method="POST" action="{{ url_for('planejamento.associar_objetivospe') }}" style="margin-top: 20px; font-size: 1.1em;">
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label for="planejamento_id" style="color: #00060c;">Selecione o Planejamento Estratégico:</label>
+            <select name="planejamento_id" id="planejamento_id" required style="width: 100%; margin-bottom: 20px; padding: 10px;" onchange="filtrarObjetivos()">
+                <option value="">-- Selecione --</option>
+                {% for pe in planejamento_estrategico %}
+                    <option value="{{ pe.id }}">{{ pe.nome }}</option>
                 {% endfor %}
-            {% endfor %}
-         </select>
-      </div>
-      <div class="form-group" style="margin-bottom: 20px;">
-         <label for="nome" style="color: #00060c;">Nome do Objetivo:</label>
-         <input type="text" id="nome" name="nome" required class="form-control" style="width: 100%; padding: 10px;">
-      </div>
-      <div class="form-group" style="text-align: center;">
-         <button type="submit" class="btn btn-primary" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Cadastrar</button>
-      </div>
-   </form>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label for="objetivo_id" style="color: #00060c;">Selecione os Objetivos do PDI:</label>
+            <select name="objetivo_id" id="objetivo_id" required style="width: 100%; margin-bottom: 20px; padding: 10px; white-space: normal;">
+                <option value="">-- Selecione --</option>
+                {% for pe, objetivo, ja_associado in objetivos_por_planejamento %}
+                    <option value="{{ objetivo.id }}" data-planejamento="{{ pe.id }}" title="{{ objetivo.nome }}">{{ objetivo.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label for="nome" style="color: #00060c;">Nome do Objetivo:</label>
+            <input type="text" id="nome" name="nome" required class="form-control" style="width: 100%; padding: 10px;">
+        </div>
+        <div class="form-group" style="text-align: center;">
+            <button type="submit" class="btn btn-primary" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Cadastrar</button>
+        </div>
+    </form>
 
-   {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-         <ul class="flashes" style="list-style-type: none; padding: 0;">
-            {% for category, message in messages %}
-               <li class="{{ category }}" style="color: {{ 'red' if category == 'danger' else 'green' }};">{{ message }}</li>
-            {% endfor %}
-         </ul>
-      {% endif %}
-   {% endwith %}
-
-   <h2 style="text-align: center; color: #003366; margin-top: 40px;">Objetivos Cadastrados</h2>
-   <table class="table table-striped" style="margin-top: 20px;">
-      <thead>
-         <tr>
-            <th>Planejamento Estratégico</th>
-            <th>Objetivo do PDI</th>
-            <th>Código</th>
-            <th>Nome</th>
-            <th>Ações</th>
-         </tr>
-      </thead>
-      <tbody>
-         {% for pe, objetivo, objetivo_pe in objetivos_por_planejamento %}
-            <tr>
-               <td>{{ pe.nome }}</td>
-               <td>{{ objetivo.nome }}</td>
-               <td>{{ objetivo_pe.id }}</td>
-               <td>{{ objetivo_pe.nome }}</td>       
-               <td>
-                  <a href="{{ url_for('planejamento.editar_objetivope', id=objetivo_pe.id) }}" class="btn btn-success">Editar</a>
-               </td>
-            </tr>
-         {% endfor %}
-      </tbody>
-   </table>
-</div>
-</style>
-<div class="form-group" style="text-align: center;">
-  <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+    {% if objetivos_por_planejamento %}
+        <h2 style="text-align: center; color: #003366; margin-top: 40px;">Objetivos Cadastrados</h2>
+        <table class="table table-striped" style="margin-top: 20px;">
+            <thead>
+                <tr>
+                    <th>Planejamento Estratégico</th>
+                    <th>Objetivo do PDI</th>
+                    <th>Nome</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pe, objetivo, ja_associado in objetivos_por_planejamento %}
+                    <tr>
+                        <td>{{ pe.nome }}</td>
+                        <td>{{ objetivo.nome }}</td>
+                        <td>{{ objetivo.nome }}</td>       
+                        <td>
+                            {% if ja_associado %}
+                                <span>Já associado</span>
+                            {% else %}
+                                <a href="{{ url_for('planejamento.editar_objetivope', id=objetivo.id) }}" class="btn btn-success">Editar</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="text-align: center;">Nenhum objetivo encontrado.</p>
+    {% endif %}
 </div>
 
 <script>
-   function fechar() {
-      window.location.href = "{{ url_for('login.get_coordenador') }}";
-   }
+    function filtrarObjetivos() {
+        var planejamentoId = document.getElementById('planejamento_id').value;
+        var objetivos = document.getElementById('objetivo_id').options;
+        
+        for (var i = 0; i < objetivos.length; i++) {
+            var option = objetivos[i];
+            if (option.getAttribute('data-planejamento') == planejamentoId || option.value == "") {
+                option.style.display = 'block';
+            } else {
+                option.style.display = 'none';
+            }
+        }
+    }
 </script>
 {% endblock %}
