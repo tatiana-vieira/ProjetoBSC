@@ -1,103 +1,68 @@
-import os
-from flask import Blueprint, request, redirect, url_for, flash, render_template, session, current_app, send_file
-from flask_login import login_required, current_user
+from flask import Flask, render_template, request, flash, redirect, Blueprint
 import pandas as pd
-import uuid
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
 
 autoavaliacaocoordenador_route = Blueprint('autoavaliacaocoordenador', __name__)
 
-@autoavaliacaocoordenador_route.before_app_request
-def setup_upload_folder():
-    current_app.config['UPLOAD_FOLDER'] = 'static/uploads'
-    if not os.path.exists(current_app.config['UPLOAD_FOLDER']):
-        os.makedirs(current_app.config['UPLOAD_FOLDER'])
+# Caminho para salvar gráficos
+GRAPH_FOLDER = 'static/graficos'
+if not os.path.exists(GRAPH_FOLDER):
+    os.makedirs(GRAPH_FOLDER)
 
 @autoavaliacaocoordenador_route.route('/importar_planilha_coordenador', methods=['GET', 'POST'])
-@login_required
 def importar_planilha_coordenador():
     if request.method == 'POST':
         if 'file' not in request.files:
-            flash('Nenhum arquivo selecionado', 'danger')
+            flash('Nenhum arquivo enviado', 'danger')
             return redirect(request.url)
-
+        
         file = request.files['file']
+
         if file.filename == '':
             flash('Nenhum arquivo selecionado', 'danger')
             return redirect(request.url)
-
-        if file:
-            upload_folder = current_app.config['UPLOAD_FOLDER']
-            filename = os.path.join(upload_folder, 'coordenador.xlsx')
-            file.save(filename)
-            flash('Arquivo salvo com sucesso', 'success')
-
+        
+        # Verifica se o arquivo é um CSV
+        if file and file.filename.endswith('.csv'):
             try:
-                coordenador_data = pd.read_excel(filename)
-                table_html = generate_coordenador_table(coordenador_data)
-                session['table_html_coordenador'] = table_html
-                return redirect(url_for('autoavaliacaocoordenador.dashboard_coordenador'))
+                # Lê o arquivo CSV diretamente da memória
+                data = pd.read_csv(file, delimiter=';')
+                
+                # Exibir as primeiras linhas para ver se foi carregado corretamente
+                print(data.head())
+                
+                # Salvar a tabela em uma lista para exibir no HTML
+                table = data.to_html(classes='table table-striped')
+
+                # Gerar um gráfico básico de barras (por exemplo, da primeira coluna numérica)
+                numeric_columns = data.select_dtypes(include=['float64', 'int64']).columns
+                if len(numeric_columns) > 0:
+                    plt.figure(figsize=(10, 6))
+                    sns.histplot(data[numeric_columns[0]], kde=False, bins=10)
+                    plt.title(f'Histograma de {numeric_columns[0]}')
+                    grafico_path = os.path.join(GRAPH_FOLDER, 'grafico.png')
+                    plt.savefig(grafico_path)
+                    plt.close()
+                
+                # Calcular média, moda e mediana
+                estatisticas = {}
+                for col in numeric_columns:
+                    estatisticas[col] = {
+                        'media': data[col].mean(),
+                        'mediana': data[col].median(),
+                        'moda': data[col].mode()[0]
+                    }
+
+                flash('Arquivo CSV carregado com sucesso!', 'success')
+                return render_template('dashboard_coordenador.html', table=table, estatisticas=estatisticas, grafico='grafico.png')
+            
             except Exception as e:
-                flash(f'Erro ao processar a planilha: {str(e)}', 'danger')
+                flash(f"Erro ao processar o arquivo: {e}", 'danger')
                 return redirect(request.url)
+        else:
+            flash('Por favor, envie um arquivo CSV válido', 'danger')
+            return redirect(request.url)
 
     return render_template('importar_planilha_coordenador.html')
-
-def generate_coordenador_table(dataframe):
-    # Convertendo o DataFrame para uma tabela HTML
-    table_html = dataframe.to_html(classes='table table-striped')
-    return table_html
-
-@autoavaliacaocoordenador_route.route('/dashboard_coordenador')
-@login_required
-def dashboard_coordenador():
-    table_html = session.get('table_html_coordenador', None)
-    if not table_html:
-        flash('Nenhuma tabela disponível para exibir', 'danger')
-        return redirect(url_for('autoavaliacaocoordenador.importar_planilha_coordenador'))
-
-    return render_template('dashboard_coordenador.html', table_html=table_html)
-
-@autoavaliacaocoordenador_route.route('/gerar_pdf_coordenador')
-@login_required
-def gerar_pdf_coordenador():
-    table_html = session.get('table_html_coordenador', None)
-    if not table_html:
-        flash('Nenhuma tabela disponível para gerar PDF', 'danger')
-        return redirect(url_for('autoavaliacaocoordenador.dashboard_coordenador'))
-
-    from fpdf import FPDF
-    from html import unescape
-
-    class PDF(FPDF):
-        def header(self):
-            self.set_font('Arial', 'B', 12)
-            self.cell(0, 10, 'Dashboard Coordenador', 0, 1, 'C')
-
-        def chapter_title(self, title):
-            self.set_font('Arial', 'B', 12)
-            self.cell(0, 10, title, 0, 1, 'L')
-            self.ln(10)
-
-        def chapter_body(self, body):
-            self.set_font('Arial', '', 12)
-            self.multi_cell(0, 10, body)
-            self.ln()
-
-        def add_table(self, html):
-            self.set_font('Arial', '', 10)
-            self.write_html(html)
-
-    pdf = PDF()
-    pdf.add_page()
-    pdf.add_table(unescape(table_html))
-
-    pdf_filename = os.path.join(current_app.config['UPLOAD_FOLDER'], 'dashboard_coordenador.pdf')
-    pdf.output(pdf_filename)
-
-    return send_file(pdf_filename, as_attachment=True)
-
-@autoavaliacaocoordenador_route.route('/fechar_dashboard')
-@login_required
-def fechar_dashboard():
-    session.pop('table_html_coordenador', None)
-    return redirect(url_for('autoavaliacaocoordenador.importar_planilha_coordenador'))

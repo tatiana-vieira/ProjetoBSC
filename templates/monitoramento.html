@@ -1,35 +1,37 @@
-{% extends 'basecord.html' %}
+{% extends 'basecorden.html' %}
 
 {% block titulo %}
     Planejamento Estratégico
 {% endblock %}
 
 {% block conteudo %}
-
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <div class="container">
-        <h2 style="text-align: center; color: #003366; margin-top: 20px;">Dados do Planejamento</h2><br>
+
+    <div class="container monitoramento-container">
+        <!-- Título centralizado -->
+        <h2 class="monitoramento-titulo" style="text-align: center;">Dados do Planejamento</h2><br>
 
         <section>
             <div class="form-container" style="text-align: center;">
                 <h5>Selecione um Planejamento Estratégico</h5>
                 <form method="POST">
                     <label for="planejamento_id">Planejamento:</label>
-                    <select name="planejamento_id" id="planejamento_id" required>
+                    <select name="planejamento_id" id="planejamento_id" required style="margin-bottom: 10px;">
                         <option value="" disabled selected>Selecione um planejamento</option>
                         {% for planejamento in planejamentos %}
                             <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
                         {% endfor %}
                     </select>
-                    <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Exibir dados</button>
+                    <!-- Botão Exibir dados em azul escuro com texto branco -->
+                    <button type="submit" class="btn btn-primary" style="background-color: #003366; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Exibir dados</button>
                 </form>
             </div>
         </section>
 
         {% if planejamento_selecionado %}
         <section class="dados-planejamento">
-            <h3>Objetivos</h3>
-            <table class="table-objetivos">
+            <h3 class="monitoramento-titulo">Objetivos</h3>
+            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
                 <thead>
                     <tr>
                         <th>Nome</th>
@@ -44,8 +46,8 @@
                 </tbody>
             </table>
 
-            <h3>Metas</h3>
-            <table class="table-metas">
+            <h3 class="monitoramento-titulo">Metas</h3>
+            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
                 <thead>
                     <tr>
                         <th>Nome</th>
@@ -64,8 +66,8 @@
                 </tbody>
             </table>
 
-            <h3>Indicadores</h3>
-            <table class="table-indicadores">
+            <h3 class="monitoramento-titulo">Indicadores</h3>
+            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
                 <thead>
                     <tr>
                         <th>Nome</th>
@@ -84,8 +86,8 @@
                 </tbody>
             </table>
 
-            <h3>Ações</h3>
-            <table class="table-acoes">
+            <h3 class="monitoramento-titulo">Ações</h3>
+            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
                 <thead>
                     <tr>
                         <th>Nome</th>
@@ -106,8 +108,8 @@
                 </tbody>
             </table>
 
-            <h3>Riscos</h3>
-            <table class="table-riscos">
+            <h3 class="monitoramento-titulo">Riscos</h3>
+            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
                 <thead>
                     <tr>
                         <th>Descrição</th>
@@ -126,11 +128,13 @@
                 </tbody>
             </table>
         </section>
+
+        <!-- Botões de Ação -->
         <div style="text-align: center; margin-top: 20px;">
             <a href="{{ url_for('gerar_pdf', planejamento_id=planejamento_selecionado.id) }}" target="_blank">
-                <button style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Gerar PDF</button>
+                <button class="btn btn-primary" style="background-color: #003366; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Gerar PDF</button>
             </a>
-            <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
+            <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; margin-left: 10px; border: none; border-radius: 4px;">Fechar</button>
         </div>
         {% endif %}
     </div>
@@ -140,5 +144,4 @@
             window.location.href = "{{ url_for('login.get_coordenador') }}";
         }
     </script>
-
 {% endblock %}

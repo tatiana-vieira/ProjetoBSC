@@ -1,115 +1,170 @@
-{% extends 'basecord.html' %}
+{% extends 'basecorden.html' %}
+
 {% block titulo %}
-  Planejamento Estratégico - Indicadores
+  Cadastro de Indicadores
 {% endblock %}
+
 {% block conteudo %}
-<div style="margin: auto; width: 80%; text-align: center;">
-  <div class="form-block">
-    <h3>Cadastro de Indicadores</h3><br>
-    <!-- Exibir mensagens flash -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="alert-container">
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">
-              {{ message }}
-            </div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-    <form method="POST" action="{{ url_for('planejamento.associar_indicadorespe') }}">
-      <label for="meta_pe_id">Selecione a Meta:</label><br>
-      <select name="meta_pe_id" required style="width: 90%; margin-bottom: 10px;">
-          {% for meta in metas_pe %}
+<div class="container" style="max-width: 80%; margin-top: 30px;">
+  
+  <!-- Card para o formulário de cadastro -->
+  <div class="card">
+    <div class="card-header bg-primary text-white">
+      <h4>Cadastro de Indicadores</h4>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('planejamento.associar_indicadorespe') }}">
+        
+        <div class="form-group">
+          <label for="meta_pe_id">Selecione a Meta:</label>
+          <select name="meta_pe_id" required class="form-control">
+            {% for meta in metas_pe %}
               <option value="{{ meta.id }}">{{ meta.nome }}</option>
-          {% endfor %}
-      </select>
-      
-      <label for="nome">Nome do Indicador:</label><br>
-      <input type="text" id="nome" name="nome" required style="width: 90%; margin-bottom: 10px;"><br>
-      
-      <label for="descricao">Descrição:</label><br>
-      <input type="text" id="descricao" name="descricao" required style="width: 90%; margin-bottom: 10px;"><br>
-
-      <label for="peso">Peso:</label><br>
-      <input type="number" id="peso" name="peso" value="1.0" required style="width: 90%; margin-bottom: 10px;" step="0.01"><br>
-      
-      <label for="frequencia_coleta">Frequência de Coleta:</label><br>
-      <select name="frequencia_coleta" required style="width: 90%; margin-bottom: 10px;">
-          <option value="diário">Diário</option>
-          <option value="semanal">Semanal</option>
-          <option value="mensal">Mensal</option>
-          <option value="trimestral">Trimestral</option>
-          <option value="semestral">Semestral</option>
-          <option value="anual">Anual</option>
-          <option value="quadrienal">Quadrienal</option>
-      </select><br>
-
-      <label for="valor_meta">Valor Meta:</label><br>
-      <input type="number" id="valor_meta" name="valor_meta" value="0.0" required style="width: 90%; margin-bottom: 10px;" step="0.01"><br>
-
-      <!-- Div para adicionar os campos dinâmicos -->
-      <div id="campos-dinamicos">
-        <div class="row">
-            <div class="col-md-3">
-                <label for="ano">Ano:</label>
-                <input type="text" name="ano[]" required style="width: 100%; margin-bottom: 8px;">
-            </div>
-            <div class="col-md-3">
-                <label for="semestre">Semestre:</label>
-                <input type="text" name="semestre[]" required style="width: 100%; margin-bottom: 8px;">
-            </div>
-            <div class="col-md-3">
-                <label for="valor">Valor:</label>
-                <input type="text" name="valor[]" required style="width: 100%; margin-bottom: 8px;">
-            </div>
+            {% endfor %}
+          </select>
         </div>
+
+        <!-- Agrupar nome e descrição em uma linha -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="nome">Nome do Indicador:</label>
+              <input type="text" id="nome" name="nome" required class="form-control">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="descricao">Descrição:</label>
+              <input type="text" id="descricao" name="descricao" required class="form-control">
+            </div>
+          </div>
+        </div>
+
+        <!-- Agrupar Peso e Frequência de Coleta em uma linha -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="peso">Peso:</label>
+              <input type="number" id="peso" name="peso" value="1.0" required class="form-control" step="0.01" min="0">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="frequencia_coleta">Frequência de Coleta:</label>
+              <select name="frequencia_coleta" required class="form-control">
+                <option value="diário">Diário</option>
+                <option value="semanal">Semanal</option>
+                <option value="mensal">Mensal</option>
+                <option value="trimestral">Trimestral</option>
+                <option value="semestral">Semestral</option>
+                <option value="anual">Anual</option>
+                <option value="quadrienal">Quadrienal</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Agrupar Responsável e Data de Início/Fim em uma linha -->
+        <div class="row">
+          <div class="col-md-4">
+            <div class="form-group">
+              <label for="responsavel">Responsável pelo Indicador:</label>
+              <input type="text" id="responsavel" name="responsavel" required class="form-control">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label for="data_inicio">Data de Coleta (Início):</label>
+              <input type="date" id="data_inicio" name="data_inicio" required class="form-control">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label for="data_fim">Data de Coleta (Fim):</label>
+              <input type="date" id="data_fim" name="data_fim" required class="form-control">
+            </div>
+          </div>
+        </div>
+
+        <!-- Agrupar Ano e Valor em uma linha -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="ano">Ano:</label>
+              <input type="text" id="ano" name="ano[]" required class="form-control">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="valor">Valor:</label>
+              <input type="text" id="valor" name="valor[]" required class="form-control">
+            </div>
+          </div>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="form-group text-center" style="margin-top: 20px;">
+          <button type="submit" class="btn btn-primary btn-lg" style="background-color: #0056b3;">Cadastrar</button>
+          <button type="button" onclick="cancelar()" class="btn btn-danger btn-lg" style="margin-left: 10px;">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tabela de Indicadores Cadastrados -->
+  <div class="card mt-5">
+    <div class="card-header bg-secondary text-white">
+      <h4>Indicadores Cadastrados</h4>
+    </div>
+    <div class="card-body">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Descrição</th>
+            <th>Frequência de Coleta</th>
+            <th>Peso</th>
+            <th>Responsável</th>
+            <th>Data Início</th>
+            <th>Data Fim</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for indicador in indicadores %}
+          <tr>
+            <td>{{ indicador.id }}</td>
+            <td>{{ indicador.nome }}</td>
+            <td>{{ indicador.descricao }}</td>
+            <td>{{ indicador.frequencia_coleta }}</td>
+            <td>{{ indicador.peso }}</td>
+            <td>{{ indicador.responsavel }}</td>
+            <td>{{ indicador.data_inicio }}</td>
+            <td>{{ indicador.data_fim }}</td>
+            <td>
+              <a href="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}" class="btn btn-success btn-sm" style="background-color: #28a745;">Editar</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="form-group text-center">
+        <button type="button" onclick="fechar()" class="btn btn-danger btn-lg">Fechar</button>
       </div>
-
-      <button type="submit" class="btn btn-primary">Cadastrar Indicador</button>
-    </form>
-  </div>
-
-  <div class="form-block" style="margin-top: 50px;">
-    <h3>Indicadores Cadastrados</h3><br>
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Nome</th>
-          <th>Descrição</th>
-          <th>Frequência de Coleta</th>
-          <th>Peso</th>
-          <th>Valor Meta</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for indicador in indicadores %}
-        <tr>
-          <td>{{ indicador.id }}</td>
-          <td>{{ indicador.nome }}</td>
-          <td>{{ indicador.descricao }}</td>
-          <td>{{ indicador.frequencia_coleta }}</td>
-          <td>{{ indicador.peso }}</td>
-          <td>{{ indicador.valor_meta }}</td>
-          <td>
-            <a href="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}" class="btn btn-warning btn-sm">Editar</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    </div>
   </div>
 </div>
-<div class="form-group" style="text-align: center;">
-  <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
-</div>
+
+<script>
+  function cancelar() {
+      window.location.href = "{{ url_for('login.get_coordenador') }}";
+  }
+</script>
+
 <script>
   function fechar() {
-      // Redireciona para a página do coordenador após o login
-      window.location.href = "{{ url_for('login.get_coordenador') }}";
+    window.location.href = "{{ url_for('login.get_coordenador') }}";
   }
 </script>
 {% endblock %}

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Análise dos Clusters</title>
+</head>
+<body>
+    <h1>Análise dos Clusters</h1>
+    <table border="1">
+        <tr>
+            <th>Pergunta</th>
+            <th>Cluster 0</th>
+            <th>Cluster 1</th>
+            <th>Cluster 2</th>
+        </tr>
+        {% for key, values in analysis_data.items() %}
+        <tr>
+            <td>{{ key }}</td>
+            <td>{{ values[0] }}</td>
+            <td>{{ values[1] }}</td>
+            <td>{{ values[2] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+    <!-- Botão para gerar o PDF de Análise -->
+    <form action="{{ url_for('autoavaliacaodiscente.gerar_pdf_analise') }}" method="get">
+        <button type="submit">Gerar PDF de Análise</button>
+    </form>
+</body>
+</html>

@@ -1,128 +1,121 @@
-{% extends 'basecord.html' %}
+{% extends 'basecorden.html' %}
 
 {% block titulo %}
     Cadastro de Riscos - PRPPG
 {% endblock %}
 
 {% block conteudo %}
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }}" role="alert">
-                {{ message }}
+<div style="margin: auto; width: 80%; text-align: left;">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="form-block">
+        <h2 style="text-align: center;">Cadastro de Risco</h2><br>
+        <form method="POST" action="{{ url_for('relatoriometas.cadastrar_risco') }}">
+            <label for="planejamento_id">Selecione o Planejamento:</label><br>
+            <select name="planejamento_id" id="planejamento_id" required style="width: 90%; margin-bottom: 10px;">
+                <option value="" disabled selected>Selecione um planejamento</option>
+                {% for planejamento in planejamentos %}
+                    <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
+                {% endfor %}
+            </select>
+            <br>
+
+            <label for="objetivo_pe_id">Selecione o Objetivo:</label><br>
+            <select name="objetivo_pe_id" id="objetivo_pe_id" required style="width: 90%; margin-bottom: 10px;" disabled>
+                <option value="" disabled selected>Selecione um objetivo</option>
+            </select>
+            <br>
+
+            <label for="meta_pe_id">Selecione a Meta:</label><br>
+            <select name="meta_pe_id" id="meta_pe_id" required style="width: 90%; margin-bottom: 10px;" disabled>
+                <option value="" disabled selected>Selecione uma meta</option>
+            </select>
+            <br>
+
+            <!-- Descrição do Risco -->
+            <div class="form-group">
+                <label for="descricao">Descrição do Risco:</label>
+                <input type="text" id="descricao" name="descricao" required class="form-control" style="width: 80%; margin-bottom: 10px;">
             </div>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
 
-<div style="margin: auto; width: 80%; text-align: center;">
-  <div class="form-block">
-    <h3>Cadastro de Riscos</h3><br>
-    <form method="POST" action="{{ url_for('relatoriometas.cadastrar_risco') }}">
-      <label for="planejamento_id">Selecione o Planejamento:</label><br>
-      <select name="planejamento_id" id="planejamento_id" required style="width: 90%; margin-bottom: 10px;">
-          <option value="" disabled selected>Selecione um planejamento</option>
-          {% for planejamento in planejamentos %}
-              <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
-          {% endfor %}
-      </select>
-      <br>
+            <!-- Probabilidade -->
+            <div class="form-group">
+                <label for="probabilidade">Probabilidade:</label>
+                <select id="probabilidade" name="probabilidade" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+                    <option value="Baixa">Baixa</option>
+                    <option value="Média">Média</option>
+                    <option value="Alta">Alta</option>
+                </select>
+            </div>
 
-      <label for="objetivo_pe_id">Selecione o Objetivo:</label><br>
-      <select name="objetivo_pe_id" id="objetivo_pe_id" required style="width: 90%; margin-bottom: 10px;" disabled>
-          <option value="" disabled selected>Selecione um objetivo</option>
-      </select>
-      <br>
+            <!-- Impacto -->
+            <div class="form-group">
+                <label for="impacto">Impacto:</label>
+                <select id="impacto" name="impacto" required class="form-control" style="width: 80%; margin-bottom: 10px;">
+                    <option value="Baixo">Baixo</option>
+                    <option value="Médio">Médio</option>
+                    <option value="Alto">Alto</option>
+                </select>
+            </div>
 
-      <label for="meta_pe_id">Selecione a Meta:</label><br>
-      <select name="meta_pe_id" id="meta_pe_id" required style="width: 90%; margin-bottom: 10px;" disabled>
-          <option value="" disabled selected>Selecione uma meta</option>
-      </select>
-      <br>
+            <!-- Ação Preventiva -->
+            <div class="form-group">
+                <label for="acao_preventiva">Ação Preventiva:</label>
+                <input type="text" id="acao_preventiva" name="acao_preventiva" class="form-control" style="width: 80%; margin-bottom: 10px;">
+            </div>
 
-      <label for="descricao">Descrição do Risco:</label><br>
-      <input type="text" id="descricao" name="descricao" required style="width: 90%; margin-bottom: 10px;"><br>
+            <!-- Botões centralizados com o mesmo tamanho -->
+            <div style="text-align: center; margin-top: 20px;">
+                <button type="submit" class="btn btn-primary" style="padding: 10px 20px; margin-right: 10px;">Cadastrar</button>
+                <button type="button" onclick="cancelar()" class="btn btn-danger" style="padding: 10px 20px; margin-right: 10px;">Cancelar</button>
+                <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px;">Fechar</button>
+            </div>
+        </form>
+        <br>
 
-      <label for="probabilidade">Probabilidade:</label>
-      <select id="probabilidade" name="probabilidade" required style="width: 90%; margin-bottom: 10px;">
-          <option value="Baixa">Baixa</option>
-          <option value="Média">Média</option>
-          <option value="Alta">Alta</option>
-      </select><br>
-      <br>
-
-      <label for="impacto">Impacto:</label><br>
-      <select id="impacto" name="impacto" required style="width: 90%; margin-bottom: 10px;">
-          <option value="Insignificante">Insignificante</option>
-          <option value="Moderado">Moderado</option>
-          <option value="Catastrófico">Catastrófico</option>
-      </select><br>
-      <br>
-
-      <div style="margin-top: 20px;">
-          <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
+        <!-- Listagem dos Riscos -->
+        <h3 style="text-align: center;">Riscos Cadastrados</h3><br> 
+         <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th>Descrição</th>
+                    <th>Nível</th>
+                    <th>Probabilidade</th>
+                    <th>Impacto</th>
+                    <th>Ação Preventiva</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for risco in riscos %}
+                <tr>
+                    <td>{{ risco.descricao }}</td>
+                    <td>{{ risco.nivel }}</td>
+                    <td>{{ risco.probabilidade }}</td>
+                    <td>{{ risco.impacto }}</td>
+                    <td>{{ risco.acao_preventiva }}</td>
+                    <td>
+                        <a href="{{ url_for('relatoriometas.editar_risco', risco_id=risco.id) }}" class="btn btn-success">Editar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div style="text-align: center; margin-top: 20px;">
+            <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px;">Fechar</button>
       </div>
-    </form>
-  </div>
-
-  <div class="form-block" style="margin-top: 50px;">
-    <h3>Riscos Cadastrados</h3><br>
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Descrição</th>
-          <th>Meta</th>   
-          <th>Probabilidade</th>
-          <th>Impacto</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for risco in riscos %}
-        <tr>
-          <td>{{ risco.id }}</td>
-          <td>{{ risco.descricao }}</td>
-          <td>{{ risco.meta_pe.nome }}</td>       
-          <td>{{ risco.probabilidade }}</td>
-          <td>{{ risco.impacto }}</td>
-          <td>
-            <a href="{{ url_for('relatoriometas.editar_risco', risco_id=risco.id) }}" class="btn btn-warning btn-sm">Editar</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    </div>
 </div>
 
-<style>
-.alert-success {
-    color: #155724;
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-}
-
-.alert-error {
-    color: #721c24;
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-}
-
-.form-block .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.form-block .row .col-md-3 {
-    flex: 1;
-    margin-right: 10px;
-}
-</style>
-<div class="form-group" style="text-align: center;">
-    <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
-</div>
 <script>
   function fechar() {
       window.location.href = "{{ url_for('login.get_coordenador') }}";
@@ -161,5 +154,9 @@
               metaSelect.disabled = false;
           });
   });
+
+  function cancelar() {
+      window.history.back();
+  }
 </script>
 {% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'basecorden.html' %}
+
+{% block titulo %}
+    <div style="text-align: center;">
+        <h2>Recomendações Estratégicas com IA por Programa</h2>
+    </div>
+{% endblock %}
+
+{% block conteudo %}
+<div style="margin-top: 20px; text-align: center; font-family: Arial, sans-serif;">
+    <h3 style="color: #333;">Métricas do Modelo</h3>
+
+    <!-- Criando uma tabela para organizar os resultados por programa -->
+    <table style="width: 80%; margin: 0 auto; border-collapse: collapse; font-family: Arial, sans-serif;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid #ddd; padding: 12px;">Programa</th>
+                <th style="border: 1px solid #ddd; padding: 12px;">MSE RandomForest</th>
+                <th style="border: 1px solid #ddd; padding: 12px;">MSE XGBoost</th>
+                <th style="border: 1px solid #ddd; padding: 12px;">Média Sentimentos</th>
+                <th style="border: 1px solid #ddd; padding: 12px;">Recomendações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for programa, recomendacoes in recomendacoes_por_programa.items() %}
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">{{ programa }}</td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">
+                    {{ mse_rf | default(0.0) | round(6) }}
+                </td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">
+                    {{ mse_xgb | default(0.0) | round(6) }}
+                </td>
+                <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">
+                    {{ media_sentimentos_programa | default(0.0) | round(6) }}
+                </td>
+                <td style="border: 1px solid #ddd; padding: 12px;">
+                    <ul style="list-style-type: disc; text-align: left;">
+                        {% for recomendacao in recomendacoes %}
+                        <li>{{ recomendacao }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Botões de Voltar e Fechar -->
+    <div style="margin-top: 40px;">
+        <!-- Botão Voltar -->
+        <a href="{{ url_for('avaliacaoegresso.gerar_graficos_completos', filename='egresso.csv') }}" class="btn btn-primary" style="margin-right: 10px; padding: 10px 20px;">Voltar para Gráficos</a>
+        
+        <!-- Botão Fechar -->
+        <button type="button" onclick="window.close();" class="btn btn-danger" style="padding: 10px 20px;">Fechar</button>
+    </div>
+</div>
+{% endblock %}

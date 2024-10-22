@@ -16,15 +16,22 @@ from routes.relatorioplanejamento import relatorioplanejamento_route
 from routes.relatorioacao import relatorioacao_route
 from routes.relatoriometas import relatoriometas_route
 from routes.altpdi import altpdi_route
+from routes.avaliacaodiscente import avaliacaodiscente_route
 from routes.graficogrant import graficogrant_route
 from routes.graficoacaope import graficoacaope_route
 from routes.calculoindicadores import calculoindicadores_route
 from routes.graficoindicador import graficoindicador_route
 from routes.relatoriocompletos import relatoriocompleto_route
-from routes.autoavaliacaodiscente import autoavaliacaodiscente_route
+from routes.autoavaliacaodiscente  import autoavaliacaodiscente_route
 from routes.autoavaliacaoegresso import autoavaliacaoegresso_route
 from routes.autoavaliacaodocente import autoavaliacaodocente_route
 from routes.autoavaliacaocoordenador import autoavaliacaocoordenador_route
+from routes.analisediscenteclustersia import analisediscenteclustersia_route
+from routes.avaliacaodiscente import avaliacaodiscente_route
+from routes.avaliacaodocente import avaliacaodocente_route
+from routes.avaliacaoegresso import avaliacaoegresso_route
+from routes.avaliacaosecretaria import avaliacaosecretaria_route
+from routes.avaliacaocoordenador import avaliacaocoordenador_route
 from routes.db import db, init_db
 from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
@@ -41,8 +48,12 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import os
+import pandas as pd
+from flask import Flask, render_template
+
 
 app = Flask(__name__)
+
 
 # Configuração de logging
 logging.basicConfig(level=logging.DEBUG)
@@ -125,10 +136,17 @@ app.register_blueprint(graficoacaope_route)
 app.register_blueprint(calculoindicadores_route)
 app.register_blueprint(graficoindicador_route)
 app.register_blueprint(relatoriocompleto_route)
-app.register_blueprint(autoavaliacaodiscente_route)
 app.register_blueprint(autoavaliacaoegresso_route)
 app.register_blueprint(autoavaliacaodocente_route)
 app.register_blueprint(autoavaliacaocoordenador_route)
+app.register_blueprint(autoavaliacaodiscente_route)
+app.register_blueprint(analisediscenteclustersia_route)
+app.register_blueprint(avaliacaodiscente_route)
+app.register_blueprint(avaliacaodocente_route)
+app.register_blueprint(avaliacaoegresso_route)
+app.register_blueprint(avaliacaosecretaria_route)
+app.register_blueprint(avaliacaocoordenador_route)
+
 
 @app.route('/')
 def index():
@@ -765,14 +783,16 @@ def dbtest():
 @app.route('/monitoramento', methods=['GET', 'POST'])
 @login_required
 def monitoramento():
-    user_id = current_user.id  # Obtendo o ID do usuário logado
-    programa_id = current_user.programa_id  # Obtendo o programa do usuário logado
+    user_id = current_user.id
+    programa_id = current_user.programa_id
 
     if not programa_id:
         flash("Usuário não tem um programa associado.", "error")
         return redirect(url_for('get_coordenador'))
 
+    # Carregando planejamentos
     planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+    print(f"Planejamentos carregados: {planejamentos}")
 
     planejamento_selecionado = None
     objetivos = []
@@ -785,11 +805,22 @@ def monitoramento():
         planejamento_id = request.form.get('planejamento_id')
         if planejamento_id:
             planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_id)
+            print(f"Planejamento selecionado: {planejamento_selecionado}")
+
             objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
+            print(f"Objetivos carregados: {objetivos}")
+
             metas = MetaPE.query.join(ObjetivoPE).filter(ObjetivoPE.planejamento_estrategico_id == planejamento_id).all()
+            print(f"Metas carregadas: {metas}")
+
             indicadores = IndicadorPlan.query.join(MetaPE).filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+            print(f"Indicadores carregados: {indicadores}")
+
             acoes = AcaoPE.query.join(MetaPE).filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+            print(f"Ações carregadas: {acoes}")
+
             riscos = Risco.query.join(MetaPE).filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+            print(f"Riscos carregados: {riscos}")
 
             # Calcular tempo restante para metas
             for meta in metas:
@@ -797,6 +828,7 @@ def monitoramento():
                     meta.tempo_restante = (meta.data_termino - datetime.now().date()).days
                 else:
                     meta.tempo_restante = 'Indefinido'
+                print(f"Tempo restante para meta '{meta.nome}': {meta.tempo_restante}")
 
             # Calcular tempo restante para ações
             for acao in acoes:
@@ -804,8 +836,10 @@ def monitoramento():
                     acao.tempo_restante = (acao.data_termino - datetime.now().date()).days
                 else:
                     acao.tempo_restante = 'Indefinido'
+                print(f"Tempo restante para ação '{acao.nome}': {acao.tempo_restante}")
 
     return render_template('monitoramento.html', planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado, objetivos=objetivos, metas=metas, indicadores=indicadores, acoes=acoes, riscos=riscos)
+
 ###################################################################################
 @app.route('/monitoramento/gerar_pdf/<int:planejamento_id>', methods=['GET'])
 @login_required
@@ -929,9 +963,110 @@ def gerar_pdf(planejamento_id):
     response.headers['Content-Type'] = 'application/pdf'
     return response
 
+########################################Analise de IA###################################################
+@app.route('/autoavaliacao/analisar_feedback', methods=['POST'])
+def analisar_feedback_route():
+    # Obter os comentários do formulário ou banco de dados
+    comentarios = request.form.getlist('comentarios')
+    
+    # Chamar a função de análise de feedback
+    sentimentos, palavras_chave = analisar_feedback(comentarios)
+    
+    # Passar os resultados para o template
+    return render_template('resultado_analise.html', sentimentos=sentimentos, palavras_chave=palavras_chave)
+
+###########################################################################
+@app.route('/importar_planilha_feedback', methods=['GET', 'POST'])
+@login_required
+def importar_planilha_feedback():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('Nenhum arquivo selecionado', 'danger')
+            return redirect(request.url)
+
+        file = request.files['file']
+        if file.filename == '':
+            flash('Nenhum arquivo selecionado', 'danger')
+            return redirect(request.url)
+
+        if file:
+            upload_folder = current_app.config['UPLOAD_FOLDER']
+            filename = os.path.join(upload_folder, 'feedback.xlsx')
+
+            try:
+                file.save(filename)
+                print(f"Arquivo salvo com sucesso em {filename}")
+            except Exception as e:
+                print(f"Erro ao salvar o arquivo: {e}")
+                flash(f'Erro ao salvar o arquivo: {e}', 'danger')
+                return redirect(request.url)
+
+            try:
+                # Ler e processar a planilha
+                feedback_data = pd.read_excel(filename)
+                print(f"Colunas disponíveis no dataframe: {feedback_data.columns}")
+
+                # Realizar a análise (por exemplo, análise de sentimentos)
+                feedback_data['Classificacao Sentimento'] = feedback_data['Comentario'].apply(analisar_sentimentos)
+
+                # Salvar o dataframe em um arquivo temporário
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pkl')
+                with open(temp_file.name, 'wb') as f:
+                    pickle.dump(feedback_data, f)
+                print(f"Dataframe salvo temporariamente em {temp_file.name}")
+
+                # Armazenar o caminho do arquivo temporário na sessão
+                session['dataframe_file'] = temp_file.name
+
+                return redirect(url_for('mostrar_resultado_feedback'))
+
+            except Exception as e:
+                print(f"Erro ao processar a planilha: {e}")
+                flash(f'Erro ao processar a planilha: {e}', 'danger')
+                return redirect(request.url)
+
+    return render_template('importar_planilha_feedback.html')
+
+@app.route('/resultado_feedback')
+@login_required
+def mostrar_resultado_feedback():
+    # Carregar o dataframe da sessão
+    dataframe_file = session.get('dataframe_file')
+    if dataframe_file:
+        with open(dataframe_file, 'rb') as f:
+            feedback_data = pickle.load(f)
+        
+        # Renderizar a página de resultados
+        return render_template('resultado_feedback.html', dados=feedback_data.to_dict(orient='records'))
+    else:
+        flash('Nenhum dado de feedback encontrado', 'danger')
+        return redirect(url_for('importar_planilha_feedback'))
 
 
+################################# Analise cluster discente##############################################3
+@app.route('/executar_analise_upload', methods=['POST'])
+def executar_analise_upload():
+    if 'file' not in request.files:
+        return "Nenhum arquivo foi enviado."
 
+    file = request.files['file']
+
+    if file.filename == '':
+        return "Nenhum arquivo selecionado."
+
+    if file:
+        # Ler o arquivo CSV diretamente sem salvar no servidor
+        dados = pd.read_csv(file)
+
+        # Chamar a função de análise e clusterização que você já criou
+        dados_clusterizados = aplicar_clusters(dados)
+        insights = gerar_insights(dados_clusterizados)
+
+        # Exibir os insights ou fazer algo com eles
+        for insight in insights:
+            print(insight)
+
+        return "Análise executada com sucesso!"
 #######################################################################################################33333
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))

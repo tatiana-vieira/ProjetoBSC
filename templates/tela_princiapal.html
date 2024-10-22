@@ -1,0 +1,31 @@
+{% extends 'basecord.html' %}
+
+{% block titulo %}
+  Tela Principal
+{% endblock %}
+
+{% block conteudo %}
+  <div class="container mt-3">
+    <h1>Bem-vindo(a) ao PPGEXPLORER</h1>
+    
+    {% if alertas %}
+      <div class="mt-4">
+        <h4>Alertas e Notificações</h4>
+        {% for alerta in alertas %}
+          <div class="alert {% if alerta.tipo == 'urgente' %}alert-danger{% else %}alert-warning{% endif %}" role="alert">
+            {{ alerta.mensagem }}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>Não há alertas no momento.</p>
+    {% endif %}
+  </div>
+  
+  <div class="container mt-5">
+    <!-- Aqui você pode adicionar mais informações, gráficos ou resumos do planejamento -->
+    <h2>Resumo do Planejamento Estratégico</h2>
+    <p>Percentual de metas atingidas: <strong>{{ percentual_metas_atingidas }}%</strong></p>
+    <p>Percentual de ações concluídas: <strong>{{ percentual_acoes_concluidas }}%</strong></p>
+  </div>
+{% endblock %}

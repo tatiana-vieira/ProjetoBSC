@@ -1,0 +1,32 @@
+{% extends 'basecorden.html' %}
+
+{% block titulo %}
+    <div style="text-align: center;">
+        Gráficos de Avaliação Docentes
+    </div>
+{% endblock %}
+
+{% block conteudo %}
+<body>
+    <h2>Gráficos Gerados</h2>
+    
+    {% for grafico in graficos %}
+        <img src="data:image/png;base64,{{ grafico }}" alt="Gráfico gerado" style="max-width: 100%; height: auto;">
+    {% endfor %}
+</body>
+
+<!-- Botões de Fechar e Gerar PDF -->
+<div style="text-align: center; margin-top: 40px;">
+    <!-- Botão vermelho para fechar -->
+    <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+
+    <!-- Botão azul para gerar PDF -->
+    <a href="{{ url_for('gerar_pdf') }}" class="btn btn-primary">Gerar PDF</a>
+</div>
+
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
+</script>
+{% endblock %}

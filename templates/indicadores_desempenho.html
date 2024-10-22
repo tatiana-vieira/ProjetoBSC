@@ -1,0 +1,85 @@
+{% extends 'basecorden.html' %}
+
+{% block titulo %}
+    Planejamento Estratégico
+{% endblock %}
+
+{% block conteudo %}
+    <h2 style="text-align: center; color: #003366;">Análise de Indicadores de Desempenho</h2>
+
+    <!-- Debug de Valores em Tabela -->
+    <table border="1" cellpadding="10" style="margin: 0 auto; width: 80%;">
+        <thead>
+            <tr>
+                <th>Indicador</th>
+                <th>Valores</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for indicador, valores in historico_valores.items() %}
+            <tr>
+                <td>{{ indicador }}</td>
+                <td>
+                    {% for data, valor in valores %}
+                        {{ data }}: {{ valor }}<br>
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <div id="indicadores-container" style="display: flex; flex-wrap: wrap; justify-content: center;">
+        {% for indicador, valores in historico_valores.items() %}
+        <div class="card" style="width: 45%; padding: 20px; margin: 10px;">
+            <h3>{{ indicador }}</h3>
+            <div>
+                <canvas id="grafico_{{ loop.index }}"></canvas>
+            </div>
+        </div>
+
+        <script>
+            var ctx = document.getElementById('grafico_{{ loop.index }}').getContext('2d');
+            var labels = [{% for data, valor in valores %}'{{ data }}',{% endfor %}];
+            var dataValues = [{% for data, valor in valores %}{{ valor }},{% endfor %}];
+            
+            var graficoIndicador = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Evolução de {{ indicador }}',
+                        data: dataValues,
+                        borderColor: '#36a2eb',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            type: 'category',
+                        }
+                    }
+                }
+            });
+        </script>
+        {% endfor %}
+    </div>
+
+    <!-- Botão Fechar -->
+    <div class="form-group text-center">
+        <button type="button" onclick="fechar()" class="btn btn-danger btn-lg">Fechar</button>
+    </div>
+    <script>
+        function fechar() {
+          window.location.href = "{{ url_for('login.get_coordenador') }}";
+        }
+      </script>
+{% endblock %}

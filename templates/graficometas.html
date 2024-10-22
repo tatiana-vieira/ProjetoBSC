@@ -20,12 +20,50 @@
     </form>
 
     {% if graph_base64 %}
-        <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Metas">
+        <div style="margin: 20px 0;">
+            <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Metas" style="max-width: 80%; height: auto; display: block; margin: auto;">
+        </div>
         <br>
         <a href="{{ url_for('relatoriometas.gerar_pdf', planejamento_selecionado=planejamento_selecionado.id) }}" style="background-color: blue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">Exportar PDF</a>
         <button type="button" onclick="fechar()" style="background-color: red; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
     {% endif %}
 </div>
+
+{% if dados_graficos %}
+<div style="margin-top: 40px;">
+    <h3>Sugestões de Ajustes</h3>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Meta</th>
+                <th>Progresso</th>
+                <th>Restante</th>
+                <th>Sugestões</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dado in dados_graficos %}
+                <tr>
+                    <td>{{ dado.meta }}</td>
+                    <td>{{ dado.progresso }}</td>
+                    <td>{{ dado.restante }}</td>
+                    <td>
+                        {% if dado.sugestoes %}
+                            <ul>
+                                {% for sugestao in dado.sugestoes %}
+                                    <li>{{ sugestao }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>Não há sugestões no momento.</p>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
 
 <script>
     function fechar() {

@@ -10,6 +10,8 @@ from sqlalchemy.orm import relationship
 from passlib.hash import scrypt
 from bcrypt import gensalt
 from flask_login import UserMixin, LoginManager
+from datetime import datetime  # Correção
+
 
 
 login_manager = LoginManager()
@@ -278,9 +280,10 @@ class Risco(db.Model):
     descricao = db.Column(db.String(255), nullable=False)
     objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'))
     meta_pe_id = db.Column(db.Integer, db.ForeignKey('meta_pe.id'))
-    probabilidade = db.Column(db.String(50))  # Adicionando o campo probabilidade
-    impacto = db.Column(db.String(50))        # Adicionando o campo impacto
-
+    probabilidade = db.Column(db.String(50))  # Campo probabilidade
+    impacto = db.Column(db.String(50))        # Campo impacto
+    acao_preventiva = db.Column(db.String(255))  # Campo acao_preventiva adicionado
+    
     objetivo_pe = db.relationship('ObjetivoPE', backref='riscos')
     meta_pe = db.relationship('MetaPE', backref='riscos')
 
@@ -340,7 +343,10 @@ class ObjetivoPE(db.Model):
     objetivo_pdi_id = db.Column(db.Integer, db.ForeignKey('objetivo_pdi.id'))
     
     planejamento_estrategico = db.relationship('PlanejamentoEstrategico', back_populates='objetivos_pe')
-    objetivo_pdi = db.relationship("Objetivo", back_populates="objetivos_pe")
+    objetivo_pdi = db.relationship('Objetivo', back_populates='objetivos_pe')
+
+    # Relacionamento com MetaPE usando back_populates
+    metas = db.relationship('MetaPE', back_populates='objetivo_pe')
 
 class MetaPE(db.Model):
     __tablename__ = 'meta_pe'
@@ -352,10 +358,13 @@ class MetaPE(db.Model):
     data_inicio = db.Column(db.Date, nullable=True)
     data_termino = db.Column(db.Date, nullable=True)
     status_inicial = db.Column(db.Numeric(5, 2), nullable=True)
+    status = db.Column(db.String(50))
     valor_alvo = db.Column(db.Numeric(5, 2), nullable=True)
     objetivo_pe_id = db.Column(db.Integer, db.ForeignKey('objetivo_pe.id'), nullable=False)
 
-    objetivo_pe = db.relationship('ObjetivoPE', backref='meta_pe')
+    # Relacionamento com ObjetivoPE usando back_populates
+    objetivo_pe = db.relationship('ObjetivoPE', back_populates='metas')
+
 
 class Valormeta(db.Model):
     __tablename__ = 'valormeta'
@@ -375,6 +384,9 @@ class IndicadorPlan(db.Model):
     frequencia_coleta = db.Column(db.String(50), nullable=False)
     valor_meta = db.Column(db.Float, nullable=False)
     peso = db.Column(db.Float, nullable=False, default=1.0)
+    data_inicio = db.Column(db.Date, nullable=True)  # Campo para Data de Início
+    data_fim = db.Column(db.Date, nullable=True)  # Campo para Data de Fim
+    responsavel = db.Column(db.String(255), nullable=False)  # Novo campo
 
     meta_pe = db.relationship('MetaPE', backref="indicador_pe")
     variaveis = db.relationship('VariavelPE', backref='indicador', lazy=True)
@@ -445,3 +457,11 @@ class User(UserMixin, db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+class Avaliacao(db.Model):
+    __tablename__ = 'avaliacoes'  # Defina o nome da tabela
+    id = db.Column(db.Integer, primary_key=True)  # Correta indentação
+    data_avaliacao = db.Column(db.DateTime, default=datetime.utcnow)  # Correta indentação
+    qualidade_aulas = db.Column(db.Float, nullable=False)  # Correta indentação
+    infraestrutura = db.Column(db.Float, nullable=False)  # Correta indentação
+    sentimento_geral = db.Column(db.Float, nullable=True)  # Correta indentação

@@ -1,4 +1,4 @@
-{% extends 'basecord.html' %}
+{% extends 'basecorden.html'%}
 
 {% block titulo %}
     Cadastro do Planejamento Estratégico - PRPPG
@@ -15,50 +15,50 @@
     {% endif %}
 {% endwith %}
 
-<div style="margin: auto; width: 80%; text-align: center;">
+<div style="margin: auto; width: 80%; text-align: left;">
   <div class="form-block">
-    <h3>Cadastro de Metas</h3><br>
+    <h3 style="text-align: center;">Cadastro de Metas</h3><br>
     <form method="POST" action="{{ url_for('planejamento.associar_metaspe') }}">
-      <label for="objetivo_pe_id">Selecione o Objetivo:</label><br>
-      <select name="objetivo_pe_id" required style="width: 90%; margin-bottom: 10px;">
+      <label for="objetivo_pe_id" style="display: block;">Selecione o Objetivo:</label>
+      <select name="objetivo_pe_id" required style="width: 100%; margin-bottom: 10px;">
           {% for objetivo in objetivos_pe %}
               <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
           {% endfor %}
       </select>
-      <br>
 
-      <label for="nome">Nome da Meta:</label><br>
-      <input type="text" id="nome" name="nome" required style="width: 90%; margin-bottom: 10px;"><br>
+      <label for="nome" style="display: block;">Nome da Meta:</label>
+      <input type="text" id="nome" name="nome" required style="width: 100%; margin-bottom: 10px;">
 
-      <label for="descricao">Descrição da Meta:</label><br>
-      <textarea id="descricao" name="descricao" required style="width: 90%; margin-bottom: 10px;"></textarea><br>
+      <label for="descricao" style="display: block;">Descrição da Meta:</label>
+      <textarea id="descricao" name="descricao" required style="width: 100%; margin-bottom: 10px;"></textarea>
 
-      <label for="responsavel">Responsável:</label><br>
-      <input type="text" id="responsavel" name="responsavel" required style="width: 90%; margin-bottom: 10px;"><br>
+      <label for="responsavel" style="display: block;">Responsável:</label>
+      <input type="text" id="responsavel" name="responsavel" required style="width: 100%; margin-bottom: 10px;">
 
-      <label for="recursos">Recursos Necessários:</label><br>
-      <textarea id="recursos" name="recursos" required style="width: 90%; margin-bottom: 10px;"></textarea><br>
+      <label for="recursos" style="display: block;">Recursos Necessários:</label>
+      <textarea id="recursos" name="recursos" required style="width: 100%; margin-bottom: 10px;"></textarea>
 
-      <label for="data_inicio">Data de Início:</label><br>
-      <input type="date" id="data_inicio" name="data_inicio" required style="width: 90%; margin-bottom: 10px;"><br>
+      <label for="data_inicio" style="display: block;">Data de Início:</label>
+      <input type="date" id="data_inicio" name="data_inicio" required style="width: 100%; margin-bottom: 10px;">
 
-      <label for="data_termino">Data de Término:</label><br>
-      <input type="date" id="data_termino" name="data_termino" required style="width: 90%; margin-bottom: 10px;"><br>
+      <label for="data_termino" style="display: block;">Data de Término:</label>
+      <input type="date" id="data_termino" name="data_termino" required style="width: 100%; margin-bottom: 10px;">
 
-      <label for="status_inicial">Status Inicial (em %):</label><br>
-      <input type="number" id="status_inicial" name="status_inicial" required min="0" max="100" step="1" style="width: 90%; margin-bottom: 10px;"><br>
+      <label for="status_inicial" style="display: block;">Status Inicial (em %):</label>
+      <input type="number" id="status_inicial" name="status_inicial" required min="0" max="100" step="1" style="width: 100%; margin-bottom: 10px;">
 
-      <label for="valor_alvo">Valor Alvo:</label><br>
-      <input type="number" id="valor_alvo" name="valor_alvo" required step="0.01" style="width: 90%; margin-bottom: 10px;"><br>
+      <label for="valor_alvo" style="display: block;">Valor Alvo:</label>
+      <input type="number" id="valor_alvo" name="valor_alvo" required step="0.01" style="width: 100%; margin-bottom: 10px;">
 
+      <!-- Campos dinâmicos para adicionar ano, semestre e valor -->
       <div id="campos-dinamicos">
         <div class="row" style="margin-bottom: 10px;">
             <div class="col-md-3">
-                <label for="ano">Ano:</label>
+                <label for="ano" style="display: block;">Ano:</label>
                 <input type="number" name="ano[]" required style="width: 100%;">
             </div>
             <div class="col-md-3">
-                <label for="semestre">Semestre:</label>
+                <label for="semestre" style="display: block;">Semestre:</label>
                 <select name="semestre[]" required style="width: 100%;">
                     <option value="">-- Selecione --</option>
                     <option value="1">1º Semestre (Jan-Jun)</option>
@@ -66,20 +66,26 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label for="valor">Valor:</label>
+                <label for="valor" style="display: block;">Valor:</label>
                 <input type="number" step="0.01" name="valor[]" required style="width: 100%;">
             </div>
         </div>
       </div>
-
-      <div style="margin-top: 20px;">
-          <button type="submit" class="btn btn-primary">Cadastrar Meta</button>
+      <div class="form-group" style="text-align: center;">
+        <!-- Botão para adicionar mais campos -->
+        <button type="button" class="btn btn-info" onclick="adicionarCampo()" style="background-color: #0056b3; color: white;">
+          <i class="fas fa-plus"></i> Adicionar Valor
+        </button>
       </div>
-   </form>
+      <div style="margin-top: 20px; text-align: center;">
+          <button type="submit" class="btn btn-primary" style="background-color: #003366; color: white;">Cadastrar</button>
+          <button type="button" onclick="cancelar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
+      </div>
+    </form>
   </div>
 
   <div class="form-block" style="margin-top: 50px;">
-    <h3>Metas Cadastradas</h3><br>
+    <h3 style="text-align: center;">Metas Cadastradas</h3><br>
     <table class="table table-striped">
       <thead>
         <tr>
@@ -106,7 +112,7 @@
           <td>{{ meta.status_inicial }}</td>
           <td>{{ meta.valor_alvo }}</td>
           <td>
-            <a href="{{ url_for('planejamento.alterar_metape', metape_id=meta.id) }}"class="btn btn-success">Editar</a>
+            <a href="{{ url_for('planejamento.alterar_metape', metape_id=meta.id) }}" class="btn btn-success">Editar</a>
           </td>
         </tr>
         {% endfor %}
@@ -114,6 +120,46 @@
     </table>
   </div>
 </div>
+
+<!-- Scripts para adicionar campos dinamicamente e para o botão cancelar -->
+<script>
+  function adicionarCampo() {
+    var container = document.getElementById('campos-dinamicos');
+    var novoCampo = document.createElement('div');
+    novoCampo.className = 'row';
+    novoCampo.style.marginBottom = '10px';
+
+    novoCampo.innerHTML = `
+        <div class="col-md-3">
+            <label for="ano" style="display: block;">Ano:</label>
+            <input type="number" name="ano[]" required style="width: 100%;">
+        </div>
+        <div class="col-md-3">
+            <label for="semestre" style="display: block;">Semestre:</label>
+            <select name="semestre[]" required style="width: 100%;">
+                <option value="">-- Selecione --</option>
+                <option value="1">1º Semestre</option>
+                <option value="2">2º Semestre</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="valor" style="display: block;">Valor:</label>
+            <input type="number" step="0.01" name="valor[]" required style="width: 100%;">
+        </div>
+        <button type="button" class="btn btn-danger btn-sm" onclick="removerCampo(this)" style="height: 40px; margin-left: 10px;">Remover</button>
+    `;
+    container.appendChild(novoCampo);
+}
+
+function removerCampo(button) {
+    var campo = button.parentNode;
+    campo.parentNode.removeChild(campo);
+}
+
+function cancelar() {
+    window.location.href = "{{ url_for('login.get_coordenador') }}";
+}
+</script>
 
 <style>
 .alert-success {
@@ -129,16 +175,30 @@
 }
 
 .form-block .row {
+    margin-bottom: 15px;
     display: flex;
-    align-items: center;
     justify-content: space-between;
 }
 
 .form-block .row .col-md-3 {
-    flex: 1;
+    flex: 0 0 30%;
     margin-right: 10px;
 }
+
+.form-block input, .form-block select, .form-block textarea {
+    width: 100%;
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+}
+
+button.btn {
+    padding: 10px 20px;
+    margin-top: 10px;
+    text-align: center;
+}
 </style>
+
 <div class="form-group" style="text-align: center;">
   <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
 </div>

@@ -75,7 +75,7 @@
         <button type="submit" style="background-color: blue; color: white; padding: 5px 15px; border: none; border-radius: 5px;">Buscar</button>
         {% if planejamento_selecionado %}
             <button type="button" onclick="window.location.href='{{ url_for('relatoriocompleto.export_pdf_acao', planejamento_selecionado=planejamento_selecionado.id) }}'" style="background-color: blue; color: white; padding: 5px 15px; border: none; border-radius: 5px;">Gerar PDF</button>
-            <button type="button" onclick="window.location.href='{{ url_for('relatoriocompleto.export_csv_acoes', planejamento_selecionado=planejamento_selecionado.id) }}'" style="background-color: green; color: white; padding: 5px 15px; border: none; border-radius: 5px;">Exportar Planilha</button>
+            <button type="button" onclick="window.location.href='{{ url_for('relatorioacao.export_csv_acoes', planejamento_selecionado=planejamento_selecionado.id) }}'" style="background-color: green; color: white; padding: 5px 15px; border: none; border-radius: 5px;">Exportar Planilha</button>
         {% endif %}
     </form>
 

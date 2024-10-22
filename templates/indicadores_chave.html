@@ -1,0 +1,63 @@
+{% extends 'basecorden.html' %}
+
+{% block titulo %}
+    Indicadores-Chave do Planejamento
+{% endblock %}
+
+{% block conteudo %}
+<div class="container mt-5">
+  <h1>Indicadores-Chave do Planejamento</h1>
+
+  <!-- % de Metas Atingidas -->
+  <div class="metas-section text-center">
+    <h2>% de Metas Atingidas</h2>
+    <div class="progress mb-3" style="height: 30px;">
+      <div class="progress-bar" role="progressbar" style="width: {{ percentual_metas_atingidas }}%;" aria-valuenow="{{ percentual_metas_atingidas }}" aria-valuemin="0" aria-valuemax="100">
+        {{ percentual_metas_atingidas }}%
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Ações com Maior Impacto -->
+  <div class="metas-section">
+    <h2>Ações com Maior Impacto</h2>
+    <ul class="list-group">
+      {% for acao in acoes_maior_impacto %}
+      <li class="list-group-item">
+        <strong>{{ acao.nome }}</strong> - {{ acao.porcentagem_execucao }}%
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <hr>
+
+  <!-- Metas no Prazo -->
+  <div class="metas-section">
+    <h2 class="text-success">Metas no Prazo</h2>
+    <ul class="list-group">
+      {% for meta in metas_no_prazo %}
+      <li class="list-group-item">
+        <span class="badge badge-success">No Prazo</span> {{ meta.nome }} - Término: {{ meta.data_termino.strftime('%d/%m/%Y') }}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <hr>
+
+  <!-- Metas Atrasadas -->
+  <div class="metas-section">
+    <h2 class="text-danger">Metas Atrasadas</h2>
+    <ul class="list-group">
+      {% for meta in metas_atrasadas %}
+      <li class="list-group-item">
+        <span class="badge badge-danger">Atrasada</span> {{ meta.nome }} - Término: {{ meta.data_termino.strftime('%d/%m/%Y') }}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

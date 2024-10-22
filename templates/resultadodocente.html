@@ -1,0 +1,34 @@
+{% extends 'basecorden.html' %}
+
+{% block titulo %}
+    <div style="text-align: center;">
+        Resultados de Sentimentos e Modelos
+    </div>
+{% endblock %}
+{% block conteudo %}
+<body>
+    <h2>Resultados da Análise de Sentimentos</h2>
+    <p>Média de Sentimentos Programa: {{ media_programa }}</p>
+    <img src="data:image/png;base64,{{ grafico_sentimentos_ingresso }}" alt="Gráfico de Sentimentos por Ingresso">
+
+    <h2>Resultados do Modelo Otimizado</h2>
+    <p>MSE após otimização: {{ mse_otimizado }}</p>
+
+    {% for programa, dados in recomendacoes_por_programa.items() %}
+<tr>
+    <td>{{ programa }}</td>
+    <td>{{ dados.mse_rf | default('N/A') | round(6) if dados.mse_rf is not none else 'N/A' }}</td>
+    <td>{{ dados.mse_xgb | default('N/A') | round(6) if dados.mse_xgb is not none else 'N/A' }}</td>
+    <td>{{ dados.media_sentimentos_programa | default('N/A') | round(6) if dados.media_sentimentos_programa is not none else 'N/A' }}</td>
+    <td>
+        <ul>
+            {% for recomendacao in dados.recomendacoes %}
+            <li>{{ recomendacao }}</li>
+            {% endfor %}
+        </ul>
+    </td>
+</tr>
+{% endfor %}
+</body>
+{% endblock %}
+

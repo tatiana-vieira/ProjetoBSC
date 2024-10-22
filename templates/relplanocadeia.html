@@ -1,4 +1,4 @@
-{% extends 'basecord.html' %}
+{% extends 'basecorden.html' %}
 
 {% block titulo %}
     Planejamento Estratégico - 2024:2028
@@ -7,7 +7,7 @@
 {% block conteudo %}
 <div style="text-align: center; margin-top: 20px;">
     <h4 style="color: #003366;">Selecione um Planejamento Estratégico:</h4>
-    <form id="selecionar-planejamento" method="POST">
+    <form method="POST" action="{{ url_for('relatorioplanejamento.exibir_detalhes_planejamentocadeia') }}">
         <select id="planejamento_estrategico" name="planejamento_selecionado" required style="width: 300px; margin-bottom: 20px;">
             <option value="">-- Selecione --</option>
             {% for planejamento in planejamentos %}
@@ -18,7 +18,8 @@
     </form>
 </div>
 
-<div id="tabela-planejamento" style="display: none; margin-top: 20px;">
+{% if dados_objetivos %}
+<div id="tabela-planejamento" style="margin-top: 20px;">
     <h3>Planejamento Estratégico</h3>
     <table class="table table-striped">
         <thead>
@@ -27,92 +28,51 @@
                 <th>Meta</th>
                 <th>Indicador</th>
                 <th>Risco</th>
-                <th>Nível</th>
                 <th>Ação Preventiva</th>
             </tr>
         </thead>
-        <tbody id="objetivos-metas">
-            <!-- Conteúdo será preenchido via AJAX -->
+        <tbody>
+            {% for objetivo in dados_objetivos %}
+                <tr>
+                    <td>{{ objetivo.nome }}</td>
+                    <td colspan="4"></td>
+                </tr>
+                {% for meta in objetivo.metas %}
+                    <tr>
+                        <td></td>
+                        <td>{{ meta.nome }}</td>
+                        <td>
+                            {% for indicador in meta.indicadores %}
+                                {{ indicador.nome }}<br>
+                            {% endfor %}
+                        </td>
+                        <td colspan="2"></td>
+                    </tr>
+                {% endfor %}
+                {% for risco in objetivo.riscos %}
+                    <tr>
+                        <td></td>
+                        <td colspan="2"></td>
+                        <td>{{ risco.descricao }}</td>
+                        <td>{{ risco.acao_preventiva }}</td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
         </tbody>
     </table>
 </div>
 
 <div style="text-align: center;">
-    <a id="gerar-pdf" href="#" class="btn btn-primary" style="display: none; margin-top: 20px;">Download PDF</a>
-    <a id="gerar-excel" href="#" class="btn btn-success" style="display: none; margin-top: 20px;">Download Excel</a>
+    <a id="gerar-pdf" href="{{ url_for('relatorioplanejamento.gerarrel_pdf', planejamento_id=planejamento_selecionado.id) }}" class="btn btn-primary" style="margin-top: 20px;">Download PDF</a>
+    <a id="gerar-excel" href="{{ url_for('relatorioplanejamento.gerarrel_excel', planejamento_id=planejamento_selecionado.id) }}" class="btn btn-success" style="margin-top: 20px;">Download Excel</a>
+</div>
+{% endif %}
+
+<div style="text-align: center;">
     <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-top: 20px;">Fechar</button>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    $(document).ready(function() {
-        $('#selecionar-planejamento').submit(function(event) {
-            event.preventDefault(); // Prevent the form from submitting the traditional way
-            var planejamento_id = $('#planejamento_estrategico').val();
-            if (planejamento_id) {
-                $.ajax({
-                    url: '/relcadeia',
-                    type: 'POST',
-                    data: { planejamento_selecionado: planejamento_id },
-                    success: function(response) {
-                        if (response.error) {
-                            alert(response.error);
-                            return;
-                        }
-                        
-                        // Preencher Objetivos, Metas, Indicadores e Riscos
-                        var objetivosMetasTbody = $('#objetivos-metas');
-                        objetivosMetasTbody.empty();
-                        response.objetivos.forEach(function(objetivo) {
-                            var objetivoNome = objetivo.nome;
-                            var riscoRows = '';
-                            objetivo.riscos.forEach(function(risco) {
-                                riscoRows += '<tr>' +
-                                    '<td>' + objetivoNome + '</td>' +
-                                    '<td></td>' + // Meta vazia
-                                    '<td></td>' + // Indicador vazio
-                                    '<td>' + risco.descricao + '</td>' +
-                                    '<td>' + risco.nivel + '</td>' +
-                                    '<td>' + risco.acao_preventiva + '</td>' +
-                                    '</tr>';
-                            });
-                            objetivo.metas.forEach(function(meta) {
-                                var metaNome = meta.nome;
-                                meta.indicadores.forEach(function(indicador) {
-                                    var row = '<tr>' +
-                                        '<td>' + objetivoNome + '</td>' +
-                                        '<td>' + metaNome + '</td>' +
-                                        '<td>' + indicador.nome + '</td>' +
-                                        '<td></td>' + // Risco vazio
-                                        '<td></td>' + // Nível vazio
-                                        '<td></td>' + // Ação Preventiva vazia
-                                        '</tr>';
-                                    objetivosMetasTbody.append(row);
-                                });
-                            });
-                            objetivosMetasTbody.append(riscoRows);
-                        });
-
-                        $('#tabela-planejamento').show(); // Show the table container
-
-                        // Update download links
-                        $('#gerar-pdf').attr('href', '/gerarrel_pdf/' + planejamento_id).show();
-                        $('#gerar-excel').attr('href', '/gerarrel_excel/' + planejamento_id).show();
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(xhr.responseText); // Log any errors
-                    }
-                });
-            } else {
-                alert('Por favor, selecione um planejamento.');
-                $('#tabela-planejamento').hide();
-                $('#objetivos-metas').empty(); // Clear the objetivos table if no selection
-                $('#gerar-pdf').hide();
-                $('#gerar-excel').hide();
-            }
-        });
-    });
-
     function fechar() {
         window.location.href = "{{ url_for('login.get_coordenador') }}";
     }

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Resultado da Análise de Feedback</title>
+</head>
+<body>
+    <h1>Resultado da Análise de Feedback</h1>
+
+    <h2>Sentimentos dos Comentários</h2>
+    <ul>
+        {% for sentimento in sentimentos %}
+        <li>{{ sentimento }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Palavras-Chave Mais Relevantes</h2>
+    <ul>
+        {% for palavra in palavras_chave %}
+        <li>{{ palavra }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

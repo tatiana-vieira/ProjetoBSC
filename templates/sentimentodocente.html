@@ -1,0 +1,22 @@
+{% extends 'basecorden.html' %}
+
+{% block titulo %}
+    <div style="text-align: center;">
+        Análise de Sentimentos
+    </div>
+{% endblock %}
+
+{% block conteudo %}
+
+<body>
+    <h1>Análise de Sentimentos</h1>
+
+    <h2>Média dos Sentimentos sobre o Programa: {{ media_programa }}</h2>
+    <h2>Média dos Sentimentos sobre a Pró-Reitoria: {{ media_prppg }}</h2>
+
+    <h3>Gráfico de Sentimentos</h3>
+    <img src="data:image/png;base64,{{ grafico_sentimentos }}" alt="Gráfico de Sentimentos"/>
+
+    <a href="{{ url_for('avaliacaodocente.importar_planilhadocente') }}">Voltar</a>
+</body>
+{% endblock %}

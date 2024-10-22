@@ -1,4 +1,4 @@
-{% extends 'basecord.html' %}
+{% extends 'basecorden.html' %}
 
 {% block titulo %}
     Matriz de Riscos - PRPPG
@@ -17,21 +17,22 @@
         </select>
         <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Exibir Matriz</button>
     </form>
+
     {% if matriz_riscos %}
-    <br>
-    <table border="1" style="width: 100%; text-align: center; border-collapse: collapse;">
+    <br><br>
+    <table style="width: 100%; text-align: center; border-collapse: collapse; border: 2px solid #333;">
         <thead>
-            <tr>
-                <th></th>
-                <th>Insignificante</th>
-                <th>Moderado</th>
-                <th>Catastrófico</th>
+            <tr style="background-color: #f2f2f2;">
+                <th style="padding: 15px;">Probabilidade/Impacto</th>
+                <th style="padding: 15px;">Insignificante</th>
+                <th style="padding: 15px;">Moderado</th>
+                <th style="padding: 15px;">Catastrófico</th>
             </tr>
         </thead>
         <tbody>
             {% for i, row_label in enumerate(['Baixa', 'Média', 'Alta']) %}
                 <tr>
-                    <td><strong>{{ row_label }}</strong></td>
+                    <td style="padding: 15px; font-weight: bold; background-color: #f2f2f2;">{{ row_label }}</td>
                     {% for j in range(3) %}
                         <td style="background-color: 
                                    {% if row_label == 'Baixa' %}
@@ -41,10 +42,10 @@
                                    {% elif row_label == 'Alta' %}
                                        {% if j == 0 %}#b1dfbb{% elif j == 1 %}#ffe08a{% elif j == 2 %}#f1b0b7{% endif %}
                                    {% endif %}; 
-                                   padding: 10px;">
-                            {% for descricao in matriz_riscos[i][j] %}
-                                <div>{{ descricao }}</div>
-                            {% endfor %}
+                                   padding: 15px; border: 1px solid #333;">
+                           {% for descricao in matriz_riscos[i][j] %}
+                             <div>{{ descricao }}</div>
+                           {% endfor %}
                         </td>
                     {% endfor %}
                 </tr>
@@ -52,9 +53,12 @@
         </tbody>
     </table>
     {% endif %}
+
+    <!-- Linha extra antes do botão Fechar -->
+    <br><br>
     <div class="form-group" style="text-align: center;">
-        <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>
-     </div>
+        <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+    </div>
 </div>
 
 <script>

@@ -10,6 +10,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import cm
+from reportlab.platypus import Spacer
 
 
 relatorioplanejamento_route = Blueprint('relatorioplanejamento', __name__)
@@ -103,6 +105,7 @@ def gerar_pdf(planejamento_id):
     response.headers['Content-Type'] = 'application/pdf'
     return response
 
+#################################################################################3
 @relatorioplanejamento_route.route('/gerar_excel/<int:planejamento_id>', methods=['GET'])
 @login_required
 def gerar_excel(planejamento_id):
@@ -136,45 +139,46 @@ def gerar_excel(planejamento_id):
 @relatorioplanejamento_route.route('/relcadeia', methods=['GET', 'POST'])
 @login_required
 def exibir_detalhes_planejamentocadeia():
-    if session.get('role') == 'Coordenador':
+    if request.method == 'POST':
+        planejamento_selecionado_id = request.form.get('planejamento_selecionado')
+        
+        if not planejamento_selecionado_id:
+            flash('Por favor, selecione um planejamento.', 'danger')
+            return redirect(url_for('relatorioplanejamento.exibir_detalhes_planejamentocadeia'))
+
+        planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
+        if not planejamento_selecionado:
+            flash('Planejamento não encontrado.', 'danger')
+            return redirect(url_for('relatorioplanejamento.exibir_detalhes_planejamentocadeia'))
+
+        # Buscar os dados relacionados ao planejamento selecionado
+        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
+        metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
+        indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas])).all()
+        riscos = Risco.query.filter(Risco.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
+
+        dados_objetivos = []
+        for objetivo in objetivos:
+            metas_dados = []
+            for meta in [m for m in metas if m.objetivo_pe_id == objetivo.id]:
+                indicadores_dados = [{'nome': indicador.nome} for indicador in indicadores if indicador.meta_pe_id == meta.id]
+                metas_dados.append({'nome': meta.nome, 'indicadores': indicadores_dados})
+            
+            riscos_dados = [{'descricao': risco.descricao, 'acao_preventiva': risco.acao_preventiva} for risco in riscos if risco.objetivo_pe_id == objetivo.id]
+            
+            dados_objetivos.append({'nome': objetivo.nome, 'metas': metas_dados, 'riscos': riscos_dados})
+
+        return render_template('relplanocadeia.html', planejamento_selecionado=planejamento_selecionado, dados_objetivos=dados_objetivos)
+
+    # Caso a requisição seja GET, renderize a página inicial (com o dropdown de planejamentos)
+    else:
         coordenador_programa_id = session.get('programa_id')
         programa = Programa.query.get(coordenador_programa_id)
-
-        if not programa:
-            flash('Não foi possível encontrar o programa associado ao coordenador.', 'warning')
-            return redirect(url_for('login.get_coordenador'))
-
         planejamentos = programa.planejamentos
 
-        if request.method == 'POST':
-            planejamento_selecionado_id = request.form.get('planejamento_selecionado')
-            if not planejamento_selecionado_id:
-                return jsonify({'error': 'Planejamento não selecionado'})
-
-            planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
-            if not planejamento_selecionado:
-                return jsonify({'error': 'Planejamento não encontrado'})
-
-            objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
-            metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
-            indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas])).all()
-            riscos = Risco.query.filter(Risco.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
-
-            dados_objetivos = []
-            for objetivo in objetivos:
-                metas_dados = []
-                for meta in [m for m in metas if m.objetivo_pe_id == objetivo.id]:
-                    indicadores_dados = [{'nome': indicador.nome} for indicador in indicadores if indicador.meta_pe_id == meta.id]
-                    metas_dados.append({'nome': meta.nome, 'indicadores': indicadores_dados})
-                riscos_dados = [{'descricao': risco.descricao, 'nivel': risco.nivel, 'acao_preventiva': risco.acao_preventiva} for risco in riscos if risco.objetivo_pe_id == objetivo.id]
-                dados_objetivos.append({'nome': objetivo.nome, 'metas': metas_dados, 'riscos': riscos_dados})
-
-            return jsonify({'objetivos': dados_objetivos})  # Retorna os dados em formato JSON para o AJAX
-
         return render_template('relplanocadeia.html', planejamentos=planejamentos)
-    
-    flash('Você não tem permissão para acessar esta página.', 'danger')
-    return redirect(url_for('login.login_page'))
+
+
 #################################################################################################################3
 
 @relatorioplanejamento_route.route('/gerarrel_pdf/<int:planejamento_id>', methods=['GET'])
@@ -192,7 +196,7 @@ def gerarrel_pdf(planejamento_id):
         for meta in [m for m in metas if m.objetivo_pe_id == objetivo.id]:
             indicadores_dados = [{'nome': indicador.nome} for indicador in indicadores if indicador.meta_pe_id == meta.id]
             metas_dados.append({'nome': meta.nome, 'indicadores': indicadores_dados})
-        riscos_dados = [{'descricao': risco.descricao, 'nivel': risco.nivel, 'acao_preventiva': risco.acao_preventiva} for risco in riscos if risco.objetivo_pe_id == objetivo.id]
+        riscos_dados = [{'descricao': risco.descricao, 'acao_preventiva': risco.acao_preventiva} for risco in riscos if risco.objetivo_pe_id == objetivo.id]
         dados.append({'nome': objetivo.nome, 'metas': metas_dados, 'riscos': riscos_dados})
 
     buffer = BytesIO()
@@ -220,20 +224,36 @@ def gerarrel_pdf(planejamento_id):
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ]))
             elements.append(table)
-        for risco in objetivo['riscos']:
-            elements.append(Paragraph(f"Risco: {risco['descricao']}", styles['Heading3']))
-            data = [["Nível", "Ação Preventiva"], [risco['nivel'], risco['acao_preventiva']]]
-            table = Table(data, colWidths=[225, 225])
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ]))
-            elements.append(table)
+
+    for risco in objetivo['riscos']:
+        # Ajustando a tabela com mais espaçamento
+        acao_preventiva = risco.get('acao_preventiva', '') if risco.get('acao_preventiva') is not None else ''
+
+        elements.append(Spacer(1, 12))  # Adiciona espaço entre o risco anterior e o novo parágrafo
+        elements.append(Paragraph(f"Risco: {risco['descricao']}", styles['Heading3']))
+
+        # Dados da tabela ajustados
+        data = [["Descrição", "Ação Preventiva"], 
+                [risco['descricao'], acao_preventiva]]
+
+        # Ajustando a largura das colunas
+        table = Table(data, colWidths=[6*cm, 6*cm])
+
+        # Melhorando o estilo da tabela
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('ALIGN', (0, 1), (-1, -1), 'LEFT'),  # Alinhando texto à esquerda nas células de dados
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),  # Verticalmente alinhando as células no meio
+        ]))
+        elements.append(table)
+        elements.append(Spacer(1, 12))  # Adiciona espaço após a tabela
+
 
     doc.build(elements)
     
@@ -242,6 +262,7 @@ def gerarrel_pdf(planejamento_id):
     response.headers['Content-Disposition'] = 'inline; filename=planejamentos.pdf'
     response.headers['Content-Type'] = 'application/pdf'
     return response
+
 
 ########################################################################################################################
 @relatorioplanejamento_route.route('/gerarrel_excel/<int:planejamento_id>', methods=['GET'])
@@ -262,7 +283,6 @@ def gerarrel_excel(planejamento_id):
                     'Meta': meta.nome,
                     'Indicador': indicador.nome,
                     'Risco': '',
-                    'Nível do Risco': '',
                     'Ação Preventiva': ''
                 })
 
@@ -272,7 +292,6 @@ def gerarrel_excel(planejamento_id):
                 'Meta': '',
                 'Indicador': '',
                 'Risco': risco.descricao,
-                'Nível do Risco': risco.nivel,
                 'Ação Preventiva': risco.acao_preventiva
             })
 

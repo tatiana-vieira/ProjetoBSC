@@ -1,0 +1,43 @@
+{% extends 'basepro.html' %}
+
+{% block titulo %}
+    Importar Planilha de Docente
+{% endblock %}
+
+{% block conteudo %}
+<div class="container" style="text-align: center; padding-top: 50px;">
+    <h2 style="text-align: center; color: #003366; padding-bottom: 20px;">Importar Planilha de Docente</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('avaliacaodocente.importar_planilhadocente') }}" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="file" style="color: #003366;">Selecionar Arquivo</label>
+            <input type="file" class="form-control-file" id="file" name="file" style="display: none;" onchange="displayFileName()">
+            <label for="file" class="btn btn-primary" style="background-color: #003366; border-color: #003366; margin-bottom: 20px;">Escolher arquivo</label>
+            <small id="fileHelp" class="form-text text-muted">Exemplo: <a href="{{ url_for('static', filename='uploads/docente.xlsx') }}" download>Baixar Exemplo</a></small>
+        </div>
+        <div id="fileName" class="form-text text-muted" style="margin-top: 10px;">Nenhum arquivo selecionado</div>
+        <div>
+            <button type="submit" class="btn btn-primary" style="background-color: #003366; border-color: #003366; width: 150px;">Upload</button>
+            
+        </div>
+    </form>
+</div>
+
+<script>
+    function displayFileName() {
+        var input = document.getElementById('file');
+        var fileName = input.files[0] ? input.files[0].name : 'Nenhum arquivo selecionado';
+        document.getElementById('fileName').innerText = 'Arquivo selecionado: ' + fileName;
+    }
+</script>
+{% endblock %}

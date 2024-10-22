@@ -31,7 +31,16 @@ def exibir_graficoindicador():
                 for indicador in indicadores:
                     valores_indicadores = Valorindicador.query.filter_by(indicadorpe_id=indicador.id).all()
                     if valores_indicadores:
-                        graph_base64 = gerar_grafico_comparativo(indicador.nome, float(indicador.valor_meta), valores_indicadores)
+                        # Verificar se indicador.valor_meta é None
+                        if indicador.valor_meta is not None:
+                            try:
+                                valor_meta = float(indicador.valor_meta)
+                            except ValueError:
+                                valor_meta = 0.0  # Definir um valor padrão se a conversão falhar
+                        else:
+                            valor_meta = 0.0  # Valor padrão se o valor_meta estiver ausente
+
+                        graph_base64 = gerar_grafico_comparativo(indicador.nome, valor_meta, valores_indicadores)
                         graphs.append((graph_base64, indicador.nome))
 
         return render_template('graficoindicador.html', planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado, graphs=graphs)
@@ -39,6 +48,11 @@ def exibir_graficoindicador():
     else:
         flash('Você não tem permissão para acessar esta página.', 'danger')
         return redirect(url_for('login.login_page'))
+
+
+
+
+
 
 def gerar_grafico_comparativo(nome_indicador, valor_meta, valores_indicadores):
     fig, ax = plt.subplots()

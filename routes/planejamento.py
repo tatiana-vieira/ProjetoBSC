@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session,jsonify,send_file
-from .models import Users, Programa,CadeiaValor, PlanejamentoEstrategico,Risco, PDI,Objetivo,ObjetivoPE,MetaPE,AcaoPE,IndicadorPlan,Valorindicador,Valormeta # Certifique-se de importar seus modelos corretamente
+from .models import Users, Programa,CadeiaValor, PlanejamentoEstrategico,AcaoPE,Risco, PDI,Objetivo,ObjetivoPE,MetaPE,IndicadorPlan,Valorindicador,Valormeta # Certifique-se de importar seus modelos corretamente
 from routes.db import db
 from flask_bcrypt import Bcrypt
 import io
@@ -11,12 +11,23 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib import colors
 from sqlalchemy.orm import joinedload
+from datetime import datetime
+from flask import get_flashed_messages
+import matplotlib.pyplot as plt
+import base64
+import logging
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+# Certifique-se de que AcaoPE está importado corretamente
 
 
 planejamento_route = Blueprint('planejamento', __name__)
 login_manager = LoginManager(planejamento_route)
 
 # Implemente o decorador coordenador_required
+
+
 
 def coordenador_required(f):
     @wraps(f)
@@ -26,6 +37,28 @@ def coordenador_required(f):
             return redirect(url_for('login.login_page'))
         return f(*args, **kwargs)
     return decorated_function
+
+
+
+@planejamento_route.route('/get_coordenador', methods=['GET'])
+def get_coordenador():
+    programa_id = session.get('programa_id')  # Pegando o ID do programa da sessão
+    planejamento = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).first()
+
+    if not planejamento:
+        return render_template('indexcord.html', planejamento=None, percentual_metas_atingidas=0, percentual_acoes_concluidas=0)
+
+    # Calculando os percentuais das metas e ações atingidas
+    percentual_metas_atingidas = calcular_percentual_metas_atingidas(planejamento)
+    percentual_acoes_concluidas = calcular_percentual_acoes_concluidas(planejamento)
+
+    return render_template('indexcord.html', 
+                           planejamento=planejamento, 
+                           percentual_metas_atingidas=percentual_metas_atingidas,
+                           percentual_acoes_concluidas=percentual_acoes_concluidas,
+                           programa_id=programa_id)
+
+
 ##################################################################33
 @planejamento_route.route('/editar/<int:id>', methods=['GET', 'POST'])
 def editar_planejamento(id):
@@ -74,6 +107,7 @@ def cadastro_planejamentope():
         return render_template('planejamento.html', pdis=pdis, programa_do_usuario=programa_do_usuario, planejamentos=planejamentos)
 
 #################################################################################################################################
+
 @planejamento_route.route('/associar_objetivospe', methods=['GET', 'POST'])
 @coordenador_required
 def associar_objetivospe():
@@ -89,47 +123,61 @@ def associar_objetivospe():
         return redirect(url_for('get_coordenador'))
 
     programa_id = session['programa_id']
+    
+    planejamento_estrategico = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+    planejamento_selecionado = None
+    objetivos_pdi = []
+    objetivos_pe = []
 
     if request.method == 'POST':
-        nome = request.form['nome']
-        objetivo_pdi_id = request.form['objetivo_id']
-        planejamento_estrategico_id = request.form['planejamento_id']
+        planejamento_id = request.form.get('planejamento_id')
+        if planejamento_id:
+            planejamento_selecionado = PlanejamentoEstrategico.query.filter_by(id=planejamento_id).first()
+            # Carregar os objetivos do PDI relacionados ao planejamento selecionado
+            objetivos_pdi = Objetivo.query.filter_by(pdi_id=planejamento_selecionado.pdi_id).all()
 
-        if planejamento_estrategico_id != programa_id:
-            return 'Acesso não autorizado'
+            # Carregar os objetivos associados ao planejamento estratégico selecionado
+            objetivos_pe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
 
-        novo_objetivo = ObjetivoPE(
-            nome=nome, 
-            objetivo_pdi_id=objetivo_pdi_id, 
-            planejamento_estrategico_id=planejamento_estrategico_id
-        )
-        
-        db.session.add(novo_objetivo)
-        db.session.commit()
+        nome = request.form.get('nome')
+        objetivo_pdi_id = request.form.get('objetivo_id')
 
-        flash('Objetivo cadastrado com sucesso!', 'success')
-        return redirect(url_for('planejamento.associar_objetivospe'))
+        if nome and objetivo_pdi_id and planejamento_id:
+            novo_objetivo = ObjetivoPE(
+                nome=nome, 
+                objetivo_pdi_id=objetivo_pdi_id, 
+                planejamento_estrategico_id=planejamento_id
+            )
 
-    # Obter todos os planejamentos estratégicos associados ao programa
-    planejamento_estrategico = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-    
-    objetivos_por_planejamento = []
+            try:
+                db.session.add(novo_objetivo)
+                db.session.commit()
+                flash('Objetivo cadastrado com sucesso!', 'success')
+            except Exception as e:
+                db.session.rollback()  # Reverter o commit em caso de erro
+                flash(f'Erro ao cadastrar objetivo: {str(e)}', 'danger')
 
-    for pe in planejamento_estrategico:
-        # Obter todos os objetivos do PDI associado ao planejamento estratégico
-        objetivos = Objetivo.query.filter_by(pdi_id=pe.pdi_id).all()
-        objetivos_existentes = ObjetivoPE.query.filter_by(planejamento_estrategico_id=pe.id).all()
-        objetivos_existentes_ids = {obj.objetivo_pdi_id for obj in objetivos_existentes}
-        
-        for objetivo in objetivos:
-            objetivos_por_planejamento.append((pe, objetivo, objetivo.id in objetivos_existentes_ids))
+            return redirect(url_for('planejamento.associar_objetivospe'))
 
-    # Remover duplicatas de Planejamentos Estratégicos
-    planejamento_estrategico_unicos = list({pe.id: pe for pe in planejamento_estrategico}.values())
+    elif request.method == 'GET':
+        # Carregar objetivos associados ao planejamento mesmo em uma requisição GET
+        if 'planejamento_id' in request.args:
+            planejamento_id = request.args.get('planejamento_id')
+            if planejamento_id:
+                planejamento_selecionado = PlanejamentoEstrategico.query.filter_by(id=planejamento_id).first()
+                # Carregar os objetivos do PDI relacionados ao planejamento selecionado
+                objetivos_pdi = Objetivo.query.filter_by(pdi_id=planejamento_selecionado.pdi_id).all()
+
+                # Carregar os objetivos associados ao planejamento estratégico selecionado
+                objetivos_pe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
 
     return render_template('objetivope.html', 
-                           objetivos_por_planejamento=objetivos_por_planejamento,
-                           planejamento_estrategico=planejamento_estrategico_unicos)
+                           planejamento_estrategico=planejamento_estrategico,
+                           planejamento_selecionado=planejamento_selecionado,
+                           objetivos_pdi=objetivos_pdi,
+                           objetivos_pe=objetivos_pe)
+
+
 
 ################################################################333    
 @planejamento_route.route('/editar_objetivope/<int:id>', methods=['GET', 'POST'])
@@ -158,7 +206,10 @@ def editar_objetivope(id):
         objetivos_pdi=objetivos_pdi
     )
 ########################################################################
-
+def calcular_previsao(meta, porcentagem_execucao, data_inicio, data_termino):
+    # Lógica para calcular a previsão de impacto
+    previsao = (porcentagem_execucao / 100) * (data_termino - data_inicio).days
+    return previsao
 ####################################################################################################################
 @planejamento_route.route('/associar_acaope', methods=['GET', 'POST'])
 @coordenador_required
@@ -178,6 +229,7 @@ def associar_acaope():
                     acoes.extend(AcaoPE.query.filter_by(meta_pe_id=meta.id).all())
 
         if request.method == 'POST':
+            # Capturar os dados do formulário
             meta_pe_id = request.form['meta_pe_id']
             nome = request.form['nome']
             porcentagem_execucao = request.form['porcentagem_execucao']
@@ -187,31 +239,41 @@ def associar_acaope():
             status = request.form['status']
             observacao = request.form['observacao']
 
+            # Obter a meta relacionada
             meta_pe = MetaPE.query.get(meta_pe_id)
             if meta_pe is None:
                 flash('Meta não encontrada!', 'error')
                 return redirect(url_for('planejamento.associar_acaope'))
 
+            # Criar uma nova ação
             nova_acao = AcaoPE(
-                nome=nome, 
-                meta_pe_id=meta_pe_id, 
-                porcentagem_execucao=porcentagem_execucao, 
-                data_inicio=data_inicio, 
+                nome=nome,
+                meta_pe_id=meta_pe_id,
+                porcentagem_execucao=porcentagem_execucao,
+                data_inicio=data_inicio,
                 data_termino=data_termino,
-                responsavel=responsavel, 
-                status=status, 
+                responsavel=responsavel,
+                status=status,
                 observacao=observacao
             )
             db.session.add(nova_acao)
             db.session.commit()
 
-            flash('Ação cadastrada com sucesso!', 'success')
+            # Função para calcular a previsão de impacto
+            previsao = calcular_previsao(meta_pe, int(porcentagem_execucao), 
+                                         datetime.strptime(data_inicio, '%Y-%m-%d'), 
+                                         datetime.strptime(data_termino, '%Y-%m-%d'))
+
+            # Exibir uma mensagem de sucesso com a previsão de impacto
+            flash(f'Ação cadastrada com sucesso! {previsao}', 'success')
             return redirect(url_for('planejamento.associar_acaope'))
 
         return render_template('acaope.html', metas_pe=metas_pe_associadas, acoes=acoes)
     else:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('login.get_coordenador'))
+
+
 ########################################## Alterar ação #####################################################
 @planejamento_route.route('/alterar_acaope/<int:acao_id>', methods=['GET', 'POST'])
 @login_required
@@ -231,6 +293,7 @@ def alterar_acaope(acao_id):
 
     return render_template('alterar_acaope.html', acao=acao)
 ################################################################################################
+
 ################################################# Pro -reitor ###################################
 @planejamento_route.route('/visualizar_programaspe', methods=['GET', 'POST'])
 def visualizar_programaspe():
@@ -282,7 +345,9 @@ def associar_indicadorespe():
             descricao = request.form['descricao']
             frequencia_coleta = request.form['frequencia_coleta']
             peso = request.form['peso']
-            valor_meta = request.form['valor_meta']
+            responsavel = request.form['responsavel']
+            data_inicio = request.form['data_inicio']
+            data_fim = request.form['data_fim']
 
             meta_pe = MetaPE.query.get(meta_pe_id)
             if meta_pe is None:
@@ -300,18 +365,19 @@ def associar_indicadorespe():
                     descricao=descricao,
                     frequencia_coleta=frequencia_coleta,
                     peso=peso,
-                    valor_meta=valor_meta
+                    responsavel=responsavel,
+                    data_inicio=data_inicio,
+                    data_fim=data_fim,
                 )
                 db.session.add(novo_indicador)
                 db.session.commit()
                 indicador_id = novo_indicador.id
 
             ano = request.form.getlist('ano[]')
-            semestre = request.form.getlist('semestre[]')
             valor = request.form.getlist('valor[]')
 
-            for ano, semestre, valor in zip(ano, semestre, valor):
-                novo_valor = Valorindicador(indicadorpe_id=indicador_id, ano=ano, semestre=semestre, valor=valor)
+            for ano, valor in zip(ano, valor):
+                novo_valor = Valorindicador(indicadorpe_id=indicador_id, ano=ano, valor=valor)
                 db.session.add(novo_valor)
 
             db.session.commit()
@@ -320,12 +386,13 @@ def associar_indicadorespe():
 
         indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas_pe_associadas])).all()
         return render_template('indicadorpe.html', metas_pe=metas_pe_associadas, indicadores=indicadores)
-    
+
     else:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('get_coordenador'))
 
-#########################################################################################################3
+
+#############################################################################################################
 @planejamento_route.route('/alterar_indicadorpe/<int:indicador_id>', methods=['GET', 'POST'])
 @login_required
 def alterar_indicadorpe(indicador_id):
@@ -337,32 +404,48 @@ def alterar_indicadorpe(indicador_id):
         descricao = request.form.get('descricao')
         frequencia_coleta = request.form.get('frequencia_coleta')
         peso = request.form.get('peso')
-        valor_meta = request.form.get('valor_meta')
+        responsavel = request.form.get('responsavel')
+        data_inicio = request.form.get('data_inicio')  # Novo campo
+        data_fim = request.form.get('data_fim')  # Novo campo
         semestres = request.form.getlist('semestres[]')
         anos = request.form.getlist('anos[]')
         valores = request.form.getlist('valores[]')
 
-        if nome:
+        # Validar se os campos estão preenchidos
+        if nome and descricao and frequencia_coleta and peso and responsavel:
             indicador.nome = nome
-        if descricao:
             indicador.descricao = descricao
-        if frequencia_coleta:
             indicador.frequencia_coleta = frequencia_coleta
-        if peso:
             indicador.peso = peso
-        if valor_meta:
-            indicador.valor_meta = valor_meta
+            indicador.responsavel = responsavel
+            indicador.data_inicio = data_inicio  # Atualiza data de início
+            indicador.data_fim = data_fim  # Atualiza data de fim
 
-        for i, valorindicador in enumerate(valores_indicadores):
-            valorindicador.semestre = semestres[i]
-            valorindicador.ano = anos[i]
-            valorindicador.valor = valores[i]
+            # Atualizar os valores associados ao indicador
+            if len(valores_indicadores) == len(semestres) == len(anos) == len(valores):
+                for i, valorindicador in enumerate(valores_indicadores):
+                    valorindicador.semestre = semestres[i]
+                    valorindicador.ano = anos[i]
+                    valorindicador.valor = valores[i]
+            else:
+                flash('Erro: Quantidade de valores, anos ou semestres está incorreta.', 'error')
+                return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
 
-        db.session.commit()
-        flash('Indicador e valores atualizados com sucesso.', 'success')
-        return redirect(url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id))
+            # Fazer o commit das mudanças no banco de dados
+            try:
+                db.session.commit()
+                flash('Indicador e valores atualizados com sucesso.', 'success')
+            except Exception as e:
+                db.session.rollback()  # Reverter em caso de erro
+                print(f"Erro ao salvar no banco: {str(e)}")
+                flash(f'Erro ao salvar as alterações: {str(e)}', 'error')
 
-    return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
+            return redirect(url_for('planejamento.associar_indicadorespe'))
+        else:
+            flash('Por favor, preencha todos os campos obrigatórios.', 'error')
+
+    return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)       
+
 ##############################################################################################################################
 @planejamento_route.route('/associar_metaspe', methods=['GET', 'POST'])
 @login_required
@@ -392,9 +475,9 @@ def associar_metaspe():
                 flash('Objetivo não encontrado!', 'error')
                 return redirect(url_for('planejamento.associar_metaspe'))
 
-            # Verifica se a meta já existe na tabela MetaPE
+            # Verifica se a meta já existe
             meta_existente = MetaPE.query.filter_by(nome=nome_meta, objetivo_pe_id=objetivo_pe_id).first()
-            meta_id = None  # Inicializa a variável meta_id
+            meta_id = None
 
             if meta_existente:
                 meta_id = meta_existente.id
@@ -413,20 +496,12 @@ def associar_metaspe():
                 db.session.add(nova_meta)
                 db.session.commit()
                 meta_id = nova_meta.id
-                print(f"Nova Meta criada com ID: {meta_id}")
 
-            # Verifique se a meta foi criada com sucesso
             if not meta_id:
                 flash('Erro ao criar a meta!', 'error')
                 return redirect(url_for('planejamento.associar_metaspe'))
 
-            # Adiciona uma verificação para garantir que o meta_id é válido
-            meta = MetaPE.query.get(meta_id)
-            if not meta:
-                flash('Erro: Meta não encontrada após criação!', 'error')
-                return redirect(url_for('planejamento.associar_metaspe'))
-
-            # Se a meta foi criada com sucesso, cadastrar os valores da meta
+            # Cadastrar os valores da meta
             try:
                 anos = request.form.getlist('ano[]')
                 semestres = request.form.getlist('semestre[]')
@@ -445,7 +520,7 @@ def associar_metaspe():
             
             return redirect(url_for('planejamento.associar_metaspe'))
 
-        # Obter todas as metas cadastradas para exibição
+        # Obter todas as metas cadastradas
         metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos_pe_associados])).all()
         return render_template('metaspe.html', objetivos_pe=objetivos_pe_associados, metas=metas)
 
@@ -454,7 +529,30 @@ def associar_metaspe():
         return redirect(url_for('planejamento.associar_metaspe'))
 #################################################################################################
 
-
+def sugerir_ajustes(meta, progresso, restante):
+    """Sugere ajustes com base nos dados da meta e progresso."""
+    sugestoes = []
+    
+    # Verifica se a data_termino está definida e converte corretamente
+    if meta.data_termino:
+        dias_restantes = (meta.data_termino - datetime.now().date()).days
+    else:
+        dias_restantes = None  # Define como None se a data de término não estiver definida
+    
+    # Verifica se o valor_alvo está definido e converte para float
+    valor_alvo = float(meta.valor_alvo) if meta.valor_alvo else 0
+    
+    # Regras de sugestão baseadas no progresso e nos dias restantes
+    if progresso < 0.5 * valor_alvo and (dias_restantes is not None and dias_restantes < 30):
+        sugestoes.append(f"A meta '{meta.nome}' está com progresso lento. Considere aumentar os recursos ou estender o prazo.")
+    
+    if progresso > 0.8 * valor_alvo and (dias_restantes is not None and dias_restantes > 30):
+        sugestoes.append(f"A meta '{meta.nome}' está no caminho certo. Continue monitorando.")
+    
+    if not sugestoes:
+        sugestoes.append("Não há sugestões no momento.")
+    
+    return sugestoes
 #######################################################################################################################    
 @planejamento_route.route('/get_objetivosplano/<int:planejamento_id>')
 def get_objetivos(planejamento_id):
@@ -467,37 +565,55 @@ def get_objetivos(planejamento_id):
 ##############################################################################################################################
 @planejamento_route.route('/alterar_metape/<int:metape_id>', methods=['GET', 'POST'])
 def alterar_metape(metape_id):
-    # Busca a meta PE a ser alterada pelo ID
     meta_pe = MetaPE.query.get_or_404(metape_id)
-    mensagem = None  # Inicializa a mensagem como None
+    mensagem = None
 
     if request.method == 'POST':
-        # Atualiza os campos da meta PE com os dados do formulário, se fornecidos
-        if 'nome' in request.form:
-            meta_pe.nome = request.form['nome']
-        if 'descricao' in request.form:
-            meta_pe.descricao = request.form['descricao']
-        if 'responsavel' in request.form:
-            meta_pe.responsavel = request.form['responsavel']
-        if 'recursos' in request.form:
-            meta_pe.recursos_necessarios = request.form['recursos']
-        if 'data_inicio' in request.form:
-            meta_pe.data_inicio = request.form['data_inicio']
-        if 'data_termino' in request.form:
-            meta_pe.data_termino = request.form['data_termino']
-        if 'status_inicial' in request.form:
-            meta_pe.status_inicial = request.form['status_inicial']
-        if 'valor_alvo' in request.form:
-            meta_pe.valor_alvo = request.form['valor_alvo']
-                
-        # Salva as alterações no banco de dados
-        db.session.commit()
+        meta_pe.nome = request.form.get('nome', meta_pe.nome)
+        meta_pe.descricao = request.form.get('descricao', meta_pe.descricao)
+        meta_pe.responsavel = request.form.get('responsavel', meta_pe.responsavel)
+        meta_pe.recursos_necessarios = request.form.get('recursos', meta_pe.recursos_necessarios)
+        
+        data_inicio = request.form.get('data_inicio')
+        if data_inicio:
+            try:
+                datetime.strptime(data_inicio, '%Y-%m-%d')
+                meta_pe.data_inicio = data_inicio
+            except ValueError:
+                flash('Formato de data de início inválido. Use o formato YYYY-MM-DD.', 'danger')
 
-        flash('Meta alterada com sucesso!', 'success')
-        return redirect(url_for('planejamento.associar_metaspe'))  # Redireciona para a página de metas
+        data_termino = request.form.get('data_termino')
+        if data_termino:
+            try:
+                datetime.strptime(data_termino, '%Y-%m-%d')
+                meta_pe.data_termino = data_termino
+            except ValueError:
+                flash('Formato de data de término inválido. Use o formato YYYY-MM-DD.', 'danger')
 
-    # Passa a variável 'meta' para o template
+        meta_pe.status_inicial = request.form.get('status_inicial', meta_pe.status_inicial)
+        meta_pe.valor_alvo = request.form.get('valor_alvo', meta_pe.valor_alvo)
+
+        # Cadastrar ou atualizar os valores da meta
+        try:
+            anos = request.form.getlist('ano[]')
+            semestres = request.form.getlist('semestre[]')
+            valores = request.form.getlist('valor[]')
+
+            for ano, semestre, valor in zip(anos, semestres, valores):
+                valor = valor.replace(',', '.')
+                novo_valor = Valormeta(metape_id=metape_id, ano=int(ano), semestre=int(semestre), valor=float(valor))
+                db.session.add(novo_valor)
+
+            db.session.commit()
+            flash('Meta e valores atualizados com sucesso!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao atualizar valores da meta: {str(e)}', 'error')
+
+        return redirect(url_for('planejamento.associar_metaspe'))
+
     return render_template('alterarmetas.html', meta=meta_pe, mensagem=mensagem)
+
 #############################################################################
 #################################################################################
 @planejamento_route.route('/sucesso', methods=['GET'])
@@ -551,7 +667,7 @@ def export_programa_excel(programa_id):
     output.seek(0)
 
     return send_file(output, as_attachment=True, download_name='planejamento_estrategico.xlsx', mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-
+##################################################################################333333
 @planejamento_route.route('/export_programa/pdf/<int:programa_id>')
 @login_required
 def export_programa_pdf(programa_id):
@@ -667,4 +783,370 @@ def associar_cadeiavalor():
 
         return render_template('cadeia_valor.html', planejamentos=planejamentos)
     
-###########################################################################################################3
+
+###################################  Dashboard  principal ########################################################################3
+@planejamento_route.route('/tela_principal')
+@login_required
+def tela_principal():
+    programa_id = current_user.programa_id
+    planejamento = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).first()
+
+    if planejamento:
+        # Busque os objetivos associados ao planejamento
+        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+
+        # Busque as metas associadas aos objetivos do planejamento
+        metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
+        total_metas = len(metas)
+        metas_atingidas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Concluída').count()
+
+        percentual_metas_atingidas = (metas_atingidas / total_metas) * 100 if total_metas > 0 else 0
+
+        # Busque as ações associadas às metas
+        total_acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).count()
+        acoes_concluidas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Concluída').count()
+
+        percentual_acoes_concluidas = (acoes_concluidas / total_acoes) * 100 if total_acoes > 0 else 0
+    else:
+        percentual_metas_atingidas = 0
+        percentual_acoes_concluidas = 0
+
+    return render_template(
+        'basecord.html',  # O template da tela principal
+        planejamento=planejamento,
+        percentual_metas_atingidas=percentual_metas_atingidas,
+        percentual_acoes_concluidas=percentual_acoes_concluidas
+    )
+
+
+
+def obter_planejamento():
+    # Supondo que você esteja buscando o primeiro planejamento cadastrado no banco de dados
+    planejamento = PlanejamentoEstrategico.query.first()
+    return planejamento
+
+def calcular_metas_prazo():
+    hoje = datetime.now().date()
+    metas_no_prazo = MetaPE.query.filter(MetaPE.data_termino >= hoje, MetaPE.status != 'Concluída').all()
+    metas_atrasadas = MetaPE.query.filter(MetaPE.data_termino < hoje, MetaPE.status != 'Concluída').all()
+    return metas_no_prazo, metas_atrasadas
+
+def log_mensagem(mensagem):
+    with open('log.txt', 'a') as f:
+        f.write(mensagem + '\n')
+
+
+def calcular_percentual_metas_atingidas(planejamento):
+    metas = planejamento.metas  # Verifique se a relação está definida corretamente
+    if not metas:
+        return 0
+    metas_atingidas = [meta for meta in metas if meta.status.lower() == 'concluída']  # Considere status como 'Concluída'
+    percentual = (len(metas_atingidas) / len(metas)) * 100
+    return round(percentual, 2)
+
+def calcular_percentual_acoes_concluidas(planejamento):
+    acoes = planejamento.acoes  # Verifique se a relação está definida corretamente
+    if not acoes:
+        return 0
+    acoes_concluidas = [acao for acao in acoes if acao.status.lower() == 'concluída']  # Considere status como 'Concluída'
+    percentual = (len(acoes_concluidas) / len(acoes)) * 100
+    return round(percentual, 2)
+
+
+##########################################################################################################3
+
+def gerar_grafico_base64(percentual_concluidas):
+    labels = ['Concluído', 'Em Andamento']
+    sizes = [percentual_concluidas, 100 - percentual_concluidas]
+    colors = ['#36a2eb', '#ff6384']
+
+    fig, ax = plt.subplots()
+    ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
+    ax.axis('equal')
+
+    # Converter gráfico para imagem base64
+    img = io.BytesIO()
+    plt.savefig(img, format='png')
+    img.seek(0)
+    graph_base64 = base64.b64encode(img.getvalue()).decode('utf8')
+    plt.close(fig)
+
+    return graph_base64
+
+##################################################################################333
+@planejamento_route.route('/indicadores_chave')
+@login_required
+def indicadores_chave():
+    # Calcula o % de metas atingidas
+    percentual_metas_atingidas = calcular_percentual_metas_atingidas()
+
+    # Calcula as ações com maior impacto (ordenadas pela maior porcentagem de execução)
+    acoes_maior_impacto = AcaoPE.query.order_by(AcaoPE.porcentagem_execucao.desc()).limit(5).all()
+
+    # Calcula metas no prazo e metas atrasadas
+    metas_no_prazo, metas_atrasadas = calcular_metas_prazo()
+
+    return render_template(
+        'indicadores_chave.html', 
+        percentual_metas_atingidas=percentual_metas_atingidas,
+        acoes_maior_impacto=acoes_maior_impacto,
+        metas_no_prazo=metas_no_prazo,
+        metas_atrasadas=metas_atrasadas
+    )
+
+#####################################################################33
+@planejamento_route.route('/avisos_alertas')
+@login_required
+def carregar_avisos():
+    coordenador_programa_id = session.get('programa_id')
+    programa = Programa.query.get(coordenador_programa_id)
+    alertas = []
+
+    if programa:
+        # Obter metas e ações relacionadas
+        planejamentos = programa.planejamentos
+        for planejamento in planejamentos:
+            metas = planejamento.metas
+            for meta in metas:
+                dias_restantes = (meta.data_termino - datetime.now().date()).days
+                if dias_restantes <= 7:
+                    alertas.append({
+                        'mensagem': f"Meta '{meta.nome}' está a {dias_restantes} dias do vencimento!",
+                        'tipo': 'urgente' if dias_restantes <= 3 else 'aviso'
+                    })
+
+                acoes = meta.acoes
+                for acao in acoes:
+                    dias_restantes_acao = (acao.data_termino - datetime.now().date()).days
+                    if dias_restantes_acao <= 7:
+                        alertas.append({
+                            'mensagem': f"Ação '{acao.nome}' da meta '{meta.nome}' está a {dias_restantes_acao} dias do vencimento!",
+                            'tipo': 'urgente' if dias_restantes_acao <= 3 else 'aviso'
+                        })
+
+    # Renderiza a página principal com os alertas
+    return render_template('basecord.html', alertas=alertas)
+
+def carregar_alertas():
+    alertas = []
+    coordenador_programa_id = session.get('programa_id')
+    programa = Programa.query.get(coordenador_programa_id)
+    if programa:
+        planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa.id).all()
+        for planejamento in planejamentos:
+            metas = MetaPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+            for meta in metas:
+                dias_restantes = (meta.data_termino - datetime.now().date()).days
+                if dias_restantes <= 7:
+                    alertas.append({
+                        'mensagem': f"Meta '{meta.nome}' está a {dias_restantes} dias do vencimento!",
+                        'tipo': 'urgente' if dias_restantes <= 3 else 'aviso'
+                    })
+                acoes = AcaoPE.query.filter_by(meta_pe_id=meta.id).all()
+                for acao in acoes:
+                    dias_restantes_acao = (acao.data_termino - datetime.now().date()).days
+                    if dias_restantes_acao <= 7:
+                        alertas.append({
+                            'mensagem': f"Ação '{acao.nome}' está a {dias_restantes_acao} dias do vencimento!",
+                            'tipo': 'urgente' if dias_restantes_acao <= 3 else 'aviso'
+                        })
+    return alertas
+
+def sugerir_ajustes(meta, progresso, restante):
+    """Sugere ajustes com base nos dados da meta e progresso."""
+    sugestoes = []
+    if meta.data_termino:
+        dias_restantes = (meta.data_termino - datetime.now().date()).days
+    else:
+        dias_restantes = None
+
+    valor_alvo = float(meta.valor_alvo) if meta.valor_alvo else 0
+
+    if progresso < 0.5 * valor_alvo and (dias_restantes is not None and dias_restantes < 30):
+        sugestoes.append(f"A meta '{meta.nome}' está com progresso lento. Considere aumentar os recursos ou estender o prazo.")
+
+    if progresso > 0.8 * valor_alvo and (dias_restantes is not None and dias_restantes > 30):
+        sugestoes.append(f"A meta '{meta.nome}' está no caminho certo. Continue monitorando.")
+
+    if not sugestoes:
+        sugestoes.append("Não há sugestões no momento.")
+
+    return sugestoes
+
+
+####################################################################################
+@planejamento_route.route('/atualizar_metas', methods=['POST'])
+@login_required
+def atualizar_metas():
+    meta_id = request.form.get('meta_id')
+    novo_status = request.form.get('status')
+
+    # Busca a meta no banco de dados
+    meta = MetaPE.query.get(meta_id)
+
+    if meta:
+        meta.status = novo_status
+        db.session.commit()
+        flash('Status atualizado com sucesso!', 'success')
+    else:
+        flash('Meta não encontrada.', 'danger')
+
+    return redirect(url_for('planejamento.acompanhamento_metas'))
+
+
+@planejamento_route.route('/acompanhamento_metas', methods=['GET', 'POST'])
+@login_required
+def acompanhamento_metas():
+    programa_id = current_user.programa_id
+    planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+    metas = []
+
+    if request.method == 'POST':
+        planejamento_id = request.form.get('planejamento_id')
+        print(f"Planejamento ID selecionado: {planejamento_id}")  # Debugging print
+
+        if planejamento_id:
+            objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
+            metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
+            print(f"Metas encontradas: {metas}")  # Debugging print
+
+            if not metas:
+                flash('Nenhuma meta encontrada para o planejamento selecionado.', 'warning')
+        else:
+            flash('Por favor, selecione um planejamento.', 'danger')
+
+    return render_template('acompanhamento_metas.html', metas=metas, planejamentos=planejamentos)
+
+
+
+@planejamento_route.route('/atualizar_status_meta/<int:meta_id>', methods=['POST'])
+@login_required
+def atualizar_status_meta(meta_id):
+    planejamento_id = request.form.get('planejamento_id')  # Obtém o ID do planejamento filtrado
+
+    # Lógica para atualizar o status da meta
+    meta = MetaPE.query.get(meta_id)
+    if meta:
+        novo_status = request.form.get('status')
+        meta.status = novo_status
+        db.session.commit()
+        flash('Status atualizado com sucesso!', 'success')
+    else:
+        flash('Meta não encontrada.', 'danger')
+
+    # Redireciona de volta para a página com o planejamento filtrado
+    return redirect(url_for('planejamento.acompanhamento_metas', planejamento_id=planejamento_id))
+
+
+def calcular_progresso_parcial(meta):
+    if meta.data_inicio and meta.data_termino:
+        # Convertendo datas para o formato de cálculo
+        data_inicio = meta.data_inicio
+        data_termino = meta.data_termino
+        hoje = datetime.now().date()
+
+        # Verifica se a meta ainda está no prazo
+        if hoje < data_inicio:
+            return 0
+        elif hoje > data_termino:
+            return 100
+
+        # Cálculo do progresso parcial
+        duracao_total = (data_termino - data_inicio).days
+        duracao_decorrida = (hoje - data_inicio).days
+
+        progresso_parcial = (duracao_decorrida / duracao_total) * 100
+        return round(progresso_parcial, 2)
+    else:
+        # Caso a meta não tenha datas definidas
+        return 0
+
+
+def calcular_progresso(meta):
+    if meta.status == "Não iniciado":
+        return 0
+    elif meta.status == "Em andamento":
+        # Calcular progresso parcial com base em algum critério (datas, ações realizadas, etc.)
+        return calcular_progresso_parcial(meta)
+    elif meta.status == "Atrasada":
+        # Atrasada, mas o progresso pode ter sido feito
+        return calcular_progresso_parcial(meta)
+    elif meta.status == "Concluída":
+        return 100
+    elif meta.status == "Cancelada":
+        return 0
+    elif meta.status == "Pausada":
+        # Retorna o progresso atual sem incrementá-lo
+        return meta.progresso_atual
+    elif meta.status == "Revisão":
+        # Pode colocar em espera até a revisão ser concluída
+        return meta.progresso_atual
+
+
+@planejamento_route.route('/resumo_planejamento')
+@login_required
+def resumo_planejamento():
+    programa_id = current_user.programa_id
+    planejamento = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).first()
+    
+    if planejamento:
+        # Busque os objetivos associados ao planejamento
+        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+        
+        # Busque as metas associadas aos objetivos do planejamento
+        metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
+        total_metas = len(metas)
+        metas_atingidas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Concluída').count()
+        metas_no_prazo = MetaPE.query.filter(MetaPE.status != 'Concluída', MetaPE.data_termino >= datetime.now().date()).count()
+        metas_atrasadas = MetaPE.query.filter(MetaPE.status != 'Concluída', MetaPE.data_termino < datetime.now().date()).count()
+        print(f"Metas no prazo: {metas_no_prazo}, Metas atrasadas: {metas_atrasadas}")
+
+        percentual_metas_atingidas = (metas_atingidas / total_metas) * 100 if total_metas > 0 else 0
+
+        # Busque as ações associadas às metas
+        total_acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).count()
+        acoes_concluidas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Concluída').count()
+
+        percentual_acoes_concluidas = (acoes_concluidas / total_acoes) * 100 if total_acoes > 0 else 0
+
+    else:
+        total_metas = 0
+        percentual_metas_atingidas = 0
+        percentual_acoes_concluidas = 0
+
+    return render_template(
+        'resumo_planejamento.html',
+        planejamento=planejamento,
+        percentual_metas_atingidas=percentual_metas_atingidas,
+        percentual_acoes_concluidas=percentual_acoes_concluidas,
+        metas_no_prazo=metas_no_prazo,
+        metas_atrasadas=metas_atrasadas
+)
+
+
+
+######################################################################################################3
+@planejamento_route.route('/indicadores_desempenho')
+@login_required
+def indicadores_desempenho():
+    # Obtenha os planejamentos relacionados ao programa do usuário
+    planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=current_user.programa_id).all()
+    
+    metas = []
+    
+    # Itere pelos planejamentos para encontrar os objetivos e as metas associadas
+    for planejamento in planejamentos:
+        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+        for objetivo in objetivos:
+            metas.extend(MetaPE.query.filter_by(objetivo_pe_id=objetivo.id).all())
+    
+    historico_valores = {}
+
+    # Itere sobre as metas associadas e busque os indicadores e seus valores
+    for meta in metas:
+        for indicador in meta.indicador_pe:
+            valores = Valorindicador.query.filter_by(indicadorpe_id=indicador.id).all()
+            if valores:
+                historico_valores[indicador.nome] = [(valor.ano, valor.valor) for valor in valores]
+
+    return render_template('indicadores_desempenho.html', historico_valores=historico_valores)

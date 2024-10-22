@@ -23,6 +23,12 @@ from reportlab.pdfgen import canvas
 from io import BytesIO
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import datetime
+import base64
+import matplotlib.pyplot as plt
+from io import BytesIO
+from flask import render_template, request, redirect, url_for, flash, session
+from flask_login import login_required
 
 
 LOGO_PATH = 'static/PPG.png'  # Atualize para o caminho correto do logo
@@ -133,74 +139,127 @@ def salvar_alteracao_meta(meta_id):
 def sucesso():
     return render_template('sucesso.html')
 ##############################################################################################################################3
+
 @relatoriometas_route.route('/graficometas', methods=['GET'])
 @login_required
 def exibir_graficometas():
     if session.get('role') == 'Coordenador':
         coordenador_programa_id = session.get('programa_id')
+        print(f"ID do Coordenador: {coordenador_programa_id}")
+        
         programa = Programa.query.get(coordenador_programa_id)
-
         if not programa:
             flash('Não foi possível encontrar o programa associado ao coordenador.', 'warning')
             return redirect(url_for('login.get_coordenador'))
 
         planejamentos = programa.planejamentos
+        print(f"Planejamentos Carregados: {planejamentos}")
+
         planejamento_selecionado_id = request.args.get('planejamento_selecionado')
         planejamento_selecionado = None
-        objetivospe = []
-        metaspe = []
-        valoresmetas = []
-        graph_base64 = None
+        graph_base64 = None  # Inicializar o graph_base64 como None no início
 
         if planejamento_selecionado_id:
             planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
-            if not planejamento_selecionado:
-                flash('Planejamento não encontrado.', 'warning')
-                return redirect(url_for('relatoriometas.exibir_graficometas'))
+            print(f"Planejamento Selecionado: {planejamento_selecionado}")
 
+        # Obter objetivos associados ao planejamento
+        if planejamento_selecionado:
             objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
-            metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
-            valoresmetas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
+            print(f"Objetivos Carregados: {objetivospe}")
+            
+            # Obter metas associadas aos objetivos
+            if objetivospe:
+                metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
+                print(f"Metas Carregadas: {metaspe}")
+            
+            # Obter valores das metas
+            if metaspe:
+                valoresmetas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
+                print(f"Valores das Metas Carregados: {valoresmetas}")
+        else:
+            objetivospe = []
+            metaspe = []
+            valoresmetas = []
+        
+        dados_graficos = []  # Certificar-se de que dados_graficos é inicializado corretamente
 
-            # Preparar dados para o gráfico
-            dados_graficos = []
+        # Preparar os dados para o gráfico e sugestões
+        if planejamento_selecionado and metaspe:
             for meta in metaspe:
                 valores = [valor for valor in valoresmetas if valor.metape_id == meta.id]
                 progresso = sum(valor.valor for valor in valores)
-                restante = meta.valor_alvo - progresso
+                valor_alvo = meta.valor_alvo if meta.valor_alvo is not None else 0
+                restante = valor_alvo - progresso if valor_alvo > progresso else 0
+
+                sugestoes = sugerir_ajustes(meta, progresso, restante)
                 dados_graficos.append({
                     'meta': meta.nome,
                     'data_inicio': meta.data_inicio,
                     'data_termino': meta.data_termino,
                     'progresso': progresso,
-                    'restante': restante if restante > 0 else 0  # Evitar valores negativos
+                    'restante': restante,
+                    'sugestoes': sugestoes
                 })
 
-            # Gerar o gráfico
-            plt.figure(figsize=(14, 8))
-            for dado in dados_graficos:
-                plt.barh(dado['meta'], dado['progresso'], color='skyblue', label='Progresso')
-                plt.barh(dado['meta'], dado['restante'], left=dado['progresso'], color='lightcoral', label='Restante')
+            # Gerar gráfico se houver dados
+            # Gerar gráfico se houver dados
+            if dados_graficos:
+                plt.figure(figsize=(10, 6))  # Ajuste o tamanho do gráfico para caber melhor na página
+                for dado in dados_graficos:
+                    plt.barh(dado['meta'], dado['progresso'], color='skyblue', label='Progresso')
+                    plt.barh(dado['meta'], dado['restante'], left=dado['progresso'], color='lightcoral', label='Restante')
+                
+                plt.xlabel('Valor')
+                plt.title('Progresso das Metas')
+                plt.tight_layout()
 
-            plt.xlabel('Valor')
-            plt.title('Progresso das Metas')
-            plt.legend(['Progresso', 'Restante'])
-            plt.tight_layout()
+                img = BytesIO()
+                plt.savefig(img, format='png')
+                img.seek(0)
+                plt.close()
 
-            img = BytesIO()
-            plt.savefig(img, format='png')
-            img.seek(0)
-            plt.close()
+                graph_base64 = base64.b64encode(img.getvalue()).decode()  # Gerar base64 do gráfico
 
-            # Codificar o gráfico em base64 para incorporação no HTML
-            graph_base64 = base64.b64encode(img.getvalue()).decode()
 
-        return render_template('graficometas.html', objetivos=objetivospe, metas=metaspe, valoresmetas=valoresmetas, graph_base64=graph_base64, planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado)
-    
+        return render_template('graficometas.html', 
+                               objetivos=objetivospe, 
+                               metas=metaspe, 
+                               valoresmetas=valoresmetas, 
+                               graph_base64=graph_base64,  # Passar o gráfico ou None se não existir
+                               dados_graficos=dados_graficos, 
+                               planejamentos=planejamentos, 
+                               planejamento_selecionado=planejamento_selecionado)
+
     else:
         flash('Você não tem permissão para acessar esta página.', 'danger')
         return redirect(url_for('login.login_page'))
+   
 
+
+#######################################################Sugestões de metas #################################
+def sugerir_ajustes(meta, progresso, restante):
+    """Sugere ajustes com base nos dados da meta e progresso."""
+    sugestoes = []
+    
+    # Verifica se a data_termino está definida
+    if meta.data_termino:
+        dias_restantes = (meta.data_termino - datetime.now().date()).days
+    else:
+        dias_restantes = None  # Define como None se a data de término não estiver definida
+    
+    # Converter valor_alvo para float
+    valor_alvo = float(meta.valor_alvo) if meta.valor_alvo else 0
+    
+    # Regras de sugestão baseadas no progresso e nos dias restantes
+    if progresso < 0.5 * valor_alvo and (dias_restantes is not None and dias_restantes < 30):
+        sugestoes.append(f"A meta '{meta.nome}' está com progresso lento. Considere aumentar os recursos ou estender o prazo.")
+    
+    if progresso > 0.8 * valor_alvo and (dias_restantes is not None and dias_restantes > 30):
+        sugestoes.append(f"A meta '{meta.nome}' está no caminho certo. Continue monitorando.")
+
+    return sugestoes
+###################################################################################################################3
 @relatoriometas_route.route('/gerar_pdf', methods=['GET'])
 @login_required
 def gerar_pdf():
@@ -212,6 +271,12 @@ def gerar_pdf():
         return redirect(url_for('login.get_coordenador'))
 
     planejamento_selecionado_id = request.args.get('planejamento_selecionado')
+    
+    # Verifique se o planejamento_selecionado_id foi passado corretamente
+    if not planejamento_selecionado_id:
+        flash('Nenhum planejamento selecionado.', 'warning')
+        return redirect(url_for('relatoriometas.exibir_graficometas'))
+
     planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
 
     if not planejamento_selecionado:
@@ -226,7 +291,7 @@ def gerar_pdf():
     plt.figure(figsize=(14, 8))
     for meta in metaspe:
         progresso = sum(valor.valor for valor in valoresmetas if valor.metape_id == meta.id)
-        restante = meta.valor_alvo - progresso
+        restante = meta.valor_alvo - progresso if meta.valor_alvo else 0
         plt.barh(meta.nome, progresso, color='skyblue')
         plt.barh(meta.nome, restante, left=progresso, color='lightcoral')
 
@@ -259,6 +324,8 @@ def gerar_pdf():
     pdf_buffer.seek(0)
 
     return send_file(pdf_buffer, download_name='grafico_metas.pdf', as_attachment=True)
+
+
 #######################################################################################################################
 @relatoriometas_route.route('/export/csv_metas')
 @login_required
@@ -366,61 +433,95 @@ def export_pdf_metas():
 @login_required
 def cadastrar_risco():
     programa_id = current_user.programa_id
-    if programa_id:
-        planejamentos_associados = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-        riscos = Risco.query.join(MetaPE, Risco.meta_pe_id == MetaPE.id).all()
 
-        if request.method == 'POST':
-            planejamento_id = request.form['planejamento_id']
-            objetivo_pe_id = request.form['objetivo_pe_id']
-            meta_pe_id = request.form['meta_pe_id']
-            descricao = request.form['descricao']
-            probabilidade = request.form['probabilidade']
-            impacto = request.form['impacto']
-
-            planejamento = PlanejamentoEstrategico.query.get(planejamento_id)
-            if not planejamento:
-                flash('Planejamento não encontrado!', 'error')
-                return redirect(url_for('relatoriometas.cadastrar_risco'))
-
-            objetivo_pe = ObjetivoPE.query.get(objetivo_pe_id)
-            if not objetivo_pe:
-                flash('Objetivo não encontrado!', 'error')
-                return redirect(url_for('relatoriometas.cadastrar_risco'))
-
-            meta_pe = MetaPE.query.get(meta_pe_id)
-            if not meta_pe:
-                flash('Meta não encontrada!', 'error')
-                return redirect(url_for('relatoriometas.cadastrar_risco'))
-
-            risco_existente = Risco.query.filter_by(descricao=descricao, objetivo_pe_id=objetivo_pe_id, meta_pe_id=meta_pe_id).first()
-            if risco_existente:
-                flash('Risco já cadastrado!', 'warning')
-                return redirect(url_for('relatoriometas.cadastrar_risco'))
-
-            try:
-                novo_risco = Risco(
-                    descricao=descricao,                   
-                    objetivo_pe_id=objetivo_pe_id,
-                    meta_pe_id=meta_pe_id,
-                    probabilidade=probabilidade,
-                    impacto=impacto
-                )
-                db.session.add(novo_risco)
-                db.session.commit()
-                flash('Risco cadastrado com sucesso!', 'success')
-            except Exception as e:
-                db.session.rollback()
-                flash('Erro ao cadastrar risco!', 'error')
-            
-            return redirect(url_for('relatoriometas.cadastrar_risco'))
-
-        return render_template('cadastrar_risco.html', planejamentos=planejamentos_associados, riscos=riscos)
-    else:
+    if not programa_id:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('relatoriometas.cadastrar_risco'))
 
+    # Obtenha todos os planejamentos associados ao programa
+    planejamentos_associados = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+
+    # Se não encontrar planejamentos
+    if not planejamentos_associados:
+        flash('Nenhum planejamento associado ao programa encontrado!', 'error')
+        return redirect(url_for('relatoriometas.cadastrar_risco'))
+
+    # Obtenha todos os riscos já cadastrados para exibir na página
+    riscos = Risco.query.join(MetaPE, Risco.meta_pe_id == MetaPE.id).all()
+
+    if request.method == 'POST':
+        # Captura os dados do formulário
+        planejamento_id = request.form.get('planejamento_id')
+        objetivo_pe_id = request.form.get('objetivo_pe_id')
+        meta_pe_id = request.form.get('meta_pe_id')
+        descricao = request.form.get('descricao')
+        probabilidade = request.form.get('probabilidade')
+        impacto = request.form.get('impacto')
+
+        # Valida o campo meta_pe_id
+        if not meta_pe_id or meta_pe_id == "":
+            flash('Por favor, selecione uma meta.', 'error')
+            return redirect(url_for('relatoriometas.cadastrar_risco'))
+
+        # Valida o planejamento
+        planejamento = PlanejamentoEstrategico.query.get(planejamento_id)
+        if not planejamento:
+            flash('Planejamento não encontrado!', 'error')
+            return redirect(url_for('relatoriometas.cadastrar_risco'))
+
+        # Valida o objetivo
+        objetivo_pe = ObjetivoPE.query.get(objetivo_pe_id)
+        if not objetivo_pe:
+            flash('Objetivo não encontrado!', 'error')
+            return redirect(url_for('relatoriometas.cadastrar_risco'))
+
+        # Valida a meta
+        meta_pe = MetaPE.query.get(meta_pe_id)
+        if not meta_pe:
+            flash('Meta não encontrada!', 'error')
+            return redirect(url_for('relatoriometas.cadastrar_risco'))
+
+        # Verifica se o risco já existe
+        risco_existente = Risco.query.filter_by(descricao=descricao, objetivo_pe_id=objetivo_pe_id, meta_pe_id=meta_pe_id).first()
+        if risco_existente:
+            flash('Risco já cadastrado!', 'warning')
+            return redirect(url_for('relatoriometas.cadastrar_risco'))
+
+        # Tenta cadastrar o novo risco
+        try:
+            novo_risco = Risco(
+                descricao=descricao,
+                objetivo_pe_id=objetivo_pe_id,
+                meta_pe_id=meta_pe_id,
+                probabilidade=probabilidade,
+                impacto=impacto
+            )
+            db.session.add(novo_risco)
+            db.session.commit()
+            flash('Risco cadastrado com sucesso!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao cadastrar risco: {str(e)}', 'error')
+
+        return redirect(url_for('relatoriometas.cadastrar_risco'))
+
+    # Carregando os objetivos e metas relacionados ao planejamento
+    objetivos_associados = ObjetivoPE.query.filter(ObjetivoPE.planejamento_estrategico_id.in_([p.id for p in planejamentos_associados])).all()
+    metas_associadas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([o.id for o in objetivos_associados])).all()
+
+    return render_template('cadastrar_risco.html', 
+                           planejamentos=planejamentos_associados, 
+                           objetivos=objetivos_associados, 
+                           metas=metas_associadas, 
+                           riscos=riscos)
+
 ########################################################################################################
+@relatoriometas_route.route('/get_metas/<int:objetivo_id>')
+def get_all_metas():
+    metas = MetaPE.query.all()
+    return jsonify([{'id': meta.id, 'nome': meta.nome} for meta in metas])
+
+
 ##################################################################################################3
 @relatoriometas_route.route('/listar_riscos', methods=['GET', 'POST'])
 @login_required
@@ -431,16 +532,23 @@ def listar_riscos():
         return redirect(url_for('relatoriometas.cadastrar_risco'))
 
     planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-    
+
+    riscos = None
     if request.method == 'POST':
         planejamento_id = request.form['planejamento_id']
         riscos = Risco.query.join(ObjetivoPE, Risco.objetivo_pe_id == ObjetivoPE.id)\
                             .join(PlanejamentoEstrategico, ObjetivoPE.planejamento_estrategico_id == PlanejamentoEstrategico.id)\
                             .filter(PlanejamentoEstrategico.id == planejamento_id).all()
-        return render_template('listar_riscos.html', riscos=riscos, planejamentos=planejamentos, selected_planejamento=planejamento_id)
-    
-    return render_template('listar_riscos.html', planejamentos=planejamentos, riscos=None)
 
+        print(riscos)  # Adiciona esta linha para depurar
+
+        if not riscos:
+            flash('Nenhum risco encontrado para o planejamento selecionado.', 'warning')
+
+    return render_template('listar_riscos.html', riscos=riscos, planejamentos=planejamentos)
+
+
+      
 
 @relatoriometas_route.route('/editar_risco/<int:risco_id>', methods=['GET', 'POST'])
 @login_required
@@ -521,6 +629,7 @@ def objetivos_por_planejamento(planejamento_id):
     objetivos_data = [{'id': objetivo.id, 'nome': objetivo.nome} for objetivo in objetivos]
     return jsonify(objetivos_data)
 
+
 @relatoriometas_route.route('/metas_por_objetivo/<int:objetivo_id>', methods=['GET'])
 @login_required
 def metas_por_objetivo(objetivo_id):
@@ -566,7 +675,9 @@ def gerar_matriz_riscos(riscos):
             col_idx = col_labels.index(risco.impacto)
             matriz[row_idx][col_idx].append(risco.descricao)
         except ValueError as e:
-            print(f"Erro: {e}. Verifique os valores de probabilidade e impacto do 'Risco'.")
+            print(f"Erro ao processar risco '{risco.descricao}': {e}. Probabilidade: {risco.probabilidade}, Impacto: {risco.impacto}")
             continue
 
     return matriz
+
+

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise de Sentimentos e Dados Numéricos</title>
+</head>
+<body>
+    <h1>Análise de Sentimentos e Classificação de Comentários</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Comentário</th>
+                <th>Classificação Sentimento</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for linha in dados %}
+            <tr>
+                <td>{{ linha['Comentario'] }}</td>
+                <td>{{ linha['Classificacao Sentimento'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
