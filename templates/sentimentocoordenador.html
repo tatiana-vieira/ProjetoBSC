@@ -2,21 +2,30 @@
 
 {% block titulo %}
     <div style="text-align: center;">
-        Análise de Sentimentos
+        <h1>Análise de Sentimentos</h1>
     </div>
 {% endblock %}
 
 {% block conteudo %}
 
-<body>
-    <h1>Análise de Sentimentos</h1>
-
+<body style="text-align: center;">
     <h2>Média dos Sentimentos sobre o Programa: {{ media_programa }}</h2>
     <h2>Média dos Sentimentos sobre a Pró-Reitoria: {{ media_prppg }}</h2>
 
     <h3>Gráfico de Sentimentos</h3>
-    <img src="data:image/png;base64,{{ grafico_sentimentos }}" alt="Gráfico de Sentimentos"/>
+    <img src="data:image/png;base64,{{ grafico_sentimentos }}" alt="Gráfico de Sentimentos" style="display: block; margin-left: auto; margin-right: auto;"/>
 
-    <a href="{{ url_for('avaliacaocoordenador.importar_planilhacoordenador') }}">Voltar</a>
+    <!-- Botão de Voltar -->
+    <a href="{{ url_for('avaliacaocoordenador.importar_planilhacoordenador') }}" 
+       style="display: inline-block; padding: 10px 20px; margin-top: 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+       Voltar
+    </a>
+
+    <!-- Botão de Fechar -->
+    <button onclick="window.close()" 
+            style="display: inline-block; padding: 10px 20px; margin-top: 20px; background-color: #dc3545; color: white; border: none; border-radius: 5px;">
+        Fechar
+    </button>
 </body>
+
 {% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block titulo %}
+  Discente
+{% endblock %}
+
+{% block conteudo %}
+<body>
+    <h1>Lista de Discentes</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Sexo</th>
+                <th>Nacionalidade</th>
+                <th>Email</th>
+                <th>Nível</th>
+                <th>Curso</th>
+                <th>Ano Matrícula</th>
+                <th>Situação</th>
+                <th>Data Situação</th>
+                <th>Autor Complem. Bolsa</th>
+                <th>Orientador</th>
+                <th>Período Orientação</th>
+                <th>Principal</th>
+                <th>Tipo Bolsa</th>
+                <th>Financiador</th>
+                <th>Programa Fomento</th>
+                <th>IES</th>
+                <th>Nível Bolsa</th>
+                <th>Ano Coleta</th>
+                <th>Código Programa</th>
+                <th>Data Matrícula</th>
+                <!-- Adicione mais cabeçalhos conforme necessário -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for discente in discentes %}
+            <tr>
+                <td>{{ discente.nome }}</td>
+                <td>{{ discente.sexo }}</td>
+                <td>{{ discente.nacionalidade }}</td>
+                <td>{{ discente.email }}</td>
+                <td>{{ discente.nivel }}</td>
+                <td>{{ discente.curso }}</td>
+                <td>{{ discente.anomatricula }}</td>
+                <td>{{ discente.situacao }}</td>
+                <td>{{ discente.datasituacao }}</td>
+                <td>{{ discente.autorcomplembolsa }}</td>
+                <td>{{ discente.orientador }}</td>
+                <td>{{ discente.periodoorientacao }}</td>
+                <td>{{ discente.principal }}</td>
+                <td>{{ discente.tipobolsa }}</td>
+                <td>{{ discente.financiador }}</td>
+                <td>{{ discente.programafomento }}</td>
+                <td>{{ discente.ies }}</td>
+                <td>{{ discente.nivelbolsa }}</td>
+                <td>{{ discente.anocoleta }}</td>
+                <td>{{ discente.codigoprograma }}</td>
+                <td>{{ discente.datamatricula }}</td>
+                <!-- Adicione mais colunas conforme necessário -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+{% endblock conteudo %}

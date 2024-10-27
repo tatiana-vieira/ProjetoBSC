@@ -2,21 +2,29 @@
 
 {% block titulo %}
     <div style="text-align: center;">
-        Análise de Sentimentos
+        <h1>Análise de Sentimentos</h1>
     </div>
 {% endblock %}
 
 {% block conteudo %}
 
-<body>
-    <h1>Análise de Sentimentos</h1>
+<body style="text-align: center;">
 
-    <h2>Média dos Sentimentos sobre o Programa: {{ media_programa }}</h2>
-    <h2>Média dos Sentimentos sobre a Pró-Reitoria: {{ media_prppg }}</h2>
+    <h2>Gráfico de Sentimentos sobre o Programa de Pós-Graduação</h2>
+    <img src="data:image/png;base64,{{ grafico_sentimentos_programa }}" alt="Gráfico de Sentimentos - Programa" style="display: block; margin-left: auto; margin-right: auto;"/>
 
-    <h3>Gráfico de Sentimentos</h3>
-    <img src="data:image/png;base64,{{ grafico_sentimentos }}" alt="Gráfico de Sentimentos"/>
+    <h2>Gráfico de Sentimentos sobre a Pró-Reitoria</h2>
+    <img src="data:image/png;base64,{{ grafico_sentimentos_prppg }}" alt="Gráfico de Sentimentos - PRPPG" style="display: block; margin-left: auto; margin-right: auto;"/>
 
-    <a href="{{ url_for('avaliacaodiscente.importar_planilhadiscente') }}">Voltar</a>
+    <h3>Média dos Sentimentos sobre o Programa: {{ media_programa }}</h3>
+    <h3>Média dos Sentimentos sobre a Pró-Reitoria: {{ media_prppg }}</h3>
+
+    <!-- Botões de Ações -->
+    <div class="buttons text-center mb-4">
+        <a href="{{ url_for('discente.importar_discente') }}" 
+           class="btn btn-primary" style="padding: 10px 20px;">Voltar</a>
+        <a href="{{ url_for('discente.exibir_recomendacoes') }}" class="btn btn-warning" style="padding: 10px 20px;">Ver Recomendações Estratégicas</a>
+    </div>
 </body>
+
 {% endblock %}

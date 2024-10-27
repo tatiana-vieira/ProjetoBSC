@@ -26,13 +26,13 @@
             <tr>
                 <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">{{ programa }}</td>
                 <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">
-                    {{ mse_rf | default(0.0) | round(6) }}
+                    {{ mse_rf.get(programa, 0.0) | round(6) }}
                 </td>
                 <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">
-                    {{ mse_xgb | default(0.0) | round(6) }}
+                    {{ mse_xgb.get(programa, 0.0) | round(6) }}
                 </td>
                 <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">
-                    {{ media_sentimentos_programa | default(0.0) | round(6) }}
+                    {{ media_sentimentos_programa.get(programa, 0.0) | round(6) }}
                 </td>
                 <td style="border: 1px solid #ddd; padding: 12px;">
                     <ul style="list-style-type: disc; text-align: left;">
@@ -49,10 +49,11 @@
     <!-- Botões de Voltar e Fechar -->
     <div style="margin-top: 40px;">
         <!-- Botão Voltar -->
-        <a href="{{ url_for('avaliacaodiscente.gerar_graficos_completos', filename='discente.csv') }}" class="btn btn-primary" style="margin-right: 10px; padding: 10px 20px;">Voltar para Gráficos</a>
+        <a href="{{ url_for('discente.gerar_graficos') }}" class="btn btn-primary" style="margin-right: 10px; padding: 10px 20px;">Voltar para Gráficos</a>
         
         <!-- Botão Fechar -->
         <button type="button" onclick="window.close();" class="btn btn-danger" style="padding: 10px 20px;">Fechar</button>
     </div>
 </div>
 {% endblock %}
+

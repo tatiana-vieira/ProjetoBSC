@@ -1,0 +1,48 @@
+{% extends 'basepro.html' %}
+
+{% block titulo %}
+    <h1 style="text-align: center; margin-bottom: 20px;">Gráficos de Autoavaliação Discentes</h1>
+{% endblock %}
+
+{% block conteudo %}
+    <h2 style="text-align: center;">Gráficos Gerados</h2>
+
+    <!-- Container para gráficos -->
+    <div class="container my-4">
+        <div class="row">
+            {% for grafico in graficos %}
+                <div class="col-md-6 mb-4">
+                    <img src="data:image/png;base64,{{ grafico }}" class="img-fluid" alt="Gráfico Gerado">
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Botões de Análise -->
+   <!-- Botões de Análise -->
+<div class="buttons text-center mb-4">
+    <a href="{{ url_for('discente.executar_analise', tipo='sentimento') }}" class="btn btn-primary">Análise de Sentimento</a>
+    <a href="{{ url_for('discente.executar_analise', tipo='clustering') }}" class="btn btn-success">Análise Clustering</a>
+    <a href="{{ url_for('discente.executar_analise', tipo='regressao') }}" class="btn btn-info">Análise de Regressão</a>
+    <a href="{{ url_for('discente.exibir_recomendacoes') }}" class="btn btn-warning">Ver Recomendações Estratégicas</a>
+    <a href="{{ url_for('discente.exibir_recomendacoes_programa') }}" class="btn btn-danger">Recomendações por Programa</a>
+</div>
+    
+    <!-- Estatísticas Descritivas -->
+    <h3 style="text-align: center;">Estatísticas Descritivas</h3>
+    <div class="table-responsive">
+        {{ estatisticas | safe }}
+    </div>
+    <div style="text-align: center; margin-top: 40px;">
+        <!-- Botão para fechar -->
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+    </div>   
+       <!-- Script para fechar a página -->
+       <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_proreitor') }}";
+        }
+    </script>
+{% endblock %}
+
+

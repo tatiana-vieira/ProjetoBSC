@@ -1,34 +1,80 @@
-{% extends 'basecorden.html' %}
+{% extends 'basepro.html' %}
 
 {% block titulo %}
     <div style="text-align: center;">
         Resultados de Sentimentos e Modelos
     </div>
 {% endblock %}
+
 {% block conteudo %}
 <body>
     <h2>Resultados da Análise de Sentimentos</h2>
-    <p>Média de Sentimentos Programa: {{ media_programa }}</p>
-    <img src="data:image/png;base64,{{ grafico_sentimentos_ingresso }}" alt="Gráfico de Sentimentos por Ingresso">
+    {% if media_programa is not none %}
+        <p>Média de Sentimentos Programa: {{ media_programa | round(2) }}</p>
+    {% else %}
+        <p class="text-muted">Média de Sentimentos Programa: Dados insuficientes ou ausentes para cálculo de sentimentos.</p>
+    {% endif %}
+
+    {% if grafico_sentimentos_ingresso %}
+        <img src="data:image/png;base64,{{ grafico_sentimentos_ingresso }}" alt="Gráfico de Sentimentos por Ingresso" class="img-fluid">
+    {% else %}
+        <p class="text-muted">Gráfico de Sentimentos por Ingresso: Dados insuficientes para exibição de gráfico.</p>
+    {% endif %}
 
     <h2>Resultados do Modelo Otimizado</h2>
-    <p>MSE após otimização: {{ mse_otimizado }}</p>
+    {% if mse_otimizado is not none %}
+        <p>MSE após otimização: {{ mse_otimizado | round(4) }}</p>
+    {% else %}
+        <p class="text-muted">MSE após otimização: Dados insuficientes para cálculo do modelo.</p>
+    {% endif %}
 
-    {% for programa, dados in recomendacoes_por_programa.items() %}
-<tr>
-    <td>{{ programa }}</td>
-    <td>{{ dados.mse_rf | default('N/A') | round(6) if dados.mse_rf is not none else 'N/A' }}</td>
-    <td>{{ dados.mse_xgb | default('N/A') | round(6) if dados.mse_xgb is not none else 'N/A' }}</td>
-    <td>{{ dados.media_sentimentos_programa | default('N/A') | round(6) if dados.media_sentimentos_programa is not none else 'N/A' }}</td>
-    <td>
-        <ul>
-            {% for recomendacao in dados.recomendacoes %}
-            <li>{{ recomendacao }}</li>
-            {% endfor %}
-        </ul>
-    </td>
-</tr>
-{% endfor %}
+    <h2>Recomendações por Programa</h2>
+    {% if recomendacoes_por_programa %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Programa</th>
+                    <th>MSE RF</th>
+                    <th>MSE XGB</th>
+                    <th>Média Sentimentos Programa</th>
+                    <th>Recomendações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for programa, dados in recomendacoes_por_programa.items() %}
+                    <tr>
+                        <td>{{ programa }}</td>
+                        <td>{{ dados.mse_rf | default('N/A') | round(6) if dados.mse_rf is not none else 'N/A' }}</td>
+                        <td>{{ dados.mse_xgb | default('N/A') | round(6) if dados.mse_xgb is not none else 'N/A' }}</td>
+                        <td>{{ dados.media_sentimentos_programa | default('N/A') | round(6) if dados.media_sentimentos_programa is not none else 'N/A' }}</td>
+                        <td>
+                            {% if dados.recomendacoes %}
+                                <ul>
+                                    {% for recomendacao in dados.recomendacoes %}
+                                        <li>{{ recomendacao }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <span class="text-muted">Nenhuma recomendação disponível</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-muted">Nenhuma recomendação disponível para exibição.</p>
+
+    {% endif %}
+    <div style="text-align: center; margin-top: 40px;">
+        <!-- Botão para fechar -->
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+    </div>   
+       <!-- Script para fechar a página -->
+       <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_proreitor') }}";
+        }
+  
 </body>
 {% endblock %}
-

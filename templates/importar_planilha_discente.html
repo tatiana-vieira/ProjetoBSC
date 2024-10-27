@@ -30,6 +30,10 @@
             <button type="submit" class="btn btn-primary" style="background-color: #003366; border-color: #003366; width: 150px;">Upload</button>
             
         </div>
+        <div style="text-align: center; margin-top: 40px;">
+            <!-- Botão para fechar -->
+            <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+        </div>   
     </form>
 </div>
 
@@ -40,4 +44,10 @@
         document.getElementById('fileName').innerText = 'Arquivo selecionado: ' + fileName;
     }
 </script>
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_proreitor') }}";
+    }
+</script>
+
 {% endblock %}

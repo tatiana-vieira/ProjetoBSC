@@ -543,3 +543,5 @@ def analisar_dados_ia():
     except Exception as e:
         flash(f"Erro ao processar os dados: {e}", 'danger')
         return redirect(url_for('avaliacaodiscente.importar_planilhadiscente'))
+    
+

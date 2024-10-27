@@ -32,6 +32,7 @@ from routes.avaliacaodocente import avaliacaodocente_route
 from routes.avaliacaoegresso import avaliacaoegresso_route
 from routes.avaliacaosecretaria import avaliacaosecretaria_route
 from routes.avaliacaocoordenador import avaliacaocoordenador_route
+from routes.discente import discente_route
 from routes.db import db, init_db
 from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
@@ -146,6 +147,8 @@ app.register_blueprint(avaliacaodocente_route)
 app.register_blueprint(avaliacaoegresso_route)
 app.register_blueprint(avaliacaosecretaria_route)
 app.register_blueprint(avaliacaocoordenador_route)
+app.register_blueprint(discente_route)
+
 
 
 @app.route('/')
