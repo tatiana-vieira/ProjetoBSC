@@ -17,28 +17,20 @@ from sklearn.model_selection import train_test_split
 from flask import jsonify
 from sklearn.ensemble import GradientBoostingRegressor
 
-# Função para substituir "Sim" e "Não" mesmo em frases maiores
-def substituir_sim_nao(valor):
-    try:
-        valor = str(valor).strip().lower()  # Converter o valor para string e remover espaços extras
-
-        # Se contém "sim", retorna 1
-        if "sim" in valor:
-            return 1
-        # Se contém "não", retorna 0
-        if "não" in valor or "nao" in valor:
-            return 0
-
-        # Caso contrário, retorna o valor original
-        return valor
-    except Exception as e:
-        print(f"Erro ao processar o valor: {valor}. Erro: {e}")
-        return valor
-
-# Função para aplicar a substituição de "Sim" e "Não" em colunas específicas
-def limpar_e_converter_sim_nao(df, colunas):
-    for col in colunas:
-        df[col] = df[col].apply(substituir_sim_nao)  # Aplicar a função de substituição
+# Função para normalizar nomes de colunas, evitando erros com valores None
+def normalize_column_names(df):
+    df.columns = [
+        unicodedata.normalize('NFKD', col) if col is not None else col
+        .encode('ascii', 'ignore')
+        .decode('utf-8')
+        .strip()
+        .lower()
+        .replace('  ', ' ')
+        .replace(' ', '_')
+        .replace('[', '')
+        .replace(']', '')
+        for col in df.columns if col is not None  # Apenas para colunas válidas
+    ]
     return df
 
 # Função para calcular a média dos dígitos de uma string numérica
@@ -54,15 +46,18 @@ def calcular_media_digitos(valor):
         print(f"Erro ao calcular a média dos dígitos: {e}")
         return np.nan
 
-# Função para substituir valores problemáticos e aplicar a média dos dígitos
-def limpar_e_converter_para_numeric(df, colunas):
-    # Substituir valores não numéricos específicos
-    df.replace("Sem condições de avaliar", np.nan, inplace=True)
-    df.replace("Sem condiÃ§Ãµes de avaliar", np.nan, inplace=True)
-    df.replace("Sem condicoes de avaliar", np.nan, inplace=True)
-
-    for col in colunas:
-        df[col] = df[col].apply(calcular_media_digitos)  # Aplicar a função de média dos dígitos
+def limpar_dados(df):
+    # Substituir os valores problemáticos por NaN apenas em valores não nulos
+    df = df.applymap(lambda x: np.nan if isinstance(x, str) and (
+        "Sem condições de avaliar" in x or "Sem condiÃ§Ãµes de avaliar" in x or
+        "Sem condicoes de avaliar" in x or "Não se aplica" in x) else x)
+    
+    # Garantir que valores de "Sim"/"Não" são corretamente convertidos para numérico
+    df.replace({
+        'Sim': 1, 'sim': 1, 
+        'Não': 0, 'NÃO': 0, 'Nao': 0, 'nao': 0, 'não': 0
+    }, inplace=True)
+    
     return df
 
 # Definir o blueprint
@@ -79,97 +74,24 @@ if not os.path.exists(UPLOAD_FOLDER):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@avaliacaocoordenador_route.route('/importar_planilhacoordenador', methods=['GET', 'POST'])
-def importar_planilhacoordenador():
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            flash('Nenhum arquivo foi enviado', 'danger')
-            return redirect(request.url)
 
-        file = request.files['file']
-
-        if file.filename == '':
-            flash('Nenhum arquivo selecionado', 'danger')
-            return redirect(request.url)
-
-        if file and allowed_file(file.filename):
-            filename = file.filename
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
-            
-            # Salvar o arquivo
-            file.save(file_path)
-
-            # Redirecionar para a geração de gráficos passando o nome do arquivo
-            return redirect(url_for('avaliacaocoordenador.gerar_graficos_completos_coordenador', filename=filename))
-
-    return render_template('importar_planilhacoordenador.html')
-
-def normalize_column_names(df):
-    df.columns = [unicodedata.normalize('NFKD', col).encode('ascii', 'ignore').decode('utf-8').strip().lower().replace('  ', ' ').replace(' ', '_').replace('[', '').replace(']', '') for col in df.columns]
-    return df
-
-# Função para calcular a média dos dígitos de uma string de números
-def calcular_media_digitos(valor):
-    try:
-        digitos = [int(digito) for digito in str(valor)]  # Converter cada caractere em um número
-        return sum(digitos) / len(digitos)  # Calcular a média dos dígitos
-    except (ValueError, TypeError):
-        return None  # Retornar None se houver erro na conversão
-
-# Função para limpar e aplicar a média dos dígitos nas colunas problemáticas
-def limpar_e_converter_para_numeric(df, colunas):
-    # Substituir os valores problemáticos por 0
-    df.replace("Sem condições de avaliar", 0, inplace=True)
-    df.replace("Sem condiÃ§Ãµes de avaliar", 0, inplace=True)
-    df.replace({'Sim': 1, 'NÃO': 0, 'Não': 0,'Nao':0}, inplace=True)
-    
-    for col in colunas:
-        df[col] = df[col].apply(calcular_media_digitos)  # Aplicar a função de média dos dígitos
-    return df
-
-
-
-@avaliacaocoordenador_route.route('/gerar_graficos_completos_coordenador')
-def gerar_graficos_completos_coordenador():
-    graficos = []
-
-    # Receber o nome do arquivo da URL
-    filename = request.args.get('filename')
-    
-    if not filename:
-        flash('Nenhum arquivo selecionado para gerar gráficos', 'danger')
-        return redirect(url_for('avaliacaocoordenador.importar_planilhacoordenador'))
-    
-    file_path = os.path.join(UPLOAD_FOLDER, filename)
-
-    if not os.path.exists(file_path):
-        flash('Arquivo não encontrado', 'danger')
-        return redirect(url_for('avaliacaocoordenador.importar_planilhacoordenador'))
-
-    try:
-        # Tentar ler o arquivo CSV e remover o BOM
-        with open(file_path, 'r', encoding='utf-8-sig') as f:
-            coordenador = pd.read_csv(f, delimiter=';')
-
-        # Renomear as colunas como no seu Colab
+def renomear_colunas(coordenador):
+     # Renomear as colunas como no seu Colab
         coordenador.rename({
-       
             'Voce e coordenador(a) de qual Programa?':'programa',
             'Ha quanto tempo esta na coordenacao do programa?':'tempo_coordenacao',
             'Como voce avalia a qualidade das aulas e do material utilizado no Programa?  [Qualidade das aulas]':'Qualidade_aulas',
             'Como voce avalia a qualidade das aulas e do material utilizado no Programa?  [Material didatico utilizado nas disciplinas]':'Material_didatico',
             'Como voce avalia a qualidade das aulas e do material utilizado no Programa?  [Acervo disponivel para consulta]':'Acervo_disponivel',
             'Como voce avalia a  infraestrutura do programa? [Infraestrutura geral]':'Infraestrutura_geral',
-            'Como voce avalia a  infraestrutura do programa? [Laboratarios de pesquisa/Salas de estudo]':'Laboratorios_ pesquisa',
+            'Como voce avalia a  infraestrutura do programa? [Laboratorios de pesquisa/Salas de estudo]':'Laboratorios_pesquisa',
             'Como voce avalia a  infraestrutura do programa? [Insumos para pesquisa]':'Insumos_pesquisa',
             'Como voce avalia o relacionamento entre voce e: [os discentes]':'Relacionamento_discentes',
             'Como voce avalia o relacionamento entre voce e: [os docentes]':'Relacionamento_docentes',
-            'Como voce avalia o relacionamento entre voce e: [os funcionarios]':'Relacionamento_funcionarios',
-            'Como voce avalia o relacionamento entre voce e: [a coordenacao do programa]':'Relacionamento_coordenacao',
             'Como voce avalia o relacionamento entre voce e: [a secretaria do programa]':'Relacionamento_secretaria',
             'Como voce avalia a gestao do programa? [Processo de gestao/Administrativo do Programa]':'processo_gestao_administrativa',
             'Como voce avalia a gestao do programa? [Organizacao do Programa]':'organizaçao_programa',
-            'Como voce avalia o seu conhecimento acerca do/das: [seu papel enquanto coordenador(a)]':'papel_coordenador',
+            'Como voce avalia seu papel enquanto coordenador(a)':'papel_coordenador',
             'Como voce avalia o seu conhecimento acerca do/das: [Regimento Interno do Programa]':'regimento_interno',
             'Como voce avalia o seu conhecimento acerca do/das: [Regimento Geral da Pos-Graduacao]':'regimento_geral',
             'Como voce avalia o seu conhecimento acerca do/das: [normas Capes]':'normas_capes',
@@ -203,13 +125,183 @@ def gerar_graficos_completos_coordenador():
             'O programa organizou eventos CIENTiFICOS nos ultimos tres anos?':'eventos_tresanos',
             'O programa organizou eventos TECNOLoGICOS nos ultimos tres anos?':'eventos_tecnologicos',
             'Os projetos de pesquisa desenvolvidos no Programa poderao gerar solucoes para os problemas que a sociedade enfrenta ou vira a enfrentar?':'solucoes_sociedade',
-            'Quais os principais impactos sociais a serem promovidos pelos projetos de pesquisa em andamento no Programa? (Marque todas aplicÃ¡veis)':'impactossociais_projeto',
-            'No momento, ha interesse por parte do seu Programa de Pos-Graduacao em iniciar um processo de InternacionalizaÃ§Ã£o?':'interesse_internacionalizacao',
+            'Quais os principais impactos sociais a serem promovidos pelos projetos de pesquisa em andamento no Programa? (Marque todas aplicaveis)':'impactossociais_projeto',
+            'No momento, ha interesse por parte do seu Programa de Pos-Graduacao em iniciar um processo de Internacionalizacao?':'interesse_internacionalizacao',
             'Seu programa esta preparado para a internacionalizacao?':'preparado_internacionalizacao',
             'Os DOCENTES do seu Programa de Pos-Graduacao estao preparados para a internacionalizacao?':'docentes_internacionalizacao',
             'Os DISCENTES do seu Programa de Pos-Graduacao estao preparados para a internacionalizacao?':'discentes_internacionalizacao',
             'Quantas disciplinas em lingua inglesa sao oferecidas em seu Programa?':'disciplinas_ingles',
-            'O Programa possui projetos de pesquisa em parceria com instituicoes internacionais de pesquisa ou ensino?':'projetos_ parceriainternacional',
+            'O Programa possui projetos de pesquisa em parceria com instituicoes internacionais de pesquisa ou ensino?':'projetos_parceriainternacional',
+            'O programa mantem algum tipo de contato com seus egressos?':'contato_egressos',
+            'Se afirmativo, quais as praticas de acompanhamento de egressos efetuadas pelo Programa e qual o canal de comunicacao utilizado?':'comunicacao_egressos',
+            'Quais informacoes consideram importantes sobre os egressos?':'informacoes_egressos',
+            'O programa acredita ser necessario um sistema institucional de acompanhamento de egressos? Por que?':'necessario acompanhamento_egresso',
+            'Quais indicadores de desempenho considera importante para auxiliar o Programa no processo de avaliacao quadrienal?':'indicadores_importantes',
+            'O programa tem dificuldades no processo de avaliacao da Capes? Se afirmativo, gentileza descreve-las.':'dificuldades_avaliacaocapes',
+            'Gostaria de adicionar algum comentario referente ao Programa de Pos-Graduacao que coordena?':'comentarios_programa',
+            'Gostaria de adicionar algum comentario referente a Pro-Reitoria de Pesquisa e Pos-Graduacao?':'comentarios_PRPPG'
+        }, axis=1, inplace=True)
+        return coordenador
+
+# Função para substituir valores de 'Sim' e 'Não' por 1 e 0
+def substituir_sim_nao(valor):
+    if isinstance(valor, str):
+        valor = valor.strip().lower()
+        if "sim" or "Sim" in valor:
+            return 1
+        elif "não" in valor or "nao" or "Nao" in valor:
+            return 0
+    return np.nan
+
+
+@avaliacaocoordenador_route.route('/importar_planilhacoordenador', methods=['GET', 'POST'])
+def importar_planilhacoordenador():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('Nenhum arquivo foi enviado', 'danger')
+            return redirect(request.url)
+
+        file = request.files['file']
+
+        if file.filename == '':
+            flash('Nenhum arquivo selecionado', 'danger')
+            return redirect(request.url)
+
+        if file and allowed_file(file.filename):
+            filename = file.filename
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            
+            # Salvar o arquivo
+            file.save(file_path)
+
+            # Redirecionar para a geração de gráficos passando o nome do arquivo
+            return redirect(url_for('avaliacaocoordenador.gerar_graficos_completos_coordenador', filename=filename))
+
+    return render_template('importar_planilhacoordenador.html')
+
+# Normalizar nomes de colunas, evitando erros com valores None
+def normalize_column_names(df):
+    df.columns = [
+        unicodedata.normalize('NFKD', col).encode('ascii', 'ignore').decode('utf-8').strip().lower()
+        .replace('  ', ' ').replace(' ', '_').replace('[', '').replace(']', '')
+        for col in df.columns if col is not None
+    ]
+    return df
+
+# Função para calcular a média dos dígitos de uma string de números
+def calcular_media_digitos(valor):
+    try:
+        digitos = [int(digito) for digito in str(valor)]  # Converter cada caractere em um número
+        return sum(digitos) / len(digitos)  # Calcular a média dos dígitos
+    except (ValueError, TypeError):
+        return None  # Retornar None se houver erro na conversão
+
+# Função para limpar e aplicar a média dos dígitos nas colunas problemáticas
+def limpar_e_converter_para_numeric(df, colunas):
+    # Substituir os valores problemáticos por 0
+    df.replace("Sem condições de avaliar", 0, inplace=True)
+    df.replace("Sem condiÃ§Ãµes de avaliar", 0, inplace=True)
+    df.replace({'Sim': 1, 'NÃO': 0, 'Não': 0,'Nao':0}, inplace=True)
+    
+    for col in colunas:
+        df[col] = df[col].apply(calcular_media_digitos)  # Aplicar a função de média dos dígitos
+    return df
+
+# Substituir valores de "Sim" e "Não" em colunas específicas, verificando tipos
+def substituir_sim_nao(valor):
+    if isinstance(valor, str):  # Verificar se é uma string
+        valor = valor.strip().lower()
+        if "sim" in valor:
+            return 1
+        elif "não" in valor or "nao" in valor:
+            return 0
+    return valor  # Retornar o valor original caso não seja 'Sim' ou 'Não'
+
+# Função para converter colunas para numéricas
+def converter_para_numerico(df, colunas):
+    for coluna in colunas:
+        df[coluna] = pd.to_numeric(df[coluna], errors='coerce')
+    return df
+
+@avaliacaocoordenador_route.route('/gerar_graficos_completos_coordenador')
+def gerar_graficos_completos_coordenador():
+    graficos = []
+
+    # Receber o nome do arquivo da URL
+    filename = request.args.get('filename')
+    
+    if not filename:
+        flash('Nenhum arquivo selecionado para gerar gráficos', 'danger')
+        return redirect(url_for('avaliacaocoordenador.importar_planilhacoordenador'))
+    
+    file_path = os.path.join(UPLOAD_FOLDER, filename)
+
+    if not os.path.exists(file_path):
+        flash('Arquivo não encontrado', 'danger')
+        return redirect(url_for('avaliacaocoordenador.importar_planilhacoordenador'))
+
+    try:
+        # Tentar ler o arquivo CSV e remover o BOM
+        with open(file_path, 'r', encoding='utf-8-sig') as f:
+            coordenador = pd.read_csv(f, delimiter=';')
+
+        # Renomear as colunas como no seu Colab
+        coordenador.rename({
+       
+            'Voce e coordenador(a) de qual Programa?':'programa',
+            'Ha quanto tempo esta na coordenacao do programa?':'tempo_coordenacao',
+            'Como voce avalia a qualidade das aulas e do material utilizado no Programa?  [Qualidade das aulas]':'Qualidade_aulas',
+            'Como voce avalia a qualidade das aulas e do material utilizado no Programa?  [Material didatico utilizado nas disciplinas]':'Material_didatico',
+            'Como voce avalia a qualidade das aulas e do material utilizado no Programa?  [Acervo disponivel para consulta]':'Acervo_disponivel',
+            'Como voce avalia a  infraestrutura do programa? [Infraestrutura geral]':'Infraestrutura_geral',
+            'Como voce avalia a  infraestrutura do programa? [Laboratarios de pesquisa/Salas de estudo]':'Laboratorios_pesquisa',
+            'Como voce avalia a  infraestrutura do programa? [Insumos para pesquisa]':'Insumos_pesquisa',
+            'Como voce avalia o relacionamento entre voce e: [os discentes]':'Relacionamento_discentes',
+            'Como voce avalia o relacionamento entre voce e: [os docentes]':'Relacionamento_docentes',
+            'Como voce avalia o relacionamento entre voce e: [a secretaria do programa]':'Relacionamento_secretaria',
+            'Como voce avalia a gestao do programa? [Processo de gestao/Administrativo do Programa]':'processo_gestao_administrativa',
+            'Como voce avalia a gestao do programa? [Organizacao do Programa]':'organizaçao_programa',
+            'Como voce avalia seu papel enquanto coordenador(a)':'papel_coordenador',
+            'Como voce avalia o seu conhecimento acerca do/das: [Regimento Interno do Programa]':'regimento_interno',
+            'Como voce avalia o seu conhecimento acerca do/das: [Regimento Geral da Pos-Graduacao]':'regimento_geral',
+            'Como voce avalia o seu conhecimento acerca do/das: [normas Capes]':'normas_capes',
+            'Como voce avalia o seu conhecimento acerca do/das: [processo de avaliacao da Capes]':'avaliacao_capes',
+            'Em relacao a  TEMaTICA dos PROJETOS DE PESQUISA desenvolvidos pelo programa, voce esta:':'tematica_projetos_pesquisa',
+            'Em relacao ao TEMPO DE EXECUcao dos PROJETOS DE PESQUISA desenvolvidos pelo programa, voce esta:':'execucao_projetos_pesquisa',
+            'Em relacao ao RESULTADOS ALCANcADOS pelos PROJETOS DE PESQUISA desenvolvidos pelo programa, voce esta:':'resultado_projeto_pesquisa',
+            'Em relacao a  PRODUcao CIENTiFICA do Programa, voce esta:':'producao_cientifica',
+            'Voce acredita que os projetos de pesquisa em andamento no Programa possuem relevancia e pertinencia social?':'projeto_relevancia_social',
+            'Voce acredita que os projetos de pesquisa em andamento no Programa possuem relevancia e pertinencia economica?':'projeto_relevancia_economica',
+            'Voce acredita que os projetos de pesquisa em andamento no Programa possuem relevancia e pertinencia ambiental?':'projeto_relevancia_ambiental',
+            'Voce acredita que os projetos de pesquisa em andamento no Programa promovem o avanÃ§o cientifico?':'projeto_avanco_cientifico',
+            'O seu Programa possui visao, missao e objetivos claros?':'visao-missao-objetivos',
+            'Voce acredita que os projetos de pesquisa em andamento estao alinhados com a visao, missao e objetivos de seu Programa?':'projetos_visao_missao_objetivos',
+            'O programa discute seu planejamento estrategico entre os docentes, tecnicos, discentes e egressos do programa?':'planejamento_estrategico',
+            'Quais sao os principais atores que podem ser impactados pelas pesquisas em andamento no Programa e pelas producoes cientificas deles decorrentes? (Marque todas que se aplicam).':'atores_impactados',
+            'Voce possui iniciativas de captacao de recurso externo para o Programa (exceto bolsa)?':'captacao de recurso sem ser bolsa',
+            'Na sua opiniao, o que e preciso para que o seu Programa tenha producao de conhecimento cientifico e tecnologico qualificado, reconhecido pela comunidade cientifica internacional da area?':'producao_internacional',
+            'Producao de inovacao tecnologica e uma prioridade em seu programa de pos-graduacao?':'producao_inovacao_tecnologica',
+            'Dentre as linhas de pesquisa do programa, ha alguma que se destaca na producao de inovacao tecnologica? Se sim, gentileza especificar qual ou quais?':'linhaspesquisa_inovacaotecnologica',
+            'Com que frequencia sÃ£o depositadas patentes pelo programa?':'frequencia_patentes',
+            'O programa ja criou outros produtos registrados como desenhos industriais, marca, indicacao geografica ou topografia de circuitos integrados, softwares e aplicativos, cultivar, etc?':'produtos_programas',
+            'Qual a quantidade de patentes depositadas entre 2018, 2019 e 2020?':'quantidade_patentes',
+            'Producao de tecnologias de APLICAcao SOCIAL e uma prioridade em seu programa de pos-graduacao?':'producao_aplicacao_social',
+            'Ha alguma linha de pesquisa com o objetivo de produzir tecnologia de APLICAcao SOCIAL? Se sim, qual ou quais?':'linhaspesquisa_aplicacaosocial',
+            'Alguma tecnologia de APLICAcao SOCIAL foi criada nos ultimos anos pelo programa?':'tecnologia_aplicacaosocial',
+            'Algum discente ou egresso do programa participou da criacao de empresa ou organizacao social inovadora?':'criacao_empresa',
+            'O Programa possui disciplinas que orientam os discentes em relacao a criacao de empresas ou organizacoes sociais de base tecnologica e inovadora?':'disciplinas_criacaoempresa',
+            'O programa possui relacao com empresas, outros centros de pesquisa ou com o Centev?':'relacao_empresas',
+            'O programa organizou eventos voltados para a COMUNIDADE nos ultimos tres anos?':'eventos_comunidade',
+            'O programa organizou eventos CIENTiFICOS nos ultimos tres anos?':'eventos_tresanos',
+            'O programa organizou eventos TECNOLoGICOS nos ultimos tres anos?':'eventos_tecnologicos',
+            'Os projetos de pesquisa desenvolvidos no Programa poderao gerar solucoes para os problemas que a sociedade enfrenta ou vira a enfrentar?':'solucoes_sociedade',
+            'Quais os principais impactos sociais a serem promovidos pelos projetos de pesquisa em andamento no Programa? (Marque todas aplicaveis)':'impactossociais_projeto',
+            'No momento, ha interesse por parte do seu Programa de Pos-Graduacao em iniciar um processo de Internacionalizacao?':'interesse_internacionalizacao',
+            'Seu programa esta preparado para a internacionalizacao?':'preparado_internacionalizacao',
+            'Os DOCENTES do seu Programa de Pos-Graduacao estao preparados para a internacionalizacao?':'docentes_internacionalizacao',
+            'Os DISCENTES do seu Programa de Pos-Graduacao estao preparados para a internacionalizacao?':'discentes_internacionalizacao',
+            'Quantas disciplinas em lingua inglesa sao oferecidas em seu Programa?':'disciplinas_ingles',
+            'O Programa possui projetos de pesquisa em parceria com instituicoes internacionais de pesquisa ou ensino?':'projetos_parceriainternacional',
             'O programa mantem algum tipo de contato com seus egressos?':'contato_egressos',
             'Se afirmativo, quais as praticas de acompanhamento de egressos efetuadas pelo Programa e qual o canal de comunicacao utilizado?':'comunicacao_egressos',
             'Quais informacoes consideram importantes sobre os egressos?':'informacoes_egressos',
@@ -349,9 +441,7 @@ def analisar_sentimentos_coordenador():
             flash('Arquivo não encontrado.', 'danger')
             return redirect(url_for('avaliacaocoordenador.importar_planilhacoordenador'))
 
-        coordenador = pd.read_csv(file_path, delimiter=';')
-
-        
+        coordenador = pd.read_csv(file_path, delimiter=';')        
 
         # Exibir as colunas do arquivo CSV para depuração
         print(f"Colunas do CSV carregado: {coordenador.columns}")
@@ -509,16 +599,14 @@ def analisar_dados_ia():
             'Como voce avalia a qualidade das aulas e do material utilizado no Programa?  [Material didatico utilizado nas disciplinas]':'Material_didatico',
             'Como voce avalia a qualidade das aulas e do material utilizado no Programa?  [Acervo disponivel para consulta]':'Acervo_disponivel',
             'Como voce avalia a  infraestrutura do programa? [Infraestrutura geral]':'Infraestrutura_geral',
-            'Como voce avalia a  infraestrutura do programa? [Laboratarios de pesquisa/Salas de estudo]':'Laboratorios_ pesquisa',
+            'Como voce avalia a  infraestrutura do programa? [Laboratarios de pesquisa/Salas de estudo]':'Laboratorios_pesquisa',
             'Como voce avalia a  infraestrutura do programa? [Insumos para pesquisa]':'Insumos_pesquisa',
             'Como voce avalia o relacionamento entre voce e: [os discentes]':'Relacionamento_discentes',
             'Como voce avalia o relacionamento entre voce e: [os docentes]':'Relacionamento_docentes',
-            'Como voce avalia o relacionamento entre voce e: [os funcionarios]':'Relacionamento_funcionarios',
-            'Como voce avalia o relacionamento entre voce e: [a coordenacao do programa]':'Relacionamento_coordenacao',
             'Como voce avalia o relacionamento entre voce e: [a secretaria do programa]':'Relacionamento_secretaria',
             'Como voce avalia a gestao do programa? [Processo de gestao/Administrativo do Programa]':'processo_gestao_administrativa',
             'Como voce avalia a gestao do programa? [Organizacao do Programa]':'organizaçao_programa',
-            'Como voce avalia o seu conhecimento acerca do/das: [seu papel enquanto coordenador(a)]':'papel_coordenador',
+            'Como voce avalia seu papel enquanto coordenador(a)':'papel_coordenador',
             'Como voce avalia o seu conhecimento acerca do/das: [Regimento Interno do Programa]':'regimento_interno',
             'Como voce avalia o seu conhecimento acerca do/das: [Regimento Geral da Pos-Graduacao]':'regimento_geral',
             'Como voce avalia o seu conhecimento acerca do/das: [normas Capes]':'normas_capes',
@@ -552,13 +640,13 @@ def analisar_dados_ia():
             'O programa organizou eventos CIENTiFICOS nos ultimos tres anos?':'eventos_tresanos',
             'O programa organizou eventos TECNOLoGICOS nos ultimos tres anos?':'eventos_tecnologicos',
             'Os projetos de pesquisa desenvolvidos no Programa poderao gerar solucoes para os problemas que a sociedade enfrenta ou vira a enfrentar?':'solucoes_sociedade',
-            'Quais os principais impactos sociais a serem promovidos pelos projetos de pesquisa em andamento no Programa? (Marque todas aplicÃ¡veis)':'impactossociais_projeto',
-            'No momento, ha interesse por parte do seu Programa de Pos-Graduacao em iniciar um processo de InternacionalizaÃ§Ã£o?':'interesse_internacionalizacao',
+            'Quais os principais impactos sociais a serem promovidos pelos projetos de pesquisa em andamento no Programa? (Marque todas aplicaveis)':'impactossociais_projeto',
+            'No momento, ha interesse por parte do seu Programa de Pos-Graduacao em iniciar um processo de Internacionalizacao?':'interesse_internacionalizacao',
             'Seu programa esta preparado para a internacionalizacao?':'preparado_internacionalizacao',
             'Os DOCENTES do seu Programa de Pos-Graduacao estao preparados para a internacionalizacao?':'docentes_internacionalizacao',
             'Os DISCENTES do seu Programa de Pos-Graduacao estao preparados para a internacionalizacao?':'discentes_internacionalizacao',
             'Quantas disciplinas em lingua inglesa sao oferecidas em seu Programa?':'disciplinas_ingles',
-            'O Programa possui projetos de pesquisa em parceria com instituicoes internacionais de pesquisa ou ensino?':'projetos_ parceriainternacional',
+            'O Programa possui projetos de pesquisa em parceria com instituicoes internacionais de pesquisa ou ensino?':'projetos_parceriainternacional',
             'O programa mantem algum tipo de contato com seus egressos?':'contato_egressos',
             'Se afirmativo, quais as praticas de acompanhamento de egressos efetuadas pelo Programa e qual o canal de comunicacao utilizado?':'comunicacao_egressos',
             'Quais informacoes consideram importantes sobre os egressos?':'informacoes_egressos',
@@ -575,7 +663,7 @@ def analisar_dados_ia():
                                'normas_capes', 'avaliacao_capes']
         colunas_infraestrutura = ['Insumos_pesquisa','Infraestrutura_geral','Laboratorios_ pesquisa']
         colunas_relacionamentos = ['Relacionamento_discentes', 'Relacionamento_docentes',
-                                   'Relacionamento_funcionarios', 'Relacionamento_coordenacao','Relacionamento_secretaria']
+                                   'Relacionamento_secretaria']
         colunas_internacionalizacao = ['interesse_internacionalizacao', 'preparado_internacionalizacao',
                                        'docentes_internacionalizacao', 'discentes_internacionalizacao','disciplinas_ingles','projetos_ parceriainternacional']
 
@@ -754,3 +842,97 @@ def avaliacao_coordenador():
     }
 
     import ace_tools as tools; tools.display_dataframe_to_user(name="Simulação de Análise Coordenadores", dataframe=pd.DataFrame([resultados]))
+
+##########################################################################################################################################3
+@avaliacaocoordenador_route.route('/exibir_recomendacoes_programacoordenador', methods=['GET'])
+def exibir_recomendacoes_programacoordenador():
+    try:
+        file_path = os.path.join(UPLOAD_FOLDER, 'coordenador.csv')
+        if not os.path.exists(file_path):
+            flash('Arquivo "coordenador.csv" não encontrado na pasta uploads.', 'danger')
+            return redirect(url_for('coordenador.importar_planilhacoordenador'))
+        
+        # Carregar o DataFrame do CSV
+        coordenador = pd.read_csv(file_path, delimiter=';')
+        
+        # Renomear e limpar dados
+        coordenador = renomear_colunas(coordenador)
+        if coordenador is None:
+            raise ValueError("Erro ao renomear colunas. Verifique a função 'renomear_colunas'.")
+
+        coordenador = limpar_dados(coordenador)
+        if coordenador is None:
+            raise ValueError("Erro ao limpar dados. Verifique a função 'limpar_dados'.")
+
+        # Calcular médias por grupo
+        colunas_qualidade = ['Qualidade_aulas', 'Material_didatico', 'Acervo_disponivel']
+        colunas_orientador = ['papel_coordenador', 'regimento_geral', 'normas_capes', 'avaliacao_capes']
+        colunas_infraestrutura = ['Insumos_pesquisa', 'Infraestrutura_geral', 'Laboratorios_pesquisa']
+        colunas_relacionamentos = ['Relacionamento_discentes', 'Relacionamento_docentes', 
+                                   'Relacionamento_secretaria']
+        colunas_internacionalizacao = ['interesse_internacionalizacao', 'preparado_internacionalizacao', 
+                                       'docentes_internacionalizacao', 'discentes_internacionalizacao', 
+                                       'disciplinas_ingles', 'projetos_parceriainternacional']
+
+        def converter_para_numerico(df, colunas):
+            for coluna in colunas:
+                if coluna in df.columns:
+                    df[coluna] = pd.to_numeric(df[coluna], errors='coerce')
+            return df
+
+        coordenador = converter_para_numerico(coordenador, 
+                                              colunas_qualidade + colunas_orientador + 
+                                              colunas_infraestrutura + colunas_relacionamentos + 
+                                              colunas_internacionalizacao)
+
+        coordenador['Media_Qualidade'] = coordenador[colunas_qualidade].mean(axis=1)
+        coordenador['Media_Orientador'] = coordenador[colunas_orientador].mean(axis=1)
+        coordenador['Media_Infraestrutura'] = coordenador[colunas_infraestrutura].mean(axis=1)
+        coordenador['Media_Relacionamentos'] = coordenador[colunas_relacionamentos].mean(axis=1)
+        coordenador['Media_Internacionalizacao'] = coordenador[colunas_internacionalizacao].mean(axis=1)
+
+        # Agrupar por programa e calcular médias
+        df_por_programa = coordenador.groupby('programa').agg({
+            'Media_Qualidade': 'mean',
+            'Media_Orientador': 'mean',
+            'Media_Infraestrutura': 'mean',
+            'Media_Relacionamentos': 'mean',
+            'Media_Internacionalizacao': 'mean'
+        }).reset_index()
+
+        # Função para gerar recomendações por programa
+        def gerar_recomendacoes_programa(df_agrupado):
+            recomendacoes_por_programa = {}
+            for _, row in df_agrupado.iterrows():
+                programa = row['programa']
+                recomendacoes = []
+
+                # Regras de recomendações
+                if row['Media_Qualidade'] < 3:
+                    recomendacoes.append("Melhorar a qualidade das aulas e do material didático.")
+                
+                if row['Media_Orientador'] < 3:
+                    recomendacoes.append("Reavaliar o conhecimento sobre as normas do programa e da PRPPG.")
+                
+                if row['Media_Infraestrutura'] < 3:
+                    recomendacoes.append("Investir em infraestrutura, incluindo laboratórios e insumos de pesquisa.")
+                
+                if row['Media_Relacionamentos'] < 3:
+                    recomendacoes.append("Aprimorar o relacionamento entre alunos, orientadores e coordenação.")
+                
+                if row['Media_Internacionalizacao'] < 3:
+                    recomendacoes.append("Incentivar a internacionalização e aumentar a proficiência em inglês dos alunos.")
+
+                recomendacoes_por_programa[programa] = recomendacoes
+
+            return recomendacoes_por_programa
+
+        # Gerar recomendações para cada programa
+        recomendacoes_programa = gerar_recomendacoes_programa(df_por_programa)
+
+        # Passar recomendações para o template
+        return render_template('recomendacaocoordenador.html', recomendacoes=recomendacoes_programa)
+
+    except Exception as e:
+        flash(f"Erro ao gerar recomendações: {e}", 'danger')
+        return redirect(url_for('avaliacaocoordenador.importar_planilhacoordenador'))

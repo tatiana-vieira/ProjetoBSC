@@ -1,4 +1,4 @@
-{% extends 'basecorden.html' %}
+{% extends 'basepro.html' %}
 
 {% block titulo %}
     <div style="text-align: center;">
@@ -35,7 +35,8 @@
         </form>
 
         <!-- Botão para gerar Análise Estratégica com IA -->
-        <a href="{{ url_for('avaliacaoegresso.analisar_dados_ia') }}" class="btn btn-primary" style="margin-left: 20px;">Gerar Análise Estratégica com IA</a>
+        <a href="{{ url_for('avaliacaoegresso.exibir_recomendacoes_egresso') }}" class="btn btn-primary">Recomendações por Programa</a>
+
     </div>
 
     <!-- Script para fechar a página -->

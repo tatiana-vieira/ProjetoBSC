@@ -1,22 +1,46 @@
-{% extends 'basecorden.html' %}
+{% extends 'basepro.html' %}
 
 {% block titulo %}
-    <div style="text-align: center;">
-        Análise de Sentimentos
+    <div style="text-align: center; margin-top: 20px;">
+        <h1>Análise de Sentimentos</h1>
     </div>
 {% endblock %}
 
 {% block conteudo %}
+<div style="display: flex; justify-content: center; margin-top: 20px;">
+    <!-- Tabela centralizada -->
+    <table style="width: 60%; border-collapse: collapse; text-align: center; font-size: 18px;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid #ddd; padding: 12px;">Categoria</th>
+                <th style="border: 1px solid #ddd; padding: 12px;">Média dos Sentimentos</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 12px;">Programa de Pós-Graduação</td>
+                <td style="border: 1px solid #ddd; padding: 12px;">{{ media_programa | round(3) }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 12px;">Pró-Reitoria</td>
+                <td style="border: 1px solid #ddd; padding: 12px;">{{ media_prppg | round(3) }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 12px;">Produção Internacional</td>
+                <td style="border: 1px solid #ddd; padding: 12px;">{{ media_producao_internacional | round(3) }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
 
-<body>
-    <h1>Análise de Sentimentos</h1>
-
-    <h2>Média dos Sentimentos sobre o Programa: {{ media_programa }}</h2>
-    <h2>Média dos Sentimentos sobre a Pró-Reitoria: {{ media_prppg }}</h2>
-
-    <h3>Gráfico de Sentimentos</h3>
+<h3 style="text-align: center; margin-top: 20px;">Gráfico de Sentimentos</h3>
+<div style="text-align: center;">
     <img src="data:image/png;base64,{{ grafico_sentimentos }}" alt="Gráfico de Sentimentos"/>
+</div>
 
-    <a href="{{ url_for('avaliacaodocente.importar_planilhadocente') }}">Voltar</a>
-</body>
+<!-- Botões centralizados -->
+<div style="text-align: center; margin-top: 20px;">
+    <a href="{{ url_for('avaliacaodocente.importar_planilhadocente') }}" class="btn btn-primary" style="margin-right: 10px;">Voltar</a>
+    <button onclick="window.close()" class="btn btn-danger">Fechar</button>
+</div>
 {% endblock %}

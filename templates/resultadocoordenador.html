@@ -1,10 +1,11 @@
-{% extends 'basecorden.html' %}
+{% extends 'basepro.html' %}
 
 {% block titulo %}
     <div style="text-align: center;">
         Resultados de Sentimentos e Modelos
     </div>
 {% endblock %}
+
 {% block conteudo %}
 <body>
     <h2>Resultados da Análise de Sentimentos</h2>
@@ -14,21 +15,35 @@
     <h2>Resultados do Modelo Otimizado</h2>
     <p>MSE após otimização: {{ mse_otimizado }}</p>
 
-    {% for programa, dados in recomendacoes_por_programa.items() %}
-<tr>
-    <td>{{ programa }}</td>
-    <td>{{ dados.mse_rf | default('N/A') | round(6) if dados.mse_rf is not none else 'N/A' }}</td>
-    <td>{{ dados.mse_xgb | default('N/A') | round(6) if dados.mse_xgb is not none else 'N/A' }}</td>
-    <td>{{ dados.media_sentimentos_programa | default('N/A') | round(6) if dados.media_sentimentos_programa is not none else 'N/A' }}</td>
-    <td>
-        <ul>
-            {% for recomendacao in dados.recomendacoes %}
-            <li>{{ recomendacao }}</li>
+    <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>Programa</th>
+                <th>MSE RF</th>
+                <th>MSE XGB</th>
+                <th>Média de Sentimentos</th>
+                <th>Recomendações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for programa, dados in recomendacoes_por_programa.items() %}
+            <tr>
+                <td>{{ programa }}</td>
+                <td>{{ dados.mse_rf | default('N/A') | round(6) if dados.mse_rf is not none else 'N/A' }}</td>
+                <td>{{ dados.mse_xgb | default('N/A') | round(6) if dados.mse_xgb is not none else 'N/A' }}</td>
+                <td>{{ dados.media_sentimentos_programa | default('N/A') | round(6) if dados.media_sentimentos_programa is not none else 'N/A' }}</td>
+                <td>
+                    <ul>
+                        {% for recomendacao in dados.recomendacoes %}
+                        <li>{{ recomendacao }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+            </tr>
             {% endfor %}
-        </ul>
-    </td>
-</tr>
-{% endfor %}
+        </tbody>
+    </table>
 </body>
 {% endblock %}
+
 

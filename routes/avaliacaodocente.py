@@ -107,7 +107,20 @@ def importar_planilhadocente():
 
 
 def normalize_column_names(df):
-    df.columns = [unicodedata.normalize('NFKD', col).encode('ascii', 'ignore').decode('utf-8').strip().lower().replace('  ', ' ').replace(' ', '_').replace('[', '').replace(']', '') for col in df.columns]
+    df.columns = [
+        unicodedata.normalize('NFKD', col)
+        .encode('ascii', 'ignore')
+        .decode('utf-8')
+        .strip()
+        .lower()
+        .replace('  ', ' ')
+        .replace(' ', '_')
+        .replace('[', '')
+        .replace(']', '')
+        .replace('<', '')
+        .replace('>', '')
+        for col in df.columns
+    ]
     return df
 
 # Função para calcular a média dos dígitos de uma string de números
@@ -125,12 +138,67 @@ def limpar_e_converter_para_numeric(df, colunas):
     df.replace("Sem condiÃ§Ãµes de avaliar", 0, inplace=True)
     df.replace("Sem condicoes de avaliar", 0, inplace=True)
 
-    df.replace({'Sim': 1, 'NÃO': 0, 'Não': 0, 'Nao': 0}, inplace=True)
+    df.replace({'Sim': 1,'sim':1, 'NÃO': 0, 'Não': 0, 'Nao': 0}, inplace=True)
     
     for col in colunas:
         df[col] = df[col].apply(calcular_media_digitos)  # Aplicar a função de média dos dígitos
     return df
 
+# Função para renomear colunas de forma segura
+def renomear_colunas(docente):
+    # Dicionário de colunas para renomear
+    colunas_para_renomear = {
+        'A qual  programa esta vinculado?': 'programa',
+        'Ha quanto tempo esta vinculado ao referido Programas de Pos-Graduacao?': 'tempo_programa',
+        'Como voce avalia a qualidade das aulas e do material utilizado?[Qualidade das aulas]': 'Qualidade_aulas',
+        'Como voce avalia a qualidade das aulas e do material utilizado? [Material didatico utilizado nas disciplinas]': 'Material_didatico',
+        'Como voce avalia a qualidade das aulas e do material utilizado? [Acervo disponivel para consulta]': 'Acervo_disponivel',
+        'Como voce avalia a infraestrutura do programa? [Infraestrutura geral]': 'Infraestrutura_geral',
+        'Como voce avalia a infraestrutura do programa? [Laboratorios de pesquisa/Salas de estudo]': 'Laboratorio_Salas',
+        'Como voce avalia a infraestrutura do programa? [Insumos para pesquisa]': 'Insumos_pesquisa',
+        'Como voce avalia o relacionamento entre voce e: [os discentes]': 'relacionamento_discentes',
+        'Como voce avalia o relacionamento entre voce e: [os demais professores do programa]':'relacionamento_professores',
+        'Como voce avalia o relacionamento entre voce e: [a comissao coordenadora]':'relacionamento_coordenador',
+        'Como voce avalia o relacionamento entre voce e: [a secretaria do programa]':'relacionamento_secretaria',
+        'Como voce avalia a gestao do programa? [Processo de gestao/Administrativo do Programa]':'gestao_administrativa',
+        'Como voce avalia a gestao do programa? [Organizacao do Programa]':'organizacao_programa',
+        'Como voce avalia o seu conhecimento acerca: [do seu papel enquanto orientador]': 'papel_orientador',
+        'Como voce avalia o seu conhecimento acerca: [do Regimento Interno do Programa]': 'regimento_interno',
+        'Como voce avalia o seu conhecimento acerca: [do Regimento Geral da Pos-Graduacao]': 'regimento_geral',
+        'Como voce avalia o seu conhecimento acerca: [normas Capes]': 'normas_capes',
+        'Como voce avalia o seu conhecimento acerca: [processo de avaliacao da Capes]': 'avaliacao_capes',
+        'Em relacao aos PROJETOS DE PESQUISA orientados por voce nesse Programa, voce esta:': 'orientados_voce',
+        'Em relacao a sua PRODUcaO CIENTiFICA relacionada a esse Programa, voce esta:': 'producao_cientifica',
+        'Voce acredita que os projetos de pesquisa orientados por voce nesse Programa possuem relevancia e pertinencia social?': 'orientados_relevancia_social',
+        'Voce acredita que os projetos de pesquisa orientados por voce nesse Programa possuem relevancia e pertinencia econômica?': 'orientados_relevancia_economica',
+        'Voce acredita que os projetos de pesquisa orientados por voce nesse Programa promovem avanco cientifico?': 'orientados_avanco_cientifico',
+        'O seu Programa possui visao, missao e objetivos claros?': 'visao_missao_objetivos',
+        'Voce acredita que os projetos de pesquisa orientados por voce nesse programa estao alinhados com o objetivo e missao de seu Programa?': 'projetos_objetivo_missao',
+        'Voce tem iniciativa de prover captacao de recurso externo para o desenvolvimento de seus projetos de pesquisa (exceto bolsa)?': 'recurso_externo',
+        'Na sua opiniao, o que e preciso para que o seu Programa tenha producao de conhecimento cientifico e tecnologico qualificado, reconhecido pela comunidade cientifica internacional da area em que atua?': 'producao_internacional',
+        'Producao de inovacao tecnologica e uma prioridade em seu programa de pos-graduacao?': 'inovacao_tecnologica_programa',
+        'Voce acredita que a linha de pesquisa em que atua nesse Programa se destaca pela producao de inovacao tecnologica?': 'linha_inovacao_tecnologica',
+        'Voce ja depositou alguma patente proveniente dos resultados das pesquisas por voce orientadas nesse Programa, ou possui isso como um dos objetivos de algum desses projetos de pesquisa?': 'patente',
+        'Alguma tecnologia de APLICAcaO SOCIAL ja foi criada como resultado das pesquisas por voce orientadas nesse Programa, ou possui isso como um dos objetivos de algum desses projetos de pesquisa?': 'tecnologia_social_orientada',
+        'Os resultados das pesquisas por voce orientadas ja foram apresentados em algum evento voltado para a COMUNIDADE, ou pretende apresentar?': 'projetos_orientados_sociedade',
+        'Os resultados das pesquisas por voce orientadas ja foram apresentados em algum evento CIENTiFICO, ou pretende apresentar?': 'projetos_orientados_evento_cientifico',
+        'Os projetos de pesquisa sob sua orientacao poderao gerar solucoes para os problemas que a sociedade enfrenta ou vira a enfrentar?': 'projetos_orientados_solucoes_sociedade',
+        'Quais os principais impactos sociais a serem promovidos por seus projetos de pesquisa? (Marque todas aplicaveis)': 'impactos_sociais',
+        'Qual o nivel de internacionalizacao do seu programa?': 'nivel_internacionalizacao',
+        'No momento, ha interesse por parte do seu Programa de Pos-Graduacao em iniciar um processo de Internacionalizacao?': 'interesse_programa_internacionalizacao',
+        'Voce se sente preparado para a internacionalizacao do seu Programa de Pos-Graduacao?': 'voce_preparado_internacionalizacao',
+        'Voce entende que o seu Programa de Pos-Graduacao esta preparado para a internacionalizacao?': 'programa_preparado_internacionalizacao',
+        'Voce possui projetos de pesquisa em parceria com instituicoes internacionais de pesquisa ou ensino?': 'projetos_instituicoes_internacionais',
+        'Qual o seu nivel de proficiencia em lingua inglesa?': 'proficiencia_ingles',
+        'Sinto-me capacitado para oferecer disciplinas em lingua inglesa:': 'ministrar_ingles',
+        'Qual o seu programa de pos-graduacao?': 'programa',
+        'Gostaria de adicionar algum comentario referente ao Programa de Pos-Graduacao em questao?': 'comentario_programa',
+        'Gostaria de adicionar algum comentario referente a Pro-Reitoria de Pesquisa e Pos-Graduacao?': 'comentario_prppg'
+    }
+    # Renomear apenas colunas existentes no DataFrame
+    colunas_existentes = {col: colunas_para_renomear[col] for col in colunas_para_renomear if col in docente.columns}
+    docente.rename(columns=colunas_existentes, inplace=True)
+    return docente
 
 
 @avaliacaodocente_route.route('/gerar_graficos_completos_docentes')
@@ -183,20 +251,19 @@ def gerar_graficos_completos_docentes():
             'Voce acredita que os projetos de pesquisa orientados por voce nesse Programa possuem relevancia e pertinencia econômica?':'orientados_ relevancia_economica',
             'Voce acredita que os projetos de pesquisa orientados por voce nesse Programa promovem avanco cientifico?':'orientados_avanco_cientifico',
             'O seu Programa possui visao, missao e objetivos claros?':'visao-missao-objetivos',
-            'Voce acredita que os projetos de pesquisa orientados por você nesse programa estão alinhados com o objetivo e missao de seu Programa?':'projetos_objetivo-missao',
-            'Quais são os principais atores que podem ser impactados pelas pesquisas sob sua orientacao nesse Programa e das producoes cientificas delas decorrentes? (Marque todas que se aplicam).':'ator_producao cientifica',
-            'Voce tem iniciativa de prover captação de recurso externo para o desenvolvimento de seus projetos de pesquisa (exceto bolsa)?':'recurso_externo',
-            'Na sua opiniao, o que e preciso para que o seu Programa tenha producao de conhecimento cientifico e tecnologico qualificado, reconhecido pela comunidade científica internacional da área em que atua?':'producao_internacional',
-            'Produção de inovacaão tecnologica e uma prioridade em seu programa de pos-graduacao?':'inovacao_tecnologica_programa',
+            'Voce acredita que os projetos de pesquisa orientados por voce nesse programa estao alinhados com o objetivo e missao de seu Programa?':'projetos_objetivo_missao',
+            'Voce tem iniciativa de prover captacao de recurso externo para o desenvolvimento de seus projetos de pesquisa (exceto bolsa)?':'recurso_externo',
+            'Na sua opiniao, o que e preciso para que o seu Programa tenha producao de conhecimento cientifico e tecnologico qualificado, reconhecido pela comunidade científica internacional da area em que atua?':'producao_internacional',
+            'Producao de inovacao tecnologica e uma prioridade em seu programa de pos-graduacao?':'inovacao_tecnologica_programa',
             'Voce acredita que a linha de pesquisa em que atua nesse Programa se destaca pela producao de inovacao tecnologica?':'linha_inovacao_tecnologica',
-            'Voce ja depositou alguma patente proveniente dos resultados das pesquisas por você orientadas nesse Programa, ou possui isso como um dos objetivos de algum desses projetos de pesquisa?':'patente',
+            'Voce ja depositou alguma patente proveniente dos resultados das pesquisas por voce orientadas nesse Programa, ou possui isso como um dos objetivos de algum desses projetos de pesquisa?':'patente',
             'Alguma tecnologia de APLICAcaO SOCIAL ja foi criada como resultado das pesquisas por voce orientadas nesse Programa, ou possui isso como um dos objetivos de algum desses projetos de pesquisa?':'tecnologia_social_orientada',
-            'Os resultados das pesquisas por você orientadas ja foram apresentados em algum evento voltado para a COMUNIDADE, ou pretende apresentar?':'projetos_orientados_sociedade',
-            'Os resultados das pesquisas por você orientadas ja foram apresentados em algum evento CIENTiFICO, ou pretende apresentar?':'projetos_orientados_evento_cientifico',
-            'Os projetos de pesquisa sob sua orientação poderao gerar solucoes para os problemas que a sociedade enfrenta ou vira a enfrentar?':'projetos_orientados_solucoes_sociedade',
+            'Os resultados das pesquisas por voce orientadas ja foram apresentados em algum evento voltado para a COMUNIDADE, ou pretende apresentar?':'projetos_orientados_sociedade',
+            'Os resultados das pesquisas por voce orientadas ja foram apresentados em algum evento CIENTiFICO, ou pretende apresentar?':'projetos_orientados_evento_cientifico',
+            'Os projetos de pesquisa sob sua orientacao poderao gerar solucoes para os problemas que a sociedade enfrenta ou vira a enfrentar?':'projetos_orientados_solucoes_sociedade',
             'Quais os principais impactos sociais a serem promovidos por seus projetos de pesquisa? (Marque todas aplicaveis)':'impactos_sociais',
-            'Qual o nivel de internacionalização do seu programa?':'nivel_internacionalizacao',
-            'No momento, ha interesse por parte do seu Programa de Pos-Graduacao em iniciar um processo de Internacionalizacao?':'interesse_ programa_internacionalizacao',
+            'Qual o nivel de internacionalizacao do seu programa?':'nivel_internacionalizacao',
+            'No momento, ha interesse por parte do seu Programa de Pos-Graduacao em iniciar um processo de Internacionalizacao?':'interesse_programa_internacionalizacao',
             'Voce se sente preparado para a internacionalizacao do seu Programa de Pos-Graduacao?':'voce_preparado_internacionalizacao',
             'Voce entende que o seu Programa de Pos-Graduacao esta preparado para a internacionalizacao?':'programa_ preparado_internacionalizacao',
             'Voce possui projetos de pesquisa em parceria com instituicoes internacionais de pesquisa ou ensino?':'projetos_instituicoes_internacionais',
@@ -204,7 +271,7 @@ def gerar_graficos_completos_docentes():
             'Sinto-me capacitado para oferecer disciplinas em lingua inglesa:':'ministrar_ingles',
             'Qual o seu programa de pos-graduacao?':'programa',
             'Gostaria de adicionar algum comentario referente ao Programa de Pos-Graduacao em questao?':'comentario_programa',
-            'Gostaria de adicionar algum comentario referente a Pró-Reitoria de Pesquisa e Pos-Graduacao?':'comentario_PRPPG'
+            'Gostaria de adicionar algum comentario referente a Pro-Reitoria de Pesquisa e Pos-Graduacao?':'comentario_prppg'
             }, axis=1, inplace=True)
 
        # Verificar se as colunas necessárias estão presentes
@@ -328,78 +395,73 @@ def analisar_sentimento(texto):
     return sid.polarity_scores(texto)
 
 
-@avaliacaodocente_route.route('/analisar_sentimentos', methods=['GET'])
-def analisar_sentimentos():
+@avaliacaodocente_route.route('/analisar_sentimentosdocente', methods=['GET'])
+def analisar_sentimentosdocente():
     try:
-        # Simulação de leitura do arquivo já carregado
-        file_path = 'uploads/docente.csv'  # Altere para o caminho correto do arquivo
+        # Definindo o caminho do arquivo
+        file_path = 'uploads/docente.csv'
         if not os.path.exists(file_path):
             flash('Arquivo não encontrado.', 'danger')
             return redirect(url_for('avaliacaodocente.importar_planilhadocente'))
 
         docente = pd.read_csv(file_path, delimiter=';')
-
-        
-
-        # Exibir as colunas do arquivo CSV para depuração
-        print(f"Colunas do CSV carregado: {docente.columns}")
-
-        # Verificar se as colunas de comentários estão presentes antes de renomeá-las
-        if 'comentario sobre o programa' not in docente.columns or \
-           'comentario sobre a PRPPG' not in docente.columns:
-            print("Colunas de comentários não encontradas:")
-            flash('Colunas de comentários não encontradas no arquivo.', 'danger')
-            return redirect(url_for('avaliacaodocente.importar_planilhadocente'))
+        docente = renomear_colunas(docente)  # Certifique-se de que esta função está definida
 
         # Renomear colunas para aplicar a análise de sentimento
         docente.rename({
-            'comentario sobre o programa': 'Sentimento_Programa',
-            'comentario sobre a PRPPG': 'Sentimento_Pro_Reitoria'
+            'comentario_programa': 'Sentimento_Programa',
+            'comentario_prppg': 'Sentimento_Pro_Reitoria',
+            'producao_internacional': 'Sentimento_ProducaoInternacional'
         }, axis=1, inplace=True)
 
-        # Remover linhas vazias das colunas de comentários
-        df_comentarios = docente[['Sentimento_Programa', 'Sentimento_Pro_Reitoria']].dropna(how='all')
+        # Remover linhas vazias das colunas de comentários e substituir valores nulos
+        df_comentarios = docente[['Sentimento_Programa', 'Sentimento_Pro_Reitoria', 'Sentimento_ProducaoInternacional']].dropna(how='all')
+        df_comentarios.fillna('', inplace=True)
 
-        if df_comentarios.empty or (df_comentarios['Sentimento_Programa'].isnull().all() and df_comentarios['Sentimento_Pro_Reitoria'].isnull().all()):
+        if df_comentarios.empty:
             flash('Nenhum comentário suficiente disponível para análise de sentimento.', 'warning')
             return redirect(url_for('avaliacaodocente.importar_planilhadocente'))
 
         # Aplicar a função de sentimento para cada comentário
         df_comentarios['Sent_Programa_Score'] = df_comentarios['Sentimento_Programa'].apply(lambda x: analisar_sentimento(str(x)) if pd.notna(x) else None)
         df_comentarios['Sent_Pro_Reitoria_Score'] = df_comentarios['Sentimento_Pro_Reitoria'].apply(lambda x: analisar_sentimento(str(x)) if pd.notna(x) else None)
+        df_comentarios['Sent_ProducaoInternacional_Score'] = df_comentarios['Sentimento_ProducaoInternacional'].apply(lambda x: analisar_sentimento(str(x)) if pd.notna(x) else None)
 
         # Quebrar os resultados do VADER (dicionário) em colunas separadas
         df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_Programa_Score']).add_prefix('Programa_'))
         df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_Pro_Reitoria_Score']).add_prefix('Pro_Reitoria_'))
+        df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_ProducaoInternacional_Score']).add_prefix('ProducaoInternacional_'))
 
-        # Exibir a média dos sentimentos para as duas áreas
+        # Calcular a média dos sentimentos para cada área
         media_sentimentos_programa = df_comentarios['Programa_compound'].mean()
         media_sentimentos_prppg = df_comentarios['Pro_Reitoria_compound'].mean()
+        media_sentimentos_producao_internacional = df_comentarios['ProducaoInternacional_compound'].mean()
 
-        # Filtrar comentários negativos e positivos para o Programa de Pós-Graduação
+        # Contar sentimentos do Programa
         total_negativos_programa = len(df_comentarios[df_comentarios['Programa_compound'] < 0])
         total_positivos_programa = len(df_comentarios[df_comentarios['Programa_compound'] > 0])
         total_neutros_programa = len(df_comentarios[df_comentarios['Programa_compound'] == 0])
 
-        # Criar gráficos de barras para a distribuição de sentimentos
-        dados_sentimentos = {'Negativos': total_negativos_programa, 'Positivos': total_positivos_programa, 'Neutros': total_neutros_programa}
+        # Criar gráfico
         fig, ax = plt.subplots(figsize=(8, 6))
-        ax.bar(dados_sentimentos.keys(), dados_sentimentos.values(), color=['red', 'green', 'gray'])
+        ax.bar(['Negativos', 'Positivos', 'Neutros'], [total_negativos_programa, total_positivos_programa, total_neutros_programa], color=['red', 'green', 'gray'])
         ax.set_title('Distribuição de Sentimentos sobre o Programa de Pós-Graduação')
         ax.set_xlabel('Tipo de Sentimento')
         ax.set_ylabel('Número de Comentários')
 
-        # Salvar o gráfico em buffer
+        # Salvar o gráfico no buffer
         img = io.BytesIO()
         plt.savefig(img, format='png')
         img.seek(0)
+        grafico_sentimentos = base64.b64encode(img.getvalue()).decode('utf-8')
         plt.close(fig)
 
-        # Codificar a imagem em base64 para renderizar no HTML
-        grafico_sentimentos = base64.b64encode(img.getvalue()).decode('utf-8')
-
-        return render_template('sentimentodocente.html', grafico_sentimentos=grafico_sentimentos,
-                               media_programa=media_sentimentos_programa, media_prppg=media_sentimentos_prppg)
+        # Renderizar o template com os dados calculados e o gráfico
+        return render_template('sentimentodocente.html', 
+                               grafico_sentimentos=grafico_sentimentos,
+                               media_programa=media_sentimentos_programa, 
+                               media_prppg=media_sentimentos_prppg,
+                               media_producao_internacional=media_sentimentos_producao_internacional)
 
     except Exception as e:
         flash(f"Erro ao processar os sentimentos: {e}", 'danger')
@@ -491,10 +553,9 @@ def analisar_dados_ia():
         docente = pd.read_csv(file_path, delimiter=';')
 
         # Renomear as colunas como no seu Colab
-        docente.rename({
-            
+        docente.rename({            
 
- 'A qual  programa esta vinculado?':'programa',
+            'A qual  programa esta vinculado?':'programa',
             'Ha quanto tempo esta vinculado ao referido Programas de Pos-Graduacao?':'tempo_programa',
             'Como voce avalia a qualidade das aulas e do material utilizado?[Qualidade das aulas]':'Qualidade_aulas',
             'Como voce avalia a qualidade das aulas e do material utilizado? [Material didatico utilizado nas disciplinas]':'Material_didatico',
@@ -519,19 +580,18 @@ def analisar_dados_ia():
             'Voce acredita que os projetos de pesquisa orientados por voce nesse Programa possuem relevancia e pertinencia econômica?':'orientados_ relevancia_economica',
             'Voce acredita que os projetos de pesquisa orientados por voce nesse Programa promovem avanco cientifico?':'orientados_avanco_cientifico',
             'O seu Programa possui visao, missao e objetivos claros?':'visao-missao-objetivos',
-            'Voce acredita que os projetos de pesquisa orientados por você nesse programa estão alinhados com o objetivo e missao de seu Programa?':'projetos_objetivo-missao',
-            'Quais são os principais atores que podem ser impactados pelas pesquisas sob sua orientacao nesse Programa e das producoes cientificas delas decorrentes? (Marque todas que se aplicam).':'ator_producao cientifica',
-            'Voce tem iniciativa de prover captação de recurso externo para o desenvolvimento de seus projetos de pesquisa (exceto bolsa)?':'recurso_externo',
-            'Na sua opiniao, o que e preciso para que o seu Programa tenha producao de conhecimento cientifico e tecnologico qualificado, reconhecido pela comunidade científica internacional da área em que atua?':'producao_internacional',
-            'Produção de inovacaão tecnologica e uma prioridade em seu programa de pos-graduacao?':'inovacao_tecnologica_programa',
+            'Voce acredita que os projetos de pesquisa orientados por voce nesse programa estao alinhados com o objetivo e missao de seu Programa?':'projetos_objetivo_missao',
+            'Voce tem iniciativa de prover captacao de recurso externo para o desenvolvimento de seus projetos de pesquisa (exceto bolsa)?':'recurso_externo',
+            'Na sua opiniao, o que e preciso para que o seu Programa tenha producao de conhecimento cientifico e tecnologico qualificado, reconhecido pela comunidade científica internacional da area em que atua?':'producao_internacional',
+            'Producao de inovacao tecnologica e uma prioridade em seu programa de pos-graduacao?':'inovacao_tecnologica_programa',
             'Voce acredita que a linha de pesquisa em que atua nesse Programa se destaca pela producao de inovacao tecnologica?':'linha_inovacao_tecnologica',
-            'Voce ja depositou alguma patente proveniente dos resultados das pesquisas por você orientadas nesse Programa, ou possui isso como um dos objetivos de algum desses projetos de pesquisa?':'patente',
+            'Voce ja depositou alguma patente proveniente dos resultados das pesquisas por voce orientadas nesse Programa, ou possui isso como um dos objetivos de algum desses projetos de pesquisa?':'patente',
             'Alguma tecnologia de APLICAcaO SOCIAL ja foi criada como resultado das pesquisas por voce orientadas nesse Programa, ou possui isso como um dos objetivos de algum desses projetos de pesquisa?':'tecnologia_social_orientada',
-            'Os resultados das pesquisas por você orientadas ja foram apresentados em algum evento voltado para a COMUNIDADE, ou pretende apresentar?':'projetos_orientados_sociedade',
-            'Os resultados das pesquisas por você orientadas ja foram apresentados em algum evento CIENTiFICO, ou pretende apresentar?':'projetos_orientados_evento_cientifico',
-            'Os projetos de pesquisa sob sua orientação poderao gerar solucoes para os problemas que a sociedade enfrenta ou vira a enfrentar?':'projetos_orientados_solucoes_sociedade',
+            'Os resultados das pesquisas por voce orientadas ja foram apresentados em algum evento voltado para a COMUNIDADE, ou pretende apresentar?':'projetos_orientados_sociedade',
+            'Os resultados das pesquisas por voce orientadas ja foram apresentados em algum evento CIENTiFICO, ou pretende apresentar?':'projetos_orientados_evento_cientifico',
+            'Os projetos de pesquisa sob sua orientacao poderao gerar solucoes para os problemas que a sociedade enfrenta ou vira a enfrentar?':'projetos_orientados_solucoes_sociedade',
             'Quais os principais impactos sociais a serem promovidos por seus projetos de pesquisa? (Marque todas aplicaveis)':'impactos_sociais',
-            'Qual o nivel de internacionalização do seu programa?':'nivel_internacionalizacao',
+            'Qual o nivel de internacionalizacao do seu programa?':'nivel_internacionalizacao',
             'No momento, ha interesse por parte do seu Programa de Pos-Graduacao em iniciar um processo de Internacionalizacao?':'interesse_ programa_internacionalizacao',
             'Voce se sente preparado para a internacionalizacao do seu Programa de Pos-Graduacao?':'voce_preparado_internacionalizacao',
             'Voce entende que o seu Programa de Pos-Graduacao esta preparado para a internacionalizacao?':'programa_ preparado_internacionalizacao',
@@ -541,7 +601,7 @@ def analisar_dados_ia():
             'Qual o seu nivel de formacao?':'nivel_formacao',
             'Qual o seu programa de pos-graduacao?':'programa',
             'Gostaria de adicionar algum comentario referente ao Programa de Pos-Graduacao em questao?':'comentario_programa',
-            'Gostaria de adicionar algum comentario referente a Pró-Reitoria de Pesquisa e Pos-Graduacao?':'comentario_PRPPG'
+            'Gostaria de adicionar algum comentario referente a Pro-Reitoria de Pesquisa e Pos-Graduacao?':'comentario_prppg'
             }, axis=1, inplace=True)           
 
 
@@ -550,8 +610,7 @@ def analisar_dados_ia():
         colunas_organizacao = ['regimento_interno', 'papel_orientador', 'normas_capes',
                                'avaliacao_capes','regimento_geral']
         colunas_infraestrutura = ['Insumos_ pesquisa','Infraestrutura_geral', 'Laboratorio_Salas']
-        colunas_relacionamentos = ['relacionamento_ professores', 'relacionamento_coordenador',
-                                   'relacionamento_discentes', 'relacionamento_secretaria']
+        colunas_relacionamentos = ['relacionamento_ professores', 'relacionamento_coordenador','relacionamento_discentes', 'relacionamento_secretaria']
         colunas_internacionalizacao = ['interesse_ programa_internacionalizacao', 'voce_preparado_internacionalizacao',
                                        'programa_ preparado_internacionalizacao', 'proficiencia_ingles','projetos_instituicoes_internacionais','ministrar_ingles']
 
@@ -645,3 +704,146 @@ def analisar_dados_ia():
     except Exception as e:
         flash(f"Erro ao processar os dados: {e}", 'danger')
         return redirect(url_for('avaliacaodocente.importar_planilhadocente'))
+    
+# Função para substituir "Sim"/"Não" e valores problemáticos
+def limpar_dados(df):
+    df.replace({
+        "Sem condições de avaliar": np.nan,
+        "Sem condiÃ§Ãµes de avaliar": np.nan,
+        "Sem condicoes de avaliar": np.nan,
+        "Não se aplica": np.nan
+    }, inplace=True)
+    return df
+#########################################################################################################
+@avaliacaodocente_route.route('/exibir_recomendacoes_programa', methods=['GET'])
+def exibir_recomendacoes_programa():
+    try:
+        file_path = os.path.join(UPLOAD_FOLDER, 'docente.csv')
+        if not os.path.exists(file_path):
+            flash('Arquivo "docente.csv" não encontrado na pasta uploads.', 'danger')
+            return redirect(url_for('avaliacaodocente.importar_planilhadocente'))
+        
+        # Carregar, limpar e renomear colunas do CSV
+        docente = pd.read_csv(file_path, delimiter=';')
+        docente = renomear_colunas(docente)
+        docente = limpar_dados(docente)
+            
+        # Garantir que as colunas relevantes são numéricas
+        colunas_qualidade = ['Qualidade_aulas', 'Material_didatico','Acervo_disponivel']
+        colunas_organizacao = ['regimento_interno', 'papel_orientador', 'normas_capes', 'avaliacao_capes', 'regimento_geral']
+        colunas_infraestrutura = ['Insumos_pesquisa','Infraestrutura_geral', 'Laboratorio_Salas']
+        colunas_relacionamentos = ['relacionamento_professores', 'relacionamento_coordenador', 'relacionamento_discentes', 'relacionamento_secretaria']
+        colunas_internacionalizacao = ['interesse_programa_internacionalizacao', 'voce_preparado_internacionalizacao', 'programa_preparado_internacionalizacao', 'proficiencia_ingles', 'projetos_instituicoes_internacionais', 'ministrar_ingles']
+        colunas_projetospesquisa = ['projetos_objetivo_missao','recurso_externo']
+        colunas_inovacaopesquisa = ['inovacao_tecnologica_programa', 'linha_inovacao_tecnologica', 'patente', 'tecnologia_social_orientada']
+        colunas_apresentacaopesquisa = ['projetos_orientados_evento_cientifico', 'projetos_orientados_solucoes_sociedade', 'impactos_sociais']
+
+        # Converter colunas para numérico e tratar valores ausentes
+        def converter_para_numerico(df, colunas):
+            for coluna in colunas:
+                df[coluna] = pd.to_numeric(df[coluna], errors='coerce')
+            return df
+
+        docente = converter_para_numerico(docente, colunas_qualidade + colunas_organizacao + colunas_infraestrutura + colunas_relacionamentos + colunas_internacionalizacao + colunas_projetospesquisa + colunas_inovacaopesquisa + colunas_apresentacaopesquisa)
+
+        # Calcular médias por grupo
+        docente['Media_Qualidade'] = docente[colunas_qualidade].mean(axis=1)
+        docente['Media_Organizacao'] = docente[colunas_organizacao].mean(axis=1)
+        docente['Media_Infraestrutura'] = docente[colunas_infraestrutura].mean(axis=1)
+        docente['Media_Relacionamentos'] = docente[colunas_relacionamentos].mean(axis=1)
+        docente['Media_Internacionalizacao'] = docente[colunas_internacionalizacao].mean(axis=1)
+        docente['Media_projetospesquisa'] = docente[colunas_projetospesquisa].mean(axis=1)
+        docente['Media_inovacaopesquisa'] = docente[colunas_inovacaopesquisa].mean(axis=1)
+        docente['Media_apresentacaopesquisa'] = docente[colunas_apresentacaopesquisa].mean(axis=1)
+
+        # Agrupar por programa e calcular médias
+        df_por_programa = docente.groupby('programa').agg({
+            'Media_Qualidade': 'mean',
+            'Media_Organizacao': 'mean',
+            'Media_Infraestrutura': 'mean',
+            'Media_Relacionamentos': 'mean',
+            'Media_Internacionalizacao': 'mean',
+            'Media_projetospesquisa': 'mean',
+            'Media_inovacaopesquisa': 'mean',
+            'Media_apresentacaopesquisa': 'mean'
+        }).reset_index()
+
+        # Gerar recomendações para cada programa
+        recomendacoes_programa = gerar_recomendacoes_programa(df_por_programa)
+
+        # Passar recomendações para o template
+        return render_template('recomendacaodocente.html', recomendacoes=recomendacoes_programa)
+    
+    except Exception as e:
+        flash(f"Erro ao gerar recomendações: {e}", 'danger')
+        return redirect(url_for('avaliacaodocente.importar_planilhadocente'))
+
+def gerar_recomendacoes_programa(df_agrupado):
+    recomendacoes_por_programa = {}
+
+    for _, row in df_agrupado.iterrows():
+        programa = row['programa']
+        recomendacoes = []
+
+        # Regras de recomendações para diferentes categorias
+        if row['Media_Qualidade'] < 3:
+            recomendacoes.append({
+                "objetivo": "Melhorar a qualidade das aulas e do material didático",
+                "meta": "Aumentar a média de satisfação para pelo menos 4.0 nos próximos 6 meses",
+                "indicador": "Média de avaliações sobre qualidade de aulas e materiais"
+            })
+
+        if row['Media_Organizacao'] < 3:
+            recomendacoes.append({
+                "objetivo": "Reavaliar e aprimorar a organização do programa",
+                "meta": "Garantir que 80% dos alunos entendam as normas e o funcionamento do programa",
+                "indicador": "Percentual de alunos que avaliam positivamente o entendimento sobre normas"
+            })
+
+        if row['Media_Infraestrutura'] < 3:
+            recomendacoes.append({
+                "objetivo": "Investir em infraestrutura para apoio acadêmico",
+                "meta": "Alocar recursos para melhorar laboratórios e insumos de pesquisa até o próximo semestre",
+                "indicador": "Nível de satisfação com infraestrutura e laboratórios"
+            })
+
+        if row['Media_Relacionamentos'] < 3:
+            recomendacoes.append({
+                "objetivo": "Fortalecer o relacionamento entre alunos e equipe acadêmica",
+                "meta": "Aumentar a média de satisfação para 4.0 na área de relacionamentos",
+                "indicador": "Média de avaliações sobre relacionamentos com orientadores, coordenadores e colegas"
+            })
+
+        if row['Media_Internacionalizacao'] < 3:
+            recomendacoes.append({
+                "objetivo": "Promover a internacionalização do programa",
+                "meta": "Aumentar a média de proficiência em inglês para 4.0 e criar 2 novas parcerias internacionais",
+                "indicador": "Média de proficiência em inglês e número de parcerias internacionais"
+            })
+
+        # Regras para as categorias adicionais
+        if row['Media_projetospesquisa'] < 3:
+            recomendacoes.append({
+                "objetivo": "Aumentar a relevância e impacto dos projetos de pesquisa",
+                "meta": "Elevar a média de satisfação para 4.0 nos próximos 6 meses",
+                "indicador": "Média de avaliações sobre projetos de pesquisa"
+            })
+
+        if row['Media_inovacaopesquisa'] < 3:
+            recomendacoes.append({
+                "objetivo": "Estimular a inovação na pesquisa científica",
+                "meta": "Implementar 3 novos projetos de inovação tecnológica no próximo ano",
+                "indicador": "Número de projetos de inovação e média de avaliação de inovação"
+            })
+
+        if row['Media_apresentacaopesquisa'] < 3:
+            recomendacoes.append({
+                "objetivo": "Aumentar a visibilidade das pesquisas em eventos acadêmicos",
+                "meta": "Garantir que 75% dos alunos apresentem seus trabalhos em pelo menos um evento acadêmico",
+                "indicador": "Percentual de alunos que participam de apresentações de pesquisa"
+            })
+
+        # Adiciona as recomendações para o programa, ou "Sem recomendações específicas" se vazio
+        recomendacoes_por_programa[programa] = recomendacoes if recomendacoes else ["Sem recomendações específicas."]
+
+    return recomendacoes_por_programa

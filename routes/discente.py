@@ -529,35 +529,50 @@ def aplicar_regressao(discentecurso):
     mse = mean_squared_error(y_test, model.predict(X_test))
     return f'MSE da regressão: {mse}'
 
-# Função para aplicar a análise de sentimento e retornar o gráfico como base64
-def aplicar_analise_sentimentos(discentecurso):
-    # Renomear colunas para aplicar a análise de sentimento
-    discentecurso.rename({
-        'comentario_programa': 'Sentimento_Programa',
-        'comentario_PRPPG': 'Sentimento_Pro_Reitoria'
+
+def aplicar_analise_sentimentos(secretaria):
+    # Normalizar colunas para evitar problemas com nomes
+    secretaria = normalize_column_names(secretaria)
+
+    # Verificar se as colunas esperadas estão presentes após a normalização
+    expected_columns = ['sugestoes', 'sistema_acompanhamento_egressos', 'consideracoes_egressos']
+    missing_columns = [col for col in expected_columns if col not in secretaria.columns]
+
+    if missing_columns:
+        flash(f"Colunas faltando no arquivo: {', '.join(missing_columns)}", 'danger')
+        return None  # Interrompe a execução se houver colunas faltando
+
+    # Continuar com a análise de sentimentos
+    secretaria.rename({
+        'sugestoes': 'Sentimento_Programa',
+        'consideracoes_egressos': 'Sentimento_Pro_Reitoria'
     }, axis=1, inplace=True)
 
-    # Remover linhas vazias das colunas de comentários
-    df_comentarios = discentecurso[['Sentimento_Programa', 'Sentimento_Pro_Reitoria']].dropna(how='all')
+    # Remover linhas vazias nas colunas de comentários
+    df_comentarios = secretaria[['Sentimento_Programa', 'Sentimento_Pro_Reitoria']].dropna(how='all')
 
-    # Aplicar a função de sentimento para cada comentário
+    if df_comentarios.empty:
+        flash('Nenhum comentário suficiente disponível para análise de sentimento.', 'warning')
+        return None
+
+    # Aplicar a análise de sentimento
     df_comentarios['Sent_Programa_Score'] = df_comentarios['Sentimento_Programa'].apply(lambda x: analisar_sentimento(str(x)) if pd.notna(x) else None)
     df_comentarios['Sent_Pro_Reitoria_Score'] = df_comentarios['Sentimento_Pro_Reitoria'].apply(lambda x: analisar_sentimento(str(x)) if pd.notna(x) else None)
 
-    # Quebrar os resultados do VADER (dicionário) em colunas separadas
+    # Expandir os resultados do VADER em colunas
     df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_Programa_Score']).add_prefix('Programa_'))
     df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_Pro_Reitoria_Score']).add_prefix('Pro_Reitoria_'))
 
-    # Calcular a média dos sentimentos
+    # Cálculo das médias
     media_sentimentos_programa = df_comentarios['Programa_compound'].mean()
     media_sentimentos_prppg = df_comentarios['Pro_Reitoria_compound'].mean()
 
-    # Contar sentimentos negativos, positivos e neutros
+    # Contar sentimentos positivos, negativos e neutros
     total_negativos_programa = len(df_comentarios[df_comentarios['Programa_compound'] < 0])
     total_positivos_programa = len(df_comentarios[df_comentarios['Programa_compound'] > 0])
     total_neutros_programa = len(df_comentarios[df_comentarios['Programa_compound'] == 0])
 
-    # Criar gráfico de barras para distribuição de sentimentos
+    # Criar gráfico de distribuição dos sentimentos
     dados_sentimentos = {'Negativos': total_negativos_programa, 'Positivos': total_positivos_programa, 'Neutros': total_neutros_programa}
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.bar(dados_sentimentos.keys(), dados_sentimentos.values(), color=['red', 'green', 'gray'])
@@ -565,15 +580,16 @@ def aplicar_analise_sentimentos(discentecurso):
     ax.set_xlabel('Tipo de Sentimento')
     ax.set_ylabel('Número de Comentários')
 
-    # Salvar gráfico em buffer
+    # Salvar o gráfico em buffer e codificar em base64
     img = io.BytesIO()
     plt.savefig(img, format='png')
     img.seek(0)
     plt.close(fig)
-
-    # Retornar gráfico como base64
     grafico_sentimentos = base64.b64encode(img.getvalue()).decode('utf-8')
+
     return grafico_sentimentos
+
+
 
 @discente_route.route('/executar_analise')
 def executar_analise():

@@ -105,10 +105,23 @@ def importar_planilhaegresso():
 
     return render_template('importar_planilhaegresso.html')
 
-def normalize_column_names(df):
-    df.columns = [unicodedata.normalize('NFKD', col).encode('ascii', 'ignore').decode('utf-8').strip().lower().replace('  ', ' ').replace(' ', '_').replace('[', '').replace(']', '') for col in df.columns]
-    return df
 
+def normalize_column_names(df):
+    df.columns = [
+        unicodedata.normalize('NFKD', col)
+        .encode('ascii', 'ignore')
+        .decode('utf-8')
+        .strip()
+        .lower()
+        .replace('  ', ' ')
+        .replace(' ', '_')
+        .replace('[', '')
+        .replace(']', '')
+        .replace('<', '')
+        .replace('>', '')
+        for col in df.columns
+    ]
+    return df
 # Função para calcular a média dos dígitos de uma string de números
 def calcular_media_digitos(valor):
     try:
@@ -117,20 +130,79 @@ def calcular_media_digitos(valor):
     except (ValueError, TypeError):
         return None  # Retornar None se houver erro na conversão
 
-# Função para garantir que colunas numéricas sejam convertidas adequadamente
+# Função para limpar e aplicar a média dos dígitos nas colunas problemáticas
 def limpar_e_converter_para_numeric(df, colunas):
-    # Substituir os valores problemáticos por NaN
-    df.replace("Sem condições de avaliar", np.nan, inplace=True)
-    df.replace("Sem condiÃ§Ãµes de avaliar", np.nan, inplace=True)
-    df.replace("Sem condicoes de avaliar", np.nan, inplace=True)
-    df.replace({'Sim': 1, 'Não': 0, 'NÃO': 0, 'Nao': 0}, inplace=True)
+    # Substituir os valores problemáticos por 0
+    df.replace("Sem condições de avaliar", 0, inplace=True)
+    df.replace("Sem condiÃ§Ãµes de avaliar", 0, inplace=True)
+    df.replace("Sem condicoes de avaliar", 0, inplace=True)
+
+    df.replace({'Sim': 1,'sim':1, 'NÃO': 0, 'Não': 0, 'Nao': 0}, inplace=True)
     
     for col in colunas:
-        # Tentar converter todas as colunas em numérico, e substituir erros por NaN
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-    
+        df[col] = df[col].apply(calcular_media_digitos)  # Aplicar a função de média dos dígitos
     return df
 
+# Função para renomear colunas de forma segura
+def renomear_colunas(egresso):
+    # Dicionário de colunas para renomear
+    colunas_para_renomear = {
+                    'Como voce identifica seu genero?':'genero', 
+                    'Qual o ultimo nivel de formacao que voce obteve na UNIFEI?':'ultima_formacao',
+                    'Qual o seu ano de conclusao?':'ano_conclusao',
+                    'A qual programa esteve vinculado?':'programa',
+                    'Em uma escala de 0 a 10, o quanto voce recomendaria o Programa em que realizou sua pos-graduacao na UNIFEI?':'recomendacao_programa',
+                    'Como voce avalia a qualidade das aulas e do material utilizado no Programa? [Qualidade das aulas]':'qualidade_aulas',
+                    'Como voce avalia a qualidade das aulas e do material utilizado no Programa? [Material didatico utilizado nas disciplinas]':'material_didatico',
+                    'Como voce avalia a qualidade das aulas e do material utilizado no Programa? [Acervo disponivel para consulta]':'acervo_consulta',
+                    'Como voce avalia a infraestrutura do programa durante seu periodo na UNIFEI? [Infraestrutura geral]':'infraestrututra_geral',
+                    'Como voce avalia a infraestrutura do programa durante seu periodo na UNIFEI? [Laboratorios de pesquisa/Salas de estudo]':'laboratorios_sala',
+                    'Como voce avalia a infraestrutura do programa durante seu periodo na UNIFEI? [Insumos para pesquisa]':'insumos_pesquisa',
+                    'Como voce avalia o relacionamento entre voce e: [os colegas]':'relacionamento_colegas',
+                    'Como voce avalia o relacionamento entre voce e: [a comissao orientadora]':'relacionamento_orientador',
+                    'Como voce avalia o relacionamento entre voce e: [a comissao coordenadora]':'relacionamento_coordenador',
+                    'Como voce avalia o relacionamento entre voce e: [a secretaria do programa]':'relacionamento_secretaria',
+                    'Como voce avalia a gestao do programa? [Processo de gestao/Administrativo do Programa]':'administrativo',
+                    'Como voce avalia a gestao do programa? [Organizacao do Programa]':'organizacao_programa',
+                    'Em relacao a sua TESE/DISSERTAcaO, voce ficou:':'satisfacao_dissertacao_tese',
+                    'Em relacao a sua PRODUcaO CIENTiFICA, voce ficou satisfeito:':'satisfacao_producao',
+                    'Voce acredita que a sua pesquisa teve relevancia e pertinencia social?':'relevancia_social',
+                    'Voce acredita que a sua pesquisa teve relevancia e pertinencia economico?':'relevancia_economico',
+                    'Voce acredita que a sua pesquisa teve relevancia e pertinencia ambiental?':'relevancia_ambiental',
+                    'Voce acredita que a sua pesquisa promoveu o avanco cientifico?':'pesquisa_cientifico',
+                    'Voce acredita que sua pesquisa esteve alinhada com missao, visao e objetivos de seu Programa?':'missao-visao-objetivos',
+                    'Voce recebeu bolsa de pos-graduacao?':'bolsa',
+                    'Para a realizacao de seu projeto de pesquisa houve algum tipo de captacao de recurso externo (exceto bolsa)?':'recurso_externo',
+                    'O programa de pos-graduacao em que atuou tem como objetivo a producao de inovacao tecnologica?':'inovacao_programa',
+                    'Voce acredita que a linha de pesquisa em que atuou se destaca pela producao de inovacao tecnologica?':'linha_pesquisa_inovacao',
+                    'Voce depositou alguma patente proveniente de sua pesquisa?':'patente',
+                    'O programa de pos-graduacao em que atuou tem como objetivo a producao de tecnologias de APLICAcaO SOCIAL?':'programa_aplicacao_social',
+                    'Alguma tecnologia de aplicacao social foi criada como resultado de sua pesquisa?':'pesquisa_tecnologia_social',
+                    'Voce ja apresentou algum resultado de sua pesquisa em algum evento voltado para a sociedade, ou pretende apresentar?':'evento_sociedade',
+                    'Voce ja apresentou algum resultado de sua pesquisa em algum evento CIENTiFICO, ou pretende apresentar?':'evento_cientifico',
+                    'Sua pesquisa gerou solucões para os problemas que a sociedade enfrenta ou vira a enfrentar?':'solucao_pesquica_sociedade',
+                    'Qual foi o principal impacto social promovido por seu projeto de pesquisa? (Marque todas aplicaveis)':'impacto_projeto',
+                    'Seu projeto de pesquisa possuiu parcerias com instituicoes internacionais de pesquisa ou ensino?':'parceria_internacional',
+                    'Quando aluno da UNIFEI, teve a oportunidade de fazer parte da sua pos-graduacao em outra instituicao (Nacional ou Internacional)?':'aluno_outra_instituicao',
+                    'Se sim, onde? Qual nivel? Qual foi o periodo de duracao (mes/ano)?':'lugar_nivel',
+                    'Em sua trajetoria profissional, teve a oportunidade de atuar fora do Brasil?':'profissional_exterior',
+                    'Caso se sinta a vontade, pedimos que compartilhe como fez para pleitear a oportunidade fora do Brasil.':'pleitear',
+                    'Qual sua colocacao profissional atualmente?':'colocacao_profissional_hoje',
+                    'Seu emprego esta relacionado a sua area de formacao na pos-graduacao da UNIFEI?':'emprego_formacao',
+                    'Qual a sua faixa salarial e/ou de rendimentos em moeda do seu pais atual? Destacamos que esta informacao tem sido requisitada ao Programas de Pos-Graduacao pela Capes e que nao sera divulgada expondo a realidade individual do egresso (em caso de moeda estrangeira, necessario realizar conversao para moeda brasileira).':'faixa_salarial',
+                    'Voce teve dificuldade para conseguir o primeiro emprego?':'dificuldade_primeiro_emprego',
+                    'Caso tenha tido/tenha dificuldade para conseguir o primeiro emprego, o que poderia ser melhorado no programa, visando maior insercao no mercado de trabalho?':'melhoria_emprego',
+                    'Teve bolsa de iniciacao cientifica na graduacao?':'bolsa_cientifica_graduacao',
+                    'Voce teve recursos e estrutura fisica suficiente para a conducao dos seus experimentos?':'recursos_experimentos',
+                    'Gostariamos de saber sua satisfacao pessoal e profissional com relacao a sua formacao na UNIFEI. Fique a vontade em descreve-las.':'satisfacao_formacao',
+                    'Gostaria de adicionar algum comentario referente a Pro-Reitoria de Pesquisa e Pos-Graduacao?':'cometario_prppg'
+       
+         }
+     # Renomear apenas colunas existentes no DataFrame
+    colunas_existentes = {col: colunas_para_renomear[col] for col in colunas_para_renomear if col in egresso.columns}
+    egresso.rename(columns=colunas_existentes, inplace=True)
+    return egresso
+           
 
 @avaliacaoegresso_route.route('/gerar_graficos_completos_egressos')
 def gerar_graficos_completos_egressos():
@@ -152,26 +224,23 @@ def gerar_graficos_completos_egressos():
     try:
         # Tentar ler o arquivo CSV e remover o BOM
         with open(file_path, 'r', encoding='utf-8-sig') as f:
-            egresso = pd.read_csv(f, delimiter=';')
+            egresso = pd.read_csv(f, delimiter=';')      
 
         # Imprimir as colunas originais para verificar o problema
-        print("Colunas originais:", egresso.columns.tolist())
+            print("Colunas originais:", egresso.columns.tolist())
+        
 
         # Renomear as colunas como no seu Colab
         egresso.rename({
                     'Como voce identifica seu genero?':'genero', 
-                    'Ano de nascimento':'ano_nascimento',
-                    'Voce se autodeclara':'Se_autodeclara',
-                    'Cidade, estado/provincia e pais de origem':'local_nascimento',
-                    'você acredita que a sua pesquisa promoveu o avanço científico?':'local_reside',
-                    '1. Qual o ultimo nivel de formacao que voce obteve na UNIFEI?':'ultima_formacao',
-                    '2. Qual o seu ano de conclusao?':'ano_conclusao',
-                    '3. A qual programa esteve vinculado?':'programa',
-                    '4. Em uma escala de 0 a 10, o quanto voce recomendaria o Programa em que realizou sua pos-graduacao na UNIFEI?':'recomendacao_programa',
+                    'Qual o ultimo nivel de formacao que voce obteve na UNIFEI?':'ultima_formacao',
+                    'Qual o seu ano de conclusao?':'ano_conclusao',
+                    'A qual programa esteve vinculado?':'programa',
+                    'Em uma escala de 0 a 10, o quanto voce recomendaria o Programa em que realizou sua pos-graduacao na UNIFEI?':'recomendacao_programa',
                     'Como voce avalia a qualidade das aulas e do material utilizado no Programa? [Qualidade das aulas]':'qualidade_aulas',
                     'Como voce avalia a qualidade das aulas e do material utilizado no Programa? [Material didatico utilizado nas disciplinas]':'material_didatico',
                     'Como voce avalia a qualidade das aulas e do material utilizado no Programa? [Acervo disponivel para consulta]':'acervo_consulta',
-                    'Como voce avalia a infraestrutura do programa durante seu periodo na UNIFEI? [Infraestrutura geral]':'infraestrutura_geral',
+                    'Como voce avalia a infraestrutura do programa durante seu periodo na UNIFEI? [Infraestrutura geral]':'infraestrututra_geral',
                     'Como voce avalia a infraestrutura do programa durante seu periodo na UNIFEI? [Laboratorios de pesquisa/Salas de estudo]':'laboratorios_sala',
                     'Como voce avalia a infraestrutura do programa durante seu periodo na UNIFEI? [Insumos para pesquisa]':'insumos_pesquisa',
                     'Como voce avalia o relacionamento entre voce e: [os colegas]':'relacionamento_colegas',
@@ -182,12 +251,11 @@ def gerar_graficos_completos_egressos():
                     'Como voce avalia a gestao do programa? [Organizacao do Programa]':'organizacao_programa',
                     'Em relacao a sua TESE/DISSERTAcaO, voce ficou:':'satisfacao_dissertacao_tese',
                     'Em relacao a sua PRODUcaO CIENTiFICA, voce ficou satisfeito:':'satisfacao_producao',
-                    'Voce acredita que a sua pesquisa teve relevância e pertinencia social?':'relevancia_social',
-                    'Voce acredita que a sua pesquisa teve relevância e pertinencia economico?':'relevancia_economico',
-                    'Voce acredita que a sua pesquisa teve relevância e pertinencia ambiental?':'relevancia_ambiental',
+                    'Voce acredita que a sua pesquisa teve relevancia e pertinencia social?':'relevancia_social',
+                    'Voce acredita que a sua pesquisa teve relevancia e pertinencia economico?':'relevancia_economico',
+                    'Voce acredita que a sua pesquisa teve relevancia e pertinencia ambiental?':'relevancia_ambiental',
                     'Voce acredita que a sua pesquisa promoveu o avanco cientifico?':'pesquisa_cientifico',
                     'Voce acredita que sua pesquisa esteve alinhada com missao, visao e objetivos de seu Programa?':'missao-visao-objetivos',
-                    'Quais sao os principais atores que foram impactados por sua pesquisa e producao cientifica dela decorrente? (Marque todas que se aplicam).':'atores_imapctados_pesqusia',
                     'Voce recebeu bolsa de pos-graduacao?':'bolsa',
                     'Para a realizacao de seu projeto de pesquisa houve algum tipo de captacao de recurso externo (exceto bolsa)?':'recurso_externo',
                     'O programa de pos-graduacao em que atuou tem como objetivo a producao de inovacao tecnologica?':'inovacao_programa',
@@ -199,11 +267,10 @@ def gerar_graficos_completos_egressos():
                     'Voce ja apresentou algum resultado de sua pesquisa em algum evento CIENTiFICO, ou pretende apresentar?':'evento_cientifico',
                     'Sua pesquisa gerou solucões para os problemas que a sociedade enfrenta ou vira a enfrentar?':'solucao_pesquica_sociedade',
                     'Qual foi o principal impacto social promovido por seu projeto de pesquisa? (Marque todas aplicaveis)':'impacto_projeto',
-                    'Seu projeto de pesquisa possuiu parcerias com instituicões internacionais de pesquisa ou ensino?':'parceria_internacional',
+                    'Seu projeto de pesquisa possuiu parcerias com instituicoes internacionais de pesquisa ou ensino?':'parceria_internacional',
                     'Quando aluno da UNIFEI, teve a oportunidade de fazer parte da sua pos-graduacao em outra instituicao (Nacional ou Internacional)?':'aluno_outra_instituicao',
                     'Se sim, onde? Qual nivel? Qual foi o periodo de duracao (mes/ano)?':'lugar_nivel',
                     'Em sua trajetoria profissional, teve a oportunidade de atuar fora do Brasil?':'profissional_exterior',
-                    'Se sim, qual instituto, pais, funcao e quando?':'instituto-pais-funcao',
                     'Caso se sinta a vontade, pedimos que compartilhe como fez para pleitear a oportunidade fora do Brasil.':'pleitear',
                     'Qual sua colocacao profissional atualmente?':'colocacao_profissional_hoje',
                     'Seu emprego esta relacionado a sua area de formacao na pos-graduacao da UNIFEI?':'emprego_formacao',
@@ -220,13 +287,7 @@ def gerar_graficos_completos_egressos():
         print("Colunas após renomeação:", egresso.columns.tolist())
 
         # Definir as colunas necessárias
-        required_columns = ['qualidade_aulas', 'material_didatico', 'infraestrutura_geral']
-
-        # Verificar se as colunas necessárias estão presentes
-        missing_columns = [col for col in required_columns if col not in egresso.columns]
-        if missing_columns:
-            flash(f"As seguintes colunas estão faltando no arquivo: {', '.join(missing_columns)}", 'danger')
-            return redirect(url_for('avaliacaoegresso.importar_planilhaegresso'))
+        required_columns = ['qualidade_aulas', 'material_didatico', 'infraestrututra_geral']
 
         # Limpar e converter colunas para numérico
         egresso = limpar_e_converter_para_numeric(egresso, required_columns)
@@ -340,79 +401,75 @@ def analisar_sentimento(texto):
 @avaliacaoegresso_route.route('/analisar_sentimentos_egresso', methods=['GET'])
 def analisar_sentimentos_egresso():
     try:
-        # Simulação de leitura do arquivo já carregado
-        file_path = 'uploads/egresso.csv'  # Altere para o caminho correto do arquivo
+        # Caminho para o arquivo
+        file_path = 'uploads/egresso.csv'
         if not os.path.exists(file_path):
             flash('Arquivo não encontrado.', 'danger')
             return redirect(url_for('avaliacaoegresso.importar_planilhaegresso'))
 
+        # Carregar o arquivo CSV
         egresso = pd.read_csv(file_path, delimiter=';')
+        egresso = renomear_colunas(egresso)
+        egresso = limpar_dados(egresso)
 
-        
-
-        # Exibir as colunas do arquivo CSV para depuração
-        print(f"Colunas do CSV carregado: {egresso.columns}")
-
-        # Verificar se as colunas de comentários estão presentes antes de renomeá-las
-        if 'satisfacao_formacao' not in egresso.columns or \
-           'cometario_prppg' not in egresso.columns:
-            print("Colunas de comentários não encontradas:")
+        # Verificar se as colunas de comentários estão presentes
+        if 'satisfacao_formacao' not in egresso.columns or 'cometario_prppg' not in egresso.columns:
             flash('Colunas de comentários não encontradas no arquivo.', 'danger')
             return redirect(url_for('avaliacaoegresso.importar_planilhaegresso'))
 
         # Renomear colunas para aplicar a análise de sentimento
         egresso.rename({
-            'Gostaria de adicionar algum comentario referente seu Programa de Pos-Graduacao?': 'Sentimento_Programa',
-            'Gostaria de adicionar algum comentario referente a Pro-Reitoria de Pesquisa e Pos-Graduacao?': 'Sentimento_Pro_Reitoria'
+            'satisfacao_formacao': 'Sentimento_Programa',
+            'cometario_prppg': 'Sentimento_Pro_Reitoria'
         }, axis=1, inplace=True)
 
-        # Remover linhas vazias das colunas de comentários
-        df_comentarios = egresso[['Sentimento_Programa', 'Sentimento_Pro_Reitoria']].dropna(how='all')
+        # Garantir que os valores nas colunas de comentários são strings e substituir NaN por string vazia
+        egresso['Sentimento_Programa'] = egresso['Sentimento_Programa'].fillna('').astype(str)
+        egresso['Sentimento_Pro_Reitoria'] = egresso['Sentimento_Pro_Reitoria'].fillna('').astype(str)
 
-        if df_comentarios.empty or (df_comentarios['Sentimento_Programa'].isnull().all() and df_comentarios['Sentimento_Pro_Reitoria'].isnull().all()):
-            flash('Nenhum comentário suficiente disponível para análise de sentimento.', 'warning')
-            return redirect(url_for('avaliacaoegresso.importar_planilhaegresso'))
+        # Selecionar as colunas de comentários para análise
+        df_comentarios = egresso[['Sentimento_Programa', 'Sentimento_Pro_Reitoria']].copy()
 
-        # Aplicar a função de sentimento para cada comentário
-        df_comentarios['Sent_Programa_Score'] = df_comentarios['Sentimento_Programa'].apply(lambda x: analisar_sentimento(str(x)) if pd.notna(x) else None)
-        df_comentarios['Sent_Pro_Reitoria_Score'] = df_comentarios['Sentimento_Pro_Reitoria'].apply(lambda x: analisar_sentimento(str(x)) if pd.notna(x) else None)
+        # Aplicar a função de sentimento para cada comentário e lidar com valores vazios
+        df_comentarios['Sent_Programa_Score'] = df_comentarios['Sentimento_Programa'].apply(lambda x: analisar_sentimento(str(x)) if x else {'compound': 0})
+        df_comentarios['Sent_Pro_Reitoria_Score'] = df_comentarios['Sentimento_Pro_Reitoria'].apply(lambda x: analisar_sentimento(str(x)) if x else {'compound': 0})
 
-        # Quebrar os resultados do VADER (dicionário) em colunas separadas
+        # Expandir os resultados do VADER em colunas separadas
         df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_Programa_Score']).add_prefix('Programa_'))
         df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_Pro_Reitoria_Score']).add_prefix('Pro_Reitoria_'))
 
-        # Exibir a média dos sentimentos para as duas áreas
+        # Calcular médias dos sentimentos
         media_sentimentos_programa = df_comentarios['Programa_compound'].mean()
         media_sentimentos_prppg = df_comentarios['Pro_Reitoria_compound'].mean()
 
-        # Filtrar comentários negativos e positivos para o Programa de Pós-Graduação
+        # Contagem de tipos de sentimento para o gráfico
         total_negativos_programa = len(df_comentarios[df_comentarios['Programa_compound'] < 0])
         total_positivos_programa = len(df_comentarios[df_comentarios['Programa_compound'] > 0])
         total_neutros_programa = len(df_comentarios[df_comentarios['Programa_compound'] == 0])
 
-        # Criar gráficos de barras para a distribuição de sentimentos
-        dados_sentimentos = {'Negativos': total_negativos_programa, 'Positivos': total_positivos_programa, 'Neutros': total_neutros_programa}
+        # Criar gráfico de barras para visualização dos sentimentos
         fig, ax = plt.subplots(figsize=(8, 6))
-        ax.bar(dados_sentimentos.keys(), dados_sentimentos.values(), color=['red', 'green', 'gray'])
+        ax.bar(['Negativos', 'Positivos', 'Neutros'], [total_negativos_programa, total_positivos_programa, total_neutros_programa], color=['red', 'green', 'gray'])
         ax.set_title('Distribuição de Sentimentos sobre o Programa de Pós-Graduação')
         ax.set_xlabel('Tipo de Sentimento')
         ax.set_ylabel('Número de Comentários')
 
-        # Salvar o gráfico em buffer
+        # Salvar o gráfico no buffer
         img = io.BytesIO()
         plt.savefig(img, format='png')
         img.seek(0)
+        grafico_sentimentos = base64.b64encode(img.getvalue()).decode('utf-8')
         plt.close(fig)
 
-        # Codificar a imagem em base64 para renderizar no HTML
-        grafico_sentimentos = base64.b64encode(img.getvalue()).decode('utf-8')
-
-        return render_template('sentimentosegresso.html', grafico_sentimentos=grafico_sentimentos,
-                               media_programa=media_sentimentos_programa, media_prppg=media_sentimentos_prppg)
+        return render_template('sentimentoegresso.html', 
+                               grafico_sentimentos=grafico_sentimentos,
+                               media_programa=media_sentimentos_programa, 
+                               media_prppg=media_sentimentos_prppg)
 
     except Exception as e:
         flash(f"Erro ao processar os sentimentos: {e}", 'danger')
         return redirect(url_for('avaliacaoegresso.importar_planilhaegresso'))
+
 
 def normalize_column_names(df):
     df.columns = [
@@ -500,20 +557,15 @@ def analisar_dados_ia():
 
         # Renomear as colunas como no seu Colab
         egresso.rename({
-     
-                    'Como voce identifica seu genero?':'genero', 
-                    'Ano de nascimento':'ano_nascimento',
-                    'Voce se autodeclara':'Se_autodeclara',
-                    'Cidade, estado/provincia e pais de origem':'local_nascimento',
-                    'você acredita que a sua pesquisa promoveu o avanço científico?':'local_reside',
-                    '1. Qual o ultimo nivel de formacao que voce obteve na UNIFEI?':'ultima_formacao',
-                    '2. Qual o seu ano de conclusao?':'ano_conclusao',
-                    '3. A qual programa esteve vinculado?':'programa',
-                    '4. Em uma escala de 0 a 10, o quanto voce recomendaria o Programa em que realizou sua pos-graduacao na UNIFEI?':'recomendacao_programa',
+     'Como voce identifica seu genero?':'genero', 
+                    'Qual o ultimo nivel de formacao que voce obteve na UNIFEI?':'ultima_formacao',
+                    'Qual o seu ano de conclusao?':'ano_conclusao',
+                    'A qual programa esteve vinculado?':'programa',
+                    'Em uma escala de 0 a 10, o quanto voce recomendaria o Programa em que realizou sua pos-graduacao na UNIFEI?':'recomendacao_programa',
                     'Como voce avalia a qualidade das aulas e do material utilizado no Programa? [Qualidade das aulas]':'qualidade_aulas',
                     'Como voce avalia a qualidade das aulas e do material utilizado no Programa? [Material didatico utilizado nas disciplinas]':'material_didatico',
                     'Como voce avalia a qualidade das aulas e do material utilizado no Programa? [Acervo disponivel para consulta]':'acervo_consulta',
-                    'Como voce avalia a infraestrutura do programa durante seu periodo na UNIFEI? [Infraestrutura geral]':'infraestrutura_geral',
+                    'Como voce avalia a infraestrutura do programa durante seu periodo na UNIFEI? [Infraestrutura geral]':'infraestrututra_geral',
                     'Como voce avalia a infraestrutura do programa durante seu periodo na UNIFEI? [Laboratorios de pesquisa/Salas de estudo]':'laboratorios_sala',
                     'Como voce avalia a infraestrutura do programa durante seu periodo na UNIFEI? [Insumos para pesquisa]':'insumos_pesquisa',
                     'Como voce avalia o relacionamento entre voce e: [os colegas]':'relacionamento_colegas',
@@ -524,12 +576,11 @@ def analisar_dados_ia():
                     'Como voce avalia a gestao do programa? [Organizacao do Programa]':'organizacao_programa',
                     'Em relacao a sua TESE/DISSERTAcaO, voce ficou:':'satisfacao_dissertacao_tese',
                     'Em relacao a sua PRODUcaO CIENTiFICA, voce ficou satisfeito:':'satisfacao_producao',
-                    'Voce acredita que a sua pesquisa teve relevância e pertinencia social?':'relevancia_social',
-                    'Voce acredita que a sua pesquisa teve relevância e pertinencia economico?':'relevancia_economico',
-                    'Voce acredita que a sua pesquisa teve relevância e pertinencia ambiental?':'relevancia_ambiental',
+                    'Voce acredita que a sua pesquisa teve relevancia e pertinencia social?':'relevancia_social',
+                    'Voce acredita que a sua pesquisa teve relevancia e pertinencia economico?':'relevancia_economico',
+                    'Voce acredita que a sua pesquisa teve relevancia e pertinencia ambiental?':'relevancia_ambiental',
                     'Voce acredita que a sua pesquisa promoveu o avanco cientifico?':'pesquisa_cientifico',
                     'Voce acredita que sua pesquisa esteve alinhada com missao, visao e objetivos de seu Programa?':'missao-visao-objetivos',
-                    'Quais sao os principais atores que foram impactados por sua pesquisa e producao cientifica dela decorrente? (Marque todas que se aplicam).':'atores_imapctados_pesqusia',
                     'Voce recebeu bolsa de pos-graduacao?':'bolsa',
                     'Para a realizacao de seu projeto de pesquisa houve algum tipo de captacao de recurso externo (exceto bolsa)?':'recurso_externo',
                     'O programa de pos-graduacao em que atuou tem como objetivo a producao de inovacao tecnologica?':'inovacao_programa',
@@ -541,11 +592,10 @@ def analisar_dados_ia():
                     'Voce ja apresentou algum resultado de sua pesquisa em algum evento CIENTiFICO, ou pretende apresentar?':'evento_cientifico',
                     'Sua pesquisa gerou solucões para os problemas que a sociedade enfrenta ou vira a enfrentar?':'solucao_pesquica_sociedade',
                     'Qual foi o principal impacto social promovido por seu projeto de pesquisa? (Marque todas aplicaveis)':'impacto_projeto',
-                    'Seu projeto de pesquisa possuiu parcerias com instituicões internacionais de pesquisa ou ensino?':'parceria_internacional',
+                    'Seu projeto de pesquisa possuiu parcerias com instituicoes internacionais de pesquisa ou ensino?':'parceria_internacional',
                     'Quando aluno da UNIFEI, teve a oportunidade de fazer parte da sua pos-graduacao em outra instituicao (Nacional ou Internacional)?':'aluno_outra_instituicao',
                     'Se sim, onde? Qual nivel? Qual foi o periodo de duracao (mes/ano)?':'lugar_nivel',
                     'Em sua trajetoria profissional, teve a oportunidade de atuar fora do Brasil?':'profissional_exterior',
-                    'Se sim, qual instituto, pais, funcao e quando?':'instituto-pais-funcao',
                     'Caso se sinta a vontade, pedimos que compartilhe como fez para pleitear a oportunidade fora do Brasil.':'pleitear',
                     'Qual sua colocacao profissional atualmente?':'colocacao_profissional_hoje',
                     'Seu emprego esta relacionado a sua area de formacao na pos-graduacao da UNIFEI?':'emprego_formacao',
@@ -557,7 +607,7 @@ def analisar_dados_ia():
                     'Gostariamos de saber sua satisfacao pessoal e profissional com relacao a sua formacao na UNIFEI. Fique a vontade em descreve-las.':'satisfacao_formacao',
                     'Gostaria de adicionar algum comentario referente a Pro-Reitoria de Pesquisa e Pos-Graduacao?':'cometario_prppg'
          }, axis=1, inplace=True)
-     
+           
 
         # 1. Garantir que todas as colunas são numéricas
         colunas_qualidade = ['qualidade_aulas','material_didatico', 'acervo_consulta']
@@ -589,7 +639,7 @@ def analisar_dados_ia():
 
             # 2. Criar as médias por grupo de avaliação
             media_qualidade = dados_programa['qualidade_aulas'].mean()
-            media_infraestrutura = dados_programa['Infraestrutura_geral'].mean()
+            media_infraestrutura = dados_programa['infraestrutura_geral'].mean()
 
             # Verificar sentimentos nos comentários (se disponíveis)
             df_comentarios = dados_programa[['satisfacao_formacao']].dropna()
@@ -655,3 +705,118 @@ def analisar_dados_ia():
         return redirect(url_for('avaliacaoegresso.importar_planilhaegresso'))
     
 
+# Função para substituir "Sim"/"Não" e valores problemáticos
+def limpar_dados(df):
+    df.replace({
+        "Sem condições de avaliar": np.nan,
+        "Sem condiÃ§Ãµes de avaliar": np.nan,
+        "Sem condicoes de avaliar": np.nan,
+        "Não se aplica": np.nan
+    }, inplace=True)
+    return df
+####################################################################################################333
+@avaliacaoegresso_route.route('/exibir_recomendacoes_egresso', methods=['GET'])
+def exibir_recomendacoes_egresso():
+    try:
+        file_path = os.path.join(UPLOAD_FOLDER, 'egresso.csv')
+        if not os.path.exists(file_path):
+            flash('Arquivo "egresso.csv" não encontrado na pasta uploads.', 'danger')
+            return redirect(url_for('avaliacaoegresso.importar_planilhaegresso'))
+        
+        # Carregar, limpar e renomear colunas do CSV
+        egresso = pd.read_csv(file_path, delimiter=';', encoding='latin1')
+        egresso = renomear_colunas(egresso)
+        egresso = limpar_dados(egresso)
+            
+        # Garantir que as colunas relevantes são numéricas
+        colunas_qualidade = ['qualidade_aulas', 'material_didatico', 'acervo_consulta']
+        colunas_projetos = ['evento_cientifico', 'evento_sociedade', 'relevancia_social', 
+                            'relevancia_economico', 'relevancia_ambiental', 'relevancia_social']
+        colunas_infraestrutura = ['infraestrututra_geral', 'laboratorios_sala', 'insumos_pesquisa']
+        colunas_relacionamentos = ['relacionamento_colegas', 'relacionamento_orientador', 
+                                   'relacionamento_secretaria', 'relacionamento_coordenador']
+        colunas_internacionalizacao = ['parceria_internacional', 'profissional_exterior']
+        
+        # Converter colunas para numérico e tratar valores ausentes
+        def converter_para_numerico(df, colunas):
+            for coluna in colunas:
+                df[coluna] = pd.to_numeric(df[coluna], errors='coerce')
+            return df
+
+        egresso = converter_para_numerico(egresso, colunas_qualidade + colunas_projetos +
+                                          colunas_infraestrutura + colunas_relacionamentos +
+                                          colunas_internacionalizacao)
+
+        # Calcular médias por grupo
+        egresso['Media_Qualidade'] = egresso[colunas_qualidade].mean(axis=1)
+        egresso['Media_Projetos'] = egresso[colunas_projetos].mean(axis=1)
+        egresso['Media_Infraestrutura'] = egresso[colunas_infraestrutura].mean(axis=1)
+        egresso['Media_Relacionamentos'] = egresso[colunas_relacionamentos].mean(axis=1)
+        egresso['Media_Internacionalizacao'] = egresso[colunas_internacionalizacao].mean(axis=1)
+        
+        # Agrupar por programa e calcular médias
+        df_por_programa = egresso.groupby('programa').agg({
+            'Media_Qualidade': 'mean',
+            'Media_Projetos': 'mean',
+            'Media_Infraestrutura': 'mean',
+            'Media_Relacionamentos': 'mean',
+            'Media_Internacionalizacao': 'mean'
+        }).reset_index()
+
+        # Gerar recomendações para cada programa
+        recomendacoes_por_programa = gerar_recomendacoes_programa(df_por_programa)
+
+        # Passar as recomendações para o template com o nome correto
+        return render_template('recomendacaoegresso.html', recomendacoes_por_programa=recomendacoes_por_programa)
+    
+    except Exception as e:
+        flash(f"Erro ao gerar recomendações: {e}", 'danger')
+        return redirect(url_for('avaliacaoegresso.importar_planilhaegresso'))
+
+def gerar_recomendacoes_programa(df_agrupado):
+    recomendacoes_por_programa = {}
+
+    for _, row in df_agrupado.iterrows():
+        programa = row['programa']
+        recomendacoes = []
+
+        # Regras de recomendações para diferentes categorias
+        if row['Media_Qualidade'] < 3:
+            recomendacoes.append({
+                "objetivo": "Melhorar a qualidade das aulas e do material didático",
+                "meta": "Aumentar a média de satisfação para pelo menos 4.0 nos próximos 6 meses",
+                "indicador": "Média de avaliações sobre qualidade de aulas e materiais"
+            })
+
+        if row['Media_Projetos'] < 3:
+            recomendacoes.append({
+                "objetivo": "Reavaliar e aprimorar os projetos de pesquisa",
+                "meta": "Garantir que 80% dos alunos entendam as normas e o funcionamento do programa",
+                "indicador": "Percentual de alunos que avaliam positivamente o entendimento sobre normas"
+            })
+
+        if row['Media_Infraestrutura'] < 3:
+            recomendacoes.append({
+                "objetivo": "Investir em infraestrutura para apoio acadêmico",
+                "meta": "Alocar recursos para melhorar laboratórios e insumos de pesquisa até o próximo semestre",
+                "indicador": "Nível de satisfação com infraestrutura e laboratórios"
+            })
+
+        if row['Media_Relacionamentos'] < 3:
+            recomendacoes.append({
+                "objetivo": "Fortalecer o relacionamento entre alunos e equipe acadêmica",
+                "meta": "Aumentar a média de satisfação para 4.0 na área de relacionamentos",
+                "indicador": "Média de avaliações sobre relacionamentos com orientadores, coordenadores e colegas"
+            })
+
+        if row['Media_Internacionalizacao'] < 3:
+            recomendacoes.append({
+                "objetivo": "Promover a internacionalização do programa",
+                "meta": "Aumentar a média de proficiência em inglês para 4.0 e criar 2 novas parcerias internacionais",
+                "indicador": "Média de proficiência em inglês e número de parcerias internacionais"
+            })
+
+            # Adiciona as recomendações para o programa, ou "Sem recomendações específicas" se vazio
+        recomendacoes_por_programa[programa] = recomendacoes if recomendacoes else ["Sem recomendações específicas."]
+
+    return recomendacoes_por_programa

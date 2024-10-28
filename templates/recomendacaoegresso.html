@@ -1,4 +1,4 @@
-{% extends 'basecorden.html' %}
+{% extends 'basepro.html' %}
 
 {% block titulo %}
     <div style="text-align: center;">
@@ -49,10 +49,17 @@
     <!-- Botões de Voltar e Fechar -->
     <div style="margin-top: 40px;">
         <!-- Botão Voltar -->
-        <a href="{{ url_for('avaliacaoegresso.gerar_graficos_completos', filename='egresso.csv') }}" class="btn btn-primary" style="margin-right: 10px; padding: 10px 20px;">Voltar para Gráficos</a>
+        <a href="{{ url_for('avaliacaoegresso.gerar_graficos_completos_egressos', filename='egresso.csv') }}" class="btn btn-primary" style="margin-right: 10px; padding: 10px 20px;">Voltar para Gráficos</a>
         
         <!-- Botão Fechar -->
-        <button type="button" onclick="window.close();" class="btn btn-danger" style="padding: 10px 20px;">Fechar</button>
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+
     </div>
+       <!-- Script para fechar a página -->
+   <script>
+    function fechar() {
+       window.location.href = "{{ url_for('login.get_proreitor') }}";
+    }
+  </script>
 </div>
 {% endblock %}
