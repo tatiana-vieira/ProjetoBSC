@@ -118,7 +118,7 @@ def renomear_colunas(discentecurso):
             'Voce acredita que sua pesquisa possui relevancia e pertinencia social?':'pesquisa_relevancia_social',
             'Voce acredita que sua pesquisa possui relevancia e pertinencia economica?':'pesquisa relevancia economica',
             'Voce acredita que sua pesquisa possui relevancia e pertinencia ambiental?':'pesquisa relevancia ambiental',
-            'Voce acredita que sua pesquisa promove avanço cientifico?':'pesquisa avanço cientifico',
+            'Voce acredita que sua pesquisa promove avanco cientifico?':'pesquisa avanço cientifico',
             'O seu Programa possui visao, missao e objetivos claros?':'visao-missao-objetivos',
             'Voce acredita que sua pesquisa esta alinhada com o objetivo e missao de seu Programa?':'pesquisa alinhada visao-missao-objetivos',
             'Voce recebe bolsa de pos-graduacao?':'possui_bolsa',
@@ -768,7 +768,8 @@ def exibir_recomendacoes_programa():
                                    'Relacionamento_secretaria', 'Relacionamento_colegas']
         colunas_internacionalizacao = ['proficiencia_ingles','preparado_internacionalizacao',
                                        'interesse_internacionalizacao', 'projeto_parceria_internacional','PRPPG_preparado_internacionalizacao']
-        
+        colunas_pesquisa = ['projeto pesquisa','producao cientifica','pesquisa_relevancia_social','pesquisa relevancia economica','pesquisa relevancia ambiental','pesquisa avanço cientifico']
+
          # Converter as colunas para numérico e tratar valores ausentes
         def converter_para_numerico(df, colunas):
             for coluna in colunas:
@@ -778,7 +779,7 @@ def exibir_recomendacoes_programa():
         discentecurso = converter_para_numerico(discentecurso, 
                                                  colunas_qualidade + colunas_organizacao + 
                                                  colunas_infraestrutura + colunas_relacionamentos + 
-                                                 colunas_internacionalizacao)
+                                                 colunas_internacionalizacao+colunas_pesquisa)
 
         # Calcular médias por grupo
         discentecurso['Media_Qualidade'] = discentecurso[colunas_qualidade].mean(axis=1)
@@ -786,6 +787,7 @@ def exibir_recomendacoes_programa():
         discentecurso['Media_Infraestrutura'] = discentecurso[colunas_infraestrutura].mean(axis=1)
         discentecurso['Media_Relacionamentos'] = discentecurso[colunas_relacionamentos].mean(axis=1)
         discentecurso['Media_Internacionalizacao'] = discentecurso[colunas_internacionalizacao].mean(axis=1)
+        discentecurso['Media_pesquisa'] = discentecurso[colunas_pesquisa].mean(axis=1)
 
         # Agrupar por programa e calcular médias
         df_por_programa = discentecurso.groupby('programa').agg({
@@ -793,7 +795,9 @@ def exibir_recomendacoes_programa():
             'Media_Organizacao': 'mean',
             'Media_Infraestrutura': 'mean',
             'Media_Relacionamentos': 'mean',
-            'Media_Internacionalizacao': 'mean'
+            'Media_Internacionalizacao': 'mean',
+            'Media_pesquisa':'mean'
+
         }).reset_index()
 
         # Função para gerar recomendações por programa
@@ -819,7 +823,9 @@ def exibir_recomendacoes_programa():
                 
                 if row['Media_Internacionalizacao'] < 3:
                     recomendacoes.append("Incentivar a internacionalização e aumentar a proficiência em inglês dos alunos.")
-                
+
+                if row['Media_pesquisa'] < 3:
+                    recomendacoes.append("Incentivar a inovação na pesquisa cientifica.")
                 # Armazena as recomendações para cada programa
                 recomendacoes_por_programa[programa] = recomendacoes
 
@@ -845,31 +851,51 @@ def gerar_recomendacoes_programa(df_agrupado):
 
         # Regras de recomendações para diferentes categorias
         if row['Media_Qualidade'] < 3:
-            recomendacoes.append("Melhorar a qualidade das aulas e do material didático.")
+            recomendacoes.append({
+                "objetivo": "Melhorar a qualidade das aulas e do material didático",
+                "meta": "Aumentar a média de satisfação para pelo menos 4.0 nos próximos 6 meses",
+                "indicador": "Média de avaliações sobre qualidade de aulas e materiais"
+            })
         
         if row['Media_Organizacao'] < 3:
-            recomendacoes.append("Reavaliar a organização do programa e o conhecimento dos alunos sobre as normas.")
+            recomendacoes.append({
+                "objetivo": "Reavaliar e aprimorar a organização do programa",
+                "meta": "Garantir que 80% dos alunos entendam as normas e o funcionamento do programa",
+                "indicador": "Percentual de alunos que avaliam positivamente o entendimento sobre normas"
+            })
         
         if row['Media_Infraestrutura'] < 3:
-            recomendacoes.append("Investir em infraestrutura, incluindo laboratórios e insumos de pesquisa para apoiar as atividades acadêmicas.")
+            recomendacoes.append({
+                "objetivo": "Investir em infraestrutura para apoio acadêmico",
+                "meta": "Alocar recursos para melhorar laboratórios e insumos de pesquisa até o próximo semestre",
+                "indicador": "Nível de satisfação com infraestrutura e laboratórios"
+            })
         
         if row['Media_Relacionamentos'] < 3:
-            recomendacoes.append("Aprimorar o relacionamento entre alunos, orientadores e coordenação para promover um ambiente colaborativo.")
+            recomendacoes.append({
+                "objetivo": "Fortalecer o relacionamento entre alunos e equipe acadêmica",
+                "meta": "Aumentar a média de satisfação para 4.0 na área de relacionamentos",
+                "indicador": "Média de avaliações sobre relacionamentos com orientadores, coordenadores e colegas"
+            })
         
         if row['Media_Internacionalizacao'] < 3:
-            recomendacoes.append("Incentivar a internacionalização e aumentar a proficiência em inglês dos alunos para expandir oportunidades globais.")
+            recomendacoes.append({
+                "objetivo": "Promover a internacionalização do programa",
+                "meta": "Aumentar a média de proficiência em inglês para 4.0 e criar 2 novas parcerias internacionais",
+                "indicador": "Média de proficiência em inglês e número de parcerias internacionais"
+            })
+
+        if row['Media_pesquisa'] < 3:
+            recomendacoes.append({
+                "objetivo": "Incentivar a inovação na pesquisa científica",
+                "meta": "Aumentar a produção de publicações científicas e inovação tecnológica",
+                "indicador": "Número de publicações científicas e inovações tecnológicas registradas"
+            })
         
-        # Adicionando recomendações específicas para casos extremos
-        if row['Media_Qualidade'] < 2:
-            recomendacoes.append("Realizar avaliações mais frequentes de qualidade com feedback dos alunos para identificar áreas críticas.")
+        # Adiciona as recomendações para cada programa, mesmo que estejam vazias, para garantir consistência no template
+        if not recomendacoes:
+            recomendacoes.append("Sem recomendações específicas.")
         
-        if row['Media_Infraestrutura'] < 2:
-            recomendacoes.append("Priorizar investimentos urgentes em infraestrutura para garantir que os recursos mínimos sejam atendidos.")
-        
-        if row['Media_Relacionamentos'] < 2:
-            recomendacoes.append("Implementar programas de desenvolvimento de habilidades interpessoais para melhorar a comunicação entre alunos e equipe.")
-        
-        # Adiciona as recomendações ao dicionário, mesmo que estejam vazias, para garantir consistência no template
         recomendacoes_por_programa[programa] = recomendacoes
 
     return recomendacoes_por_programa
