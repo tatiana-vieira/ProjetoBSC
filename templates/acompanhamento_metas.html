@@ -1,27 +1,25 @@
 {% extends 'basecorden.html' %}
 
 {% block titulo %}
-    Editar Objetivo - PRPPG
+    Acompanhamento de Metas - PRPPG
 {% endblock %}
 
 {% block conteudo %}
 <h3 style="text-align: center;">Acompanhamento de Metas</h3>
 
-<form method="POST" style="text-align: center;">
+<form method="POST" style="text-align: center; margin-bottom: 20px;">
   <label for="planejamento" style="margin-right: 10px;">Selecione o Planejamento:</label>
   <select name="planejamento_id" id="planejamento" style="margin-right: 10px;">
       <option value="" disabled selected>Selecione</option>
       {% for planejamento in planejamentos %}
-          <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
+          <option value="{{ planejamento.id }}" {% if request.form.planejamento_id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
       {% endfor %}
   </select>
   <button type="submit" class="btn btn-primary">Filtrar Metas</button>
 </form>
 
-<br>
-
 <!-- Tabela de acompanhamento de metas -->
-<table class="table" style="width: 80%; margin: auto; text-align: center;">
+<table class="table table-striped" style="width: 80%; margin: auto; text-align: center;">
   <thead>
       <tr>
           <th>Nome da Meta</th>
@@ -41,15 +39,12 @@
                   <td>{{ meta.status }}</td>
                   <td>
                     <form method="POST" action="{{ url_for('planejamento.atualizar_status_meta', meta_id=meta.id) }}">
-                      <!-- Enviar o planejamento_id como hidden field -->
-                      <input type="hidden" name="planejamento_id" value="{{ request.form.planejamento_id }}">
-                      
                       <select name="status" class="form-control" style="display: inline-block; width: auto;">
-                          <option value="Não iniciado">Não iniciado</option>
-                          <option value="Em andamento">Em andamento</option>
-                          <option value="Concluída">Concluída</option>
-                          <option value="Atrasada">Atrasada</option>
-                          <option value="Pausada">Pausada</option>
+                          <option value="Não iniciado" {% if meta.status == 'Não iniciado' %}selected{% endif %}>Não iniciado</option>
+                          <option value="Em andamento" {% if meta.status == 'Em andamento' %}selected{% endif %}>Em andamento</option>
+                          <option value="Concluída" {% if meta.status == 'Concluída' %}selected{% endif %}>Concluída</option>
+                          <option value="Atrasada" {% if meta.status == 'Atrasada' %}selected{% endif %}>Atrasada</option>
+                          <option value="Pausada" {% if meta.status == 'Pausada' %}selected{% endif %}>Pausada</option>
                       </select>
                       <button type="submit" class="btn btn-success" style="display: inline-block; margin-left: 10px;">Atualizar</button>
                     </form>
@@ -73,5 +68,4 @@
       window.location.href = "{{ url_for('login.get_coordenador') }}";
   }
 </script>
-
 {% endblock %}

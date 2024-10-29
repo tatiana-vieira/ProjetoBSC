@@ -92,14 +92,14 @@
                     <th>Probabilidade</th>
                     <th>Impacto</th>
                     <th>Ação Preventiva</th>
-                    <th>Ações</th>
+                    <th>Editar</th>
                 </tr>
             </thead>
             <tbody>
                 {% for risco in riscos %}
                 <tr>
                     <td>{{ risco.descricao }}</td>
-                    <td>{{ risco.nivel }}</td>
+                    <td>{{ risco.nivel }}</td> <!-- Verifique se "nivel" realmente existe no modelo Risco -->
                     <td>{{ risco.probabilidade }}</td>
                     <td>{{ risco.impacto }}</td>
                     <td>{{ risco.acao_preventiva }}</td>

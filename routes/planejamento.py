@@ -452,14 +452,17 @@ def alterar_indicadorpe(indicador_id):
 def associar_metaspe():
     programa_id = current_user.programa_id
     if programa_id:
+        # Obter planejamentos associados ao programa
         planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
         objetivos_pe_associados = []
 
+        # Buscar objetivos associados a cada planejamento
         for planejamento in planejamentos:
             objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
             objetivos_pe_associados.extend(objetivos)
 
         if request.method == 'POST':
+            # Coletar dados do formulário
             objetivo_pe_id = request.form['objetivo_pe_id']
             nome_meta = request.form['nome']
             descricao = request.form['descricao']
@@ -470,20 +473,22 @@ def associar_metaspe():
             status_inicial = request.form['status_inicial']
             valor_alvo = request.form['valor_alvo']
 
+            # Verificar se o objetivo existe
             objetivo_pe = ObjetivoPE.query.get(objetivo_pe_id)
-            if objetivo_pe is None:
+            if not objetivo_pe:
                 flash('Objetivo não encontrado!', 'error')
                 return redirect(url_for('planejamento.associar_metaspe'))
 
-            # Verifica se a meta já existe
+            # Verificar se uma meta com o mesmo nome já existe para o objetivo selecionado
             meta_existente = MetaPE.query.filter_by(nome=nome_meta, objetivo_pe_id=objetivo_pe_id).first()
-            meta_id = None
-
             if meta_existente:
-                meta_id = meta_existente.id
-            else:
+                flash('Essa meta já existe para o objetivo selecionado!', 'warning')
+                return redirect(url_for('planejamento.associar_metaspe'))
+
+            # Tentar criar a nova meta
+            try:
                 nova_meta = MetaPE(
-                    objetivo_pe_id=objetivo_pe_id, 
+                    objetivo_pe_id=objetivo_pe_id,
                     nome=nome_meta,
                     descricao=descricao,
                     responsavel=responsavel,
@@ -495,10 +500,10 @@ def associar_metaspe():
                 )
                 db.session.add(nova_meta)
                 db.session.commit()
-                meta_id = nova_meta.id
-
-            if not meta_id:
-                flash('Erro ao criar a meta!', 'error')
+                meta_id = nova_meta.id  # Obter o ID da meta recém-criada
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao cadastrar a meta: {str(e)}', 'error')
                 return redirect(url_for('planejamento.associar_metaspe'))
 
             # Cadastrar os valores da meta
@@ -508,8 +513,13 @@ def associar_metaspe():
                 valores = request.form.getlist('valor[]')
 
                 for ano, semestre, valor in zip(anos, semestres, valores):
-                    valor = valor.replace(',', '.')  # Substituir vírgula por ponto
-                    novo_valor = Valormeta(metape_id=meta_id, ano=int(ano), semestre=int(semestre), valor=float(valor))
+                    valor = valor.replace(',', '.')  # Substituir vírgula por ponto decimal
+                    novo_valor = Valormeta(
+                        metape_id=meta_id, 
+                        ano=int(ano), 
+                        semestre=int(semestre), 
+                        valor=float(valor)
+                    )
                     db.session.add(novo_valor)
 
                 db.session.commit()
@@ -520,13 +530,14 @@ def associar_metaspe():
             
             return redirect(url_for('planejamento.associar_metaspe'))
 
-        # Obter todas as metas cadastradas
+        # Obter todas as metas cadastradas associadas aos objetivos do planejamento
         metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos_pe_associados])).all()
         return render_template('metaspe.html', objetivos_pe=objetivos_pe_associados, metas=metas)
 
     else:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('planejamento.associar_metaspe'))
+
 #################################################################################################
 
 def sugerir_ajustes(meta, progresso, restante):
@@ -1018,12 +1029,9 @@ def acompanhamento_metas():
     return render_template('acompanhamento_metas.html', metas=metas, planejamentos=planejamentos)
 
 
-
 @planejamento_route.route('/atualizar_status_meta/<int:meta_id>', methods=['POST'])
 @login_required
 def atualizar_status_meta(meta_id):
-    planejamento_id = request.form.get('planejamento_id')  # Obtém o ID do planejamento filtrado
-
     # Lógica para atualizar o status da meta
     meta = MetaPE.query.get(meta_id)
     if meta:
@@ -1034,9 +1042,8 @@ def atualizar_status_meta(meta_id):
     else:
         flash('Meta não encontrada.', 'danger')
 
-    # Redireciona de volta para a página com o planejamento filtrado
-    return redirect(url_for('planejamento.acompanhamento_metas', planejamento_id=planejamento_id))
-
+    # Redireciona de volta para a página de acompanhamento de metas
+    return redirect(url_for('planejamento.acompanhamento_metas'))
 
 def calcular_progresso_parcial(meta):
     if meta.data_inicio and meta.data_termino:

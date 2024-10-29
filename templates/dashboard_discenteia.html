@@ -18,13 +18,11 @@
         </div>
     </div>
 
-    <!-- Botões de Análise -->
-   <!-- Botões de Análise -->
 <div class="buttons text-center mb-4">
-    <a href="{{ url_for('discente.executar_analise', tipo='sentimento') }}" class="btn btn-primary">Análise de Sentimento</a>
+    <a href="{{ url_for('discente.analisar_sentimentosdiscente') }}" class="btn btn-primary">Analisar Sentimentos</a>
     <a href="{{ url_for('discente.executar_analise', tipo='clustering') }}" class="btn btn-success">Análise Clustering</a>
     <a href="{{ url_for('discente.executar_analise', tipo='regressao') }}" class="btn btn-info">Análise de Regressão</a>
-    <a href="{{ url_for('discente.exibir_recomendacoes_programa') }}" class="btn btn-danger">Recomendações por Programa</a>
+    <a href="{{ url_for('discente.exibir_recomendacoes_discente') }}" class="btn btn-danger">Recomendações por Programa</a>
 </div>
     
     <!-- Estatísticas Descritivas -->
@@ -41,7 +39,7 @@
         function fechar() {
             window.location.href = "{{ url_for('login.get_proreitor') }}";
         }
-    </script>
+       </script>
 {% endblock %}
 
 

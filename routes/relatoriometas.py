@@ -447,8 +447,8 @@ def cadastrar_risco():
         return redirect(url_for('relatoriometas.cadastrar_risco'))
 
     # Obtenha todos os riscos já cadastrados para exibir na página
-    riscos = Risco.query.join(MetaPE, Risco.meta_pe_id == MetaPE.id).all()
-
+    riscos = Risco.query.distinct().all()
+ 
     if request.method == 'POST':
         # Captura os dados do formulário
         planejamento_id = request.form.get('planejamento_id')
@@ -457,6 +457,7 @@ def cadastrar_risco():
         descricao = request.form.get('descricao')
         probabilidade = request.form.get('probabilidade')
         impacto = request.form.get('impacto')
+        acao_preventiva = request.form.get('acao_preventiva')
 
         # Valida o campo meta_pe_id
         if not meta_pe_id or meta_pe_id == "":
@@ -494,7 +495,8 @@ def cadastrar_risco():
                 objetivo_pe_id=objetivo_pe_id,
                 meta_pe_id=meta_pe_id,
                 probabilidade=probabilidade,
-                impacto=impacto
+                impacto=impacto,
+                acao_preventiva=acao_preventiva
             )
             db.session.add(novo_risco)
             db.session.commit()
@@ -510,10 +512,10 @@ def cadastrar_risco():
     metas_associadas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([o.id for o in objetivos_associados])).all()
 
     return render_template('cadastrar_risco.html', 
-                           planejamentos=planejamentos_associados, 
-                           objetivos=objetivos_associados, 
-                           metas=metas_associadas, 
-                           riscos=riscos)
+                       planejamentos=planejamentos_associados, 
+                       objetivos=objetivos_associados, 
+                       metas=metas_associadas, 
+                       riscos=riscos)
 
 ########################################################################################################
 @relatoriometas_route.route('/get_metas/<int:objetivo_id>')
@@ -548,30 +550,30 @@ def listar_riscos():
     return render_template('listar_riscos.html', riscos=riscos, planejamentos=planejamentos)
 
 
-      
-
 @relatoriometas_route.route('/editar_risco/<int:risco_id>', methods=['GET', 'POST'])
 @login_required
 def editar_risco(risco_id):
     risco = Risco.query.get_or_404(risco_id)
     if request.method == 'POST':
-        risco.descricao = request.form['descricao']       
+        risco.descricao = request.form['descricao']
         risco.probabilidade = request.form['probabilidade']
         risco.impacto = request.form['impacto']
+        risco.acao_preventiva = request.form['acao_preventiva']  # Incluindo o campo ação preventiva
         
         try:
             db.session.commit()
             flash('Risco alterado com sucesso!', 'success')
-            return redirect(url_for('relatoriometas.editar_risco', risco_id=risco.id))  # Redireciona para a mesma página
+            return redirect(url_for('relatoriometas.editar_risco', risco_id=risco.id))
         except Exception as e:
             db.session.rollback()
             flash(f'Erro ao salvar o risco: {str(e)}', 'error')
-    
+
     objetivos_pe_associados = ObjetivoPE.query.join(PlanejamentoEstrategico, ObjetivoPE.planejamento_estrategico_id == PlanejamentoEstrategico.id)\
                                               .filter(PlanejamentoEstrategico.id_programa == current_user.programa_id).all()
     metas_pe_associadas = MetaPE.query.filter_by(objetivo_pe_id=risco.objetivo_pe_id).all()
     
     return render_template('alterar_risco.html', risco=risco, objetivos_pe=objetivos_pe_associados, metas_pe=metas_pe_associadas)
+
 
 @relatoriometas_route.route('/salvar_alteracao_risco/<int:risco_id>', methods=['POST'])
 @login_required
@@ -583,6 +585,7 @@ def salvar_alteracao_risco(risco_id):
     risco.descricao = request.form.get('descricao')    
     risco.probabilidade = request.form.get('probabilidade')
     risco.impacto = request.form.get('impacto')
+    risco.acao_preventiva = request.form.get('acao_preventiva')
     
     try:
         db.session.commit()
@@ -612,6 +615,7 @@ def exportar_riscos_pdf():
             elements.append(Paragraph(f"Objetivo: {risco.objetivo_pe.nome}", styles['BodyText']))
             elements.append(Paragraph(f"Probabilidade: {risco.probabilidade}", styles['BodyText']))
             elements.append(Paragraph(f"Impacto: {risco.impacto}", styles['BodyText']))
+            elements.append(Paragraph(f"acao_preventiva: {risco.acao_preventiva}",styles['BodyText']))
             elements.append(Paragraph(" ", styles['BodyText']))
 
         doc.build(elements)

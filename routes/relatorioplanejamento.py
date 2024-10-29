@@ -153,24 +153,29 @@ def exibir_detalhes_planejamentocadeia():
 
         # Buscar os dados relacionados ao planejamento selecionado
         objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
-        metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
-        indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas])).all()
-        riscos = Risco.query.filter(Risco.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
-
         dados_objetivos = []
+
         for objetivo in objetivos:
             metas_dados = []
-            for meta in [m for m in metas if m.objetivo_pe_id == objetivo.id]:
-                indicadores_dados = [{'nome': indicador.nome} for indicador in indicadores if indicador.meta_pe_id == meta.id]
-                metas_dados.append({'nome': meta.nome, 'indicadores': indicadores_dados})
-            
-            riscos_dados = [{'descricao': risco.descricao, 'acao_preventiva': risco.acao_preventiva} for risco in riscos if risco.objetivo_pe_id == objetivo.id]
-            
-            dados_objetivos.append({'nome': objetivo.nome, 'metas': metas_dados, 'riscos': riscos_dados})
+            metas = MetaPE.query.filter_by(objetivo_pe_id=objetivo.id).all()
+            for meta in metas:
+                indicadores = [{'nome': indicador.nome} for indicador in IndicadorPlan.query.filter_by(meta_pe_id=meta.id).all()]
+                riscos = [{'descricao': risco.descricao, 'acao_preventiva': risco.acao_preventiva} for risco in Risco.query.filter_by(objetivo_pe_id=objetivo.id).all()]
+
+                # Adiciona metas, indicadores e riscos
+                metas_dados.append({
+                    'nome': meta.nome,
+                    'indicadores': indicadores,
+                    'riscos': riscos
+                })
+
+            dados_objetivos.append({
+                'nome': objetivo.nome,
+                'metas': metas_dados
+            })
 
         return render_template('relplanocadeia.html', planejamento_selecionado=planejamento_selecionado, dados_objetivos=dados_objetivos)
 
-    # Caso a requisição seja GET, renderize a página inicial (com o dropdown de planejamentos)
     else:
         coordenador_programa_id = session.get('programa_id')
         programa = Programa.query.get(coordenador_programa_id)
@@ -189,6 +194,7 @@ def gerarrel_pdf(planejamento_id):
     metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
     indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas])).all()
     riscos = Risco.query.filter(Risco.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+    
 
     dados = []
     for objetivo in objetivos:

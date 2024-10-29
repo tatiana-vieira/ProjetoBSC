@@ -80,10 +80,8 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def renomear_colunas(secretaria):
-    # Verificar as colunas antes de renomear
-    print("Colunas antes da renomeação:", secretaria.columns)
-    
-    secretaria.rename({
+   # Define a dictionary for renaming columns for consistency
+    rename_columns = {
         'A qual programa esta vinculado(a)?': 'programa',
         'Ha quanto tempo voce e secretario(a) do programa?': 'tempo_programa',
         'Como voce avalia a infraestrutura da secretaria do programa': 'infraestrutura_programa',
@@ -102,32 +100,59 @@ def renomear_colunas(secretaria):
         'Voce acha necessario um sistema de acompanhamento de egressos?': 'sistema_acompanhamento_egressos',
         'Quais questoes considera importantes a serem abordadas sobre o acompanhamento dos egressos?': 'consideracoes_egressos',
         'Fique a vontade para dar sugestoes sobre o que considera importante no acompanhamento de egressos?': 'sugestoes'
-    }, axis=1, inplace=True)
-    
-    # Verificar as colunas após a renomeação
-    print("Colunas após a renomeação:", secretaria.columns)
-    
-    # Verificar a presença da coluna 'infraestrutura_programa'
-    if 'infraestrutura_programa' not in secretaria.columns:
-        print("Erro: 'infraestrutura_programa' não encontrada após a renomeação.")
-    else:
-        print("Coluna 'infraestrutura_programa' encontrada.")
-    
+    }
+        # Renomear apenas colunas existentes no DataFrame
+    secretaria.rename(columns=rename_columns, inplace=True)
+
     return secretaria
 
-def limpar_dados(df):
-    # Substituir os valores problemáticos por NaN apenas em valores não nulos
-    df = df.applymap(lambda x: np.nan if isinstance(x, str) and (
-        "Sem condições de avaliar" in x or "Sem condiÃ§Ãµes de avaliar" in x or
-        "Sem condicoes de avaliar" in x or "Não se aplica" or "Nao se aplica"in x) else x)
-    
-    # Garantir que valores de "Sim"/"Não" são corretamente convertidos para numérico
-    df.replace({
-        'Sim': 1, 'sim': 1, 
-        'Não': 0, 'NÃO': 0, 'Nao': 0, 'nao': 0, 'não': 0
-    }, inplace=True)
-    
-    return df         
+# Mapping for 'tempo_programa' to convert to numerical values
+tempo_mapping = {
+    'Mais de 5 anos': 6,
+    'Entre 1 e 2 anos': 1.5,
+    'Menos de 1 ano': 0.5,
+    'Entre 3 e 4 anos': 3.5,
+    'Mais de 2 anos': 3
+}
+
+# Convert "Sim/Não" responses to numeric values in specific columns
+sim_nao_mapping = {
+    'Sim': 1,
+    'Nao': 0,
+    'Não': 0,
+    'nao': 0,
+    'sim': 1,
+    'não': 0,
+    'NÃO': 0,
+}
+
+boolean_columns = [
+    'acompanhamento_discentes', 'acompanhamento_egresso', 'analise_informacoes',
+    'levantamento_egresso_apenas_capes', 'contato_mensagem_egressos', 
+    'egressos_contato_emprego', 'sistema_acompanhamento_egressos'
+]
+
+# Function to clean and process data
+def substituir_sim_nao(valor):
+    if pd.isna(valor):
+        return np.nan
+    valor = valor.strip().lower()
+    if "sim" in valor:
+        return 1
+    elif "não" in valor or "nao" in valor:
+        return 0
+    return valor
+
+def limpar_dados(df, colunas):
+    for col in colunas:
+        df[col] = df[col].apply(substituir_sim_nao)
+    return df
+
+def calcular_media_digitos(valor):
+    if pd.isna(valor):
+        return np.nan
+    digitos = [int(d) for d in str(valor) if d.isdigit()]
+    return sum(digitos) / len(digitos) if digitos else np.nan     
 
 @avaliacaosecretaria_route.route('/importar_planilhasecretaria', methods=['GET', 'POST'])
 def importar_planilhasecretaria():
@@ -180,13 +205,14 @@ def limpar_e_converter_para_numeric(df, colunas):
     return df
 
 
+# Updated route function
+
 @avaliacaosecretaria_route.route('/gerar_graficos_completos_secretaria')
 def gerar_graficos_completos_secretaria():
     graficos = []
 
     # Receber o nome do arquivo da URL
     filename = request.args.get('filename')
-    
     if not filename:
         flash('Nenhum arquivo selecionado para gerar gráficos', 'danger')
         return redirect(url_for('avaliacaosecretaria.importar_planilhasecretaria'))
@@ -198,72 +224,31 @@ def gerar_graficos_completos_secretaria():
         return redirect(url_for('avaliacaosecretaria.importar_planilhasecretaria'))
 
     try:
-        # Tentar ler o arquivo CSV e remover o BOM
+        # Read the CSV file
         with open(file_path, 'r', encoding='utf-8-sig') as f:
             secretaria = pd.read_csv(f, delimiter=';')
 
-        # Renomear as colunas como no seu Colab
-        secretaria.rename({
-            'A qual programa esta vinculado(a)?': 'programa',
-            'Ha quanto tempo voce e secretario(a) do programa?': 'tempo_programa',
-            'Como voce avalia a infraestrutura da secretaria do programa': 'infraestrutura_programa',
-            'Existem praticas de acompanhamento dos discentes regularmente matriculados no programa?': 'acompanhamento_discentes',
-            'Em caso afirmativo, quais sao essas praticas?': 'praticas_discentes',
-            'Existem praticas de acompanhamento dos egressos do programa?': 'acompanhamento_egresso',
-            'Em caso afirmativo, quais sao essas praticas?': 'pratica_egresso',
-            'Como sao armazenadas essas informacoes?': 'armazenadas',
-            'O programa faz alguma analise das informacoes coletadas?': 'analise_informacoes',
-            'O programa faz levantamento de dados dos egressos apenas para preenchimento da plataforma sucupira?': 'levantamento_egresso_apenas_capes',
-            'O programa tem o habito de encaminhar mensagens ou mantem algum contato periodico com os egressos?': 'contato_mensagem_egressos',
-            'Em caso afirmativo, com que frequencia?': 'frequencia_egresso',
-            'Que tipo de informacoes sao encaminhadas?': 'informacaoes_encaminhadas_egresso',
-            'e comum os egressos contactarem o programa para buscar informacoes sobre concursos e/ou empregos?': 'egressos_contato_emprego',
-            'Voce acha necessario um sistema de acompanhamento de egressos?': 'sistema_acompanhamento_egressos',
-            'Quais questoes considera importantes a serem abordadas sobre o acompanhamento dos egressos?': 'consideracoes_egressos',
-            'Fique a vontade para dar sugestoes sobre o que considera importante no acompanhamento de egressos?': 'sugestoes'
-        }, axis=1, inplace=True)
-
-        # Mapeamento da coluna 'tempo_programa' para valores numéricos
-        data = {
-            'tempo_programa': [
-                'Mais de 5 anos', 'Mais de 5 anos', 'Mais de 5 anos', 'Mais de 5 anos', 
-                'Entre 1 e 2 anos', 'Mais de 5 anos', 'Mais de 5 anos', 'Mais de 5 anos',
-                'Menos de 1 ano', 'Mais de 5 anos', 'Mais de 5 anos', 'Mais de 5 anos', 
-                'Menos de 1 ano', 'Mais de 5 anos', 'Entre 3 e 4 anos', 'Mais de 5 anos', 
-                'Mais de 5 anos', 'Entre 3 e 4 anos', 'Mais de 5 anos'
-            ]
-        }
-        df = pd.DataFrame(data)
-
-        # Definir o mapeamento para valores numéricos
-        mapping = {
-            'Mais de 5 anos': 6,
-            'Entre 1 e 2 anos': 1.5,
-            'Menos de 1 ano': 0.5,
-            'Entre 3 e 4 anos': 3.5
-        }
-
-        # Aplicar o mapeamento à coluna
-        df['tempo_programa_numeric'] = df['tempo_programa'].map(mapping)
-
-        # Verificar a nova coluna numérica
-        print(df[['tempo_programa', 'tempo_programa_numeric']])
-        secretaria['tempo_programa_numeric'] = secretaria['tempo_programa'].map(mapping)
-
-        # Verificar se a nova coluna numérica foi criada corretamente
-        print(secretaria[['tempo_programa', 'tempo_programa_numeric']].head())
-
-        # Verificar se as colunas necessárias estão presentes
-        required_columns = ['tempo_programa_numeric', 'infraestrutura_programa']
+        # Apply renaming and mappings
+        secretaria = renomear_colunas(secretaria)
         
-        # Aplicar a função de cálculo da média dos dígitos, se aplicável
-        secretaria = limpar_e_converter_para_numeric(secretaria, required_columns)
-        print(secretaria.columns)
+        # Convert 'tempo_programa' using the mapping dictionary
+        secretaria['tempo_programa_numeric'] = secretaria['tempo_programa'].map(tempo_mapping)
 
-        # Criar novas colunas calculadas (médias)
-        secretaria['Media_Programa'] = secretaria[['tempo_programa_numeric', 'infraestrutura_programa']].mean(axis=1)
+        # Convert boolean columns using 'sim_nao_mapping'
+        for col in boolean_columns:
+            if col in secretaria.columns:
+                secretaria[col] = secretaria[col].map(sim_nao_mapping)
 
-        # Gráfico de barras - Avaliação do tempo no programa
+        # Convert 'infraestrutura_programa' to numeric if needed
+        secretaria['infraestrutura_programa'] = pd.to_numeric(secretaria['infraestrutura_programa'], errors='coerce')
+
+        # Calculate Media_Programa
+        if 'tempo_programa_numeric' in secretaria.columns and 'infraestrutura_programa' in secretaria.columns:
+            secretaria['Media_Programa'] = secretaria[['tempo_programa_numeric', 'infraestrutura_programa']].mean(axis=1)
+
+        # Continue with generating graphs and processing data...
+        
+        # Example: Generating a bar plot
         fig1, ax1 = plt.subplots()
         ax1.bar(secretaria['tempo_programa_numeric'].value_counts().index, 
                 secretaria['tempo_programa_numeric'].value_counts())
@@ -289,15 +274,13 @@ def gerar_graficos_completos_secretaria():
         plt.close(fig2)
 
         # Boxplot - Sistema de Acompanhamento de Egressos vs Tempo no Programa
-        # Boxplot - Sistema de Acompanhamento de Egressos vs Tempo no Programa
         fig3, ax3 = plt.subplots()
 
-        # Verificar se os dados estão disponíveis e não têm valores faltantes
-        if secretaria['sistema_acompanhamento_egressos'].notna().sum() > 0 and secretaria['tempo_programa_numeric'].notna().sum() > 0:
-            sns.boxplot(x='sistema_acompanhamento_egressos', y='tempo_programa_numeric', data=secretaria, ax=ax3)
-            ax3.set_title('Sistema de Acompanhamento de Egressos vs Tempo no Programa')
-            ax3.set_xlabel('Sistema de Acompanhamento de Egressos')
-            ax3.set_ylabel('Tempo no Programa (anos)')
+        if secretaria['tempo_programa_numeric'].notna().sum() > 0 and secretaria['infraestrutura_programa'].notna().sum() > 0:
+            sns.boxplot(x='tempo_programa_numeric', y='infraestrutura_programa', data=secretaria, ax=ax3)
+            ax3.set_title('Tempo programa vs Infraestrutura do Programa')
+            ax3.set_xlabel('tempo_programa')
+            ax3.set_ylabel('Infraestutura')
             plt.xticks(rotation=45)
             
             img3 = io.BytesIO()
@@ -308,44 +291,32 @@ def gerar_graficos_completos_secretaria():
         else:
             flash("Dados insuficientes para gerar o boxplot do Sistema de Acompanhamento de Egressos.", "warning")
 
-
-
-        # Mapa de calor - Correlação entre variáveis
-        fig4, ax4 = plt.subplots(figsize=(10, 7))
-        sns.heatmap(secretaria[['tempo_programa_numeric', 'infraestrutura_programa']].corr(), 
-                    annot=True, cmap='coolwarm', linewidths=0.4, ax=ax4)
-        ax4.set_title('Mapa de Calor das Correlações')
-        img4 = io.BytesIO()
-        plt.savefig(img4, format='png')
-        img4.seek(0)
-        graficos.append(base64.b64encode(img4.getvalue()).decode('utf-8'))
-        plt.close(fig4)
-
         # Gráfico de violino - Distribuição da Média de Qualidade do Programa
-        fig5, ax5 = plt.subplots(figsize=(10, 6))  # Definir o tamanho do gráfico
-        sns.violinplot(y=secretaria['Media_Programa'], ax=ax5, color='lightgreen')
-        ax5.set_title('Distribuição da Média de Qualidade do Programa', fontsize=16)
-        ax5.set_ylabel('Média de Avaliação', fontsize=14)
+        if 'Media_Programa' in secretaria.columns:
+            fig5, ax5 = plt.subplots(figsize=(10, 6))
+            sns.violinplot(y=secretaria['Media_Programa'], ax=ax5, color='lightgreen')
+            ax5.set_title('Distribuição da Média de Qualidade do Programa', fontsize=16)
+            ax5.set_ylabel('Média de Avaliação', fontsize=14)
 
-        # Adicionar anotação com a média
-        media_valor = secretaria['Media_Programa'].mean()
-        ax5.text(0.1, media_valor + 0.2, f'Média: {media_valor:.2f}', color='black', fontsize=12)
+            # Adicionar anotação com a média
+            media_valor = secretaria['Media_Programa'].mean()
+            ax5.text(0.1, media_valor + 0.2, f'Média: {media_valor:.2f}', color='black', fontsize=12)
 
-        plt.tight_layout()
-
-        # Salvar o gráfico em buffer
-        img5 = io.BytesIO()
-        plt.savefig(img5, format='png')
-        img5.seek(0)
-        graficos.append(base64.b64encode(img5.getvalue()).decode('utf-8'))
-        plt.close(fig5)
+            plt.tight_layout()
+            img5 = io.BytesIO()
+            plt.savefig(img5, format='png')
+            img5.seek(0)
+            graficos.append(base64.b64encode(img5.getvalue()).decode('utf-8'))
+            plt.close(fig5)
+        else:
+            flash("Coluna 'Media_Programa' não encontrada para o gráfico de violino.", "warning")
 
     except Exception as e:
         flash(f"Erro ao processar o arquivo: {e}", "danger")
         return redirect(url_for('avaliacaosecretaria.importar_planilhasecretaria'))
 
-    # Retornar o template com os gráficos gerados
     return render_template('dashboard_secretaria.html', graficos=graficos)
+
 
 # Inicializar o analisador de sentimentos
 nltk.download('vader_lexicon')
@@ -356,56 +327,10 @@ def analisar_sentimento(texto):
     return sid.polarity_scores(texto)
 
 
-
-
 def analisar_sentimentos_secretaria(secretaria):
-
-        secretaria.rename({
-        'sistema_acompanhamento_egressos': 'Sentimento_acompanhamento',
-        'consideracoes_egressos': 'Sentimento_egressos',
-        'sugestoes' : 'Suegestao'
-        }, axis=1, inplace=True)
-
-        # Remover linhas vazias das colunas de comentários
-        df_comentarios = secretaria[['sistema_acompanhamento_egressos', 'consideracoes_egressos','sugestoes']].dropna(how='all')
-
-        # Aplicar a função de sentimento para cada comentário
-        df_comentarios['Sent_acompanhamento'] = df_comentarios['sistema_acompanhamento_egressos'].apply(lambda x: analisar_sentimento(str(x)) if pd.notna(x) else None)
-        df_comentarios['Sent_egressos'] = df_comentarios['consideracoes_egressos'].apply(lambda x: analisar_sentimento(str(x)) if pd.notna(x) else None)
-        df_comentarios['Sent_sugestoes'] = df_comentarios['sugestoes'].apply(lambda x: analisar_sentimento(str(x)) if pd.notna(x) else None)
-
-        # Quebrar os resultados do VADER (dicionário) em colunas separadas
-        df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_acompanhamento']).add_prefix('Programa_'))
-        df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_egressos']).add_prefix('Pro_Reitoria_'))
-        df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_sugestoes']).add_prefix('Pro_Reitoria_'))
-
-        # Calcular a média dos sentimentos
-        media_sentimentos_programa = df_comentarios['Programa_compound'].mean()
-        media_sentimentos_prppg = df_comentarios['Pro_Reitoria_compound'].mean()
-
-        # Contar sentimentos negativos, positivos e neutros
-        total_negativos_programa = len(df_comentarios[df_comentarios['Acompanhamento_compound'] < 0])
-        total_positivos_programa = len(df_comentarios[df_comentarios['Acompanhamento_compound'] > 0])
-        total_neutros_programa = len(df_comentarios[df_comentarios['Acompanhamento_compound'] == 0])
-
-        # Criar gráfico de barras para distribuição de sentimentos
-        dados_sentimentos = {'Negativos': total_negativos_programa, 'Positivos': total_positivos_programa, 'Neutros': total_neutros_programa}
-        fig, ax = plt.subplots(figsize=(8, 6))
-        ax.bar(dados_sentimentos.keys(), dados_sentimentos.values(), color=['red', 'green', 'gray'])
-        ax.set_title('Distribuição de Sentimentos sobre o Programa de Pós-Graduação')
-        ax.set_xlabel('Tipo de Sentimento')
-        ax.set_ylabel('Número de Comentários')
-
-       # Salvar gráfico em buffer
-        img = io.BytesIO()
-        plt.savefig(img, format='png')
-        img.seek(0)
-        plt.close(fig)
-
-        # Retornar gráfico como base64
-        grafico_sentimentos = base64.b64encode(img.getvalue()).decode('utf-8')
-        return grafico_sentimentos
-
+    # Apply sentiment analysis to specific columns
+    sentiment_scores = secretaria['sugestoes'].apply(lambda x: analisar_sentimento(str(x)) if pd.notna(x) else None)
+    return sentiment_scores
 
 def normalize_column_names(df):
     df.columns = [
@@ -435,7 +360,18 @@ def executar_analise():
     tipo = request.args.get('tipo')
     secretaria = pd.read_csv('uploads/secretaria.csv', delimiter=';')
     secretaria = renomear_colunas(secretaria)
-    secretaria = limpar_dados(secretaria)
+    print("Colunas do DataFrame:", secretaria.columns)
+    print("Dados iniciais:", secretaria.head())
+    
+    # Specify columns for cleaning
+    colunas_para_limpeza = [
+        'acompanhamento_discentes', 'praticas_discentes', 'pratica_egresso',
+        'analise_informacoes', 'levantamento_egresso_apenas_capes',
+        'contato_mensagem_egressos', 'sistema_acompanhamento_egressos', 'sugestoes'
+    ]
+    
+    # Clean the data using the specified columns
+    secretaria = limpar_dados(secretaria, colunas_para_limpeza)
 
     graficos = []
     estatisticas_html = gerar_estatisticas_descritivas(secretaria)
@@ -468,6 +404,7 @@ def executar_analise():
         recomendacoes_por_programa=recomendacoes_por_programa,  # Passa o dicionário vazio se não houver dados
         estatisticas=estatisticas_html
     )
+
 
 
 @avaliacaosecretaria_route.route('/visualizar_resultados', methods=['GET'])
@@ -727,7 +664,7 @@ def exibir_recomendacoes_programasecretaria():
         file_path = os.path.join(UPLOAD_FOLDER, 'secretaria.csv')
         if not os.path.exists(file_path):
             flash('Arquivo "secretaria.csv" não encontrado na pasta uploads.', 'danger')
-            return redirect(url_for('secretaria.importar_planilhacoordenador'))
+            return redirect(url_for('avaliacaosecretaria.importar_planilhasecretaria'))
         
         # Carregar o DataFrame do CSV
         secretaria = pd.read_csv(file_path, delimiter=';')
@@ -737,16 +674,26 @@ def exibir_recomendacoes_programasecretaria():
         if secretaria is None:
             raise ValueError("Erro ao renomear colunas. Verifique a função 'renomear_colunas'.")
 
-        secretaria = limpar_dados(secretaria)
-        if secretaria is None:
-            raise ValueError("Erro ao limpar dados. Verifique a função 'limpar_dados'.")
+        # Define the columns that need to be cleaned
+        colunas_para_limpeza = [
+            'acompanhamento_discentes', 'praticas_discentes', 'pratica_egresso',
+            'analise_informacoes', 'levantamento_egresso_apenas_capes',
+            'contato_mensagem_egressos', 'sistema_acompanhamento_egressos', 'sugestoes'
+        ]
+
+        # Limpar os dados com a lista de colunas
+        secretaria = limpar_dados(secretaria, colunas_para_limpeza)
 
         # Calcular médias por grupo
         colunas_programa = ['tempo_programa', 'infraestrutura_programa']
-        colunas_acompanhamento = ['acompanhamento_discentes', 'praticas_discentes', 'pratica_egresso',
-                               'analise_informacoes']
-        colunas_egressos = ['levantamento_egresso_apenas_capes','contato_mensagem_egressos', 'sistema_acompanhamento_egressos','consideracoes_egressos','sugestoes']
-    
+        colunas_acompanhamento = [
+            'acompanhamento_discentes', 'praticas_discentes', 'pratica_egresso',
+            'analise_informacoes'
+        ]
+        colunas_egressos = [
+            'levantamento_egresso_apenas_capes', 'contato_mensagem_egressos',
+            'sistema_acompanhamento_egressos', 'consideracoes_egressos', 'sugestoes'
+        ]
 
         def converter_para_numerico(df, colunas):
             for coluna in colunas:
@@ -754,14 +701,12 @@ def exibir_recomendacoes_programasecretaria():
                     df[coluna] = pd.to_numeric(df[coluna], errors='coerce')
             return df
 
-        secretaria = converter_para_numerico(secretaria, 
-                                              colunas_programa + colunas_acompanhamento + 
-                                              colunas_egressos )
+        secretaria = converter_para_numerico(secretaria, colunas_programa + colunas_acompanhamento + colunas_egressos)
 
+        # Calculate mean values for each program group
         secretaria['Media_Qualidade'] = secretaria[colunas_programa].mean(axis=1)
         secretaria['Media_Acompanhamento'] = secretaria[colunas_acompanhamento].mean(axis=1)
         secretaria['Media_Egressos'] = secretaria[colunas_egressos].mean(axis=1)
-       
 
         # Agrupar por programa e calcular médias
         df_por_programa = secretaria.groupby('programa').agg({
@@ -784,13 +729,11 @@ def exibir_recomendacoes_programasecretaria():
                 if row['Media_Acompanhamento'] < 3:
                     recomendacoes.append("Reavaliar o acompanhamento de discentes e egressos")
                 
-                if row['Media_Infraestrutura'] < 3:
-                    recomendacoes.append("Investir em infraestrutura, incluindo laboratórios e insumos de pesquisa.")
-                
                 if row['Media_Egressos'] < 3:
-                    recomendacoes.append("Aprimorar o relacionamento egressos.")
-                
-               
+                    recomendacoes.append("Aprimorar o relacionamento com egressos.")
+
+                recomendacoes_por_programa[programa] = recomendacoes
+
             return recomendacoes_por_programa
 
         # Gerar recomendações para cada programa
@@ -825,29 +768,20 @@ def aplicar_clustering(secretaria, num_clusters=3):
     return base64.b64encode(img.getvalue()).decode('utf-8')
 
 # Função para análise de regressão
-def aplicar_regressao(secretaria):
-    # Ensure numeric values in relevant columns
-    secretaria[['Infraestrutura_geral', 'acompanhamento_egresso', 'tempo_programa']] = secretaria[['Infraestrutura_geral', 'acompanhamento_egresso', 'tempo_programa']].apply(pd.to_numeric, errors='coerce')
-    secretaria.dropna(subset=['Infraestrutura_geral', 'acompanhamento_egresso', 'tempo_programa'], inplace=True)
-
-    # Define features and target
-    X = secretaria[['Infraestrutura_geral', 'acompanhamento_egresso']]
-    y = secretaria['tempo_programa']
+def regressao(secretaria):
+    X = secretaria[['tempo_programa_numeric', 'infraestrutura_programa']].dropna()
+    y = secretaria['tempo_programa_numeric'].dropna()
     
-    # Debugging output
-    print("Features for regression analysis (first rows):", X.head())
-    print("Target variable for regression (first rows):", y.head())
-
-    # Split data and train model
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    
-    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model = RandomForestRegressor(random_state=42)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     
-    # Calculate MSE and print for debugging
     mse = mean_squared_error(y_test, y_pred)
-    print("Mean Squared Error of Regression:", mse)
-    print("Predictions vs Actual values:", list(zip(y_test, y_pred)))
+    return mse
 
-    return f'MSE da regressão: {mse}'
+
+def analisar_sentimento(texto):
+    if pd.isna(texto) or texto.strip() == "":
+        return None
+    return sid.polarity_scores(texto)

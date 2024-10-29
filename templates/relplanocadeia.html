@@ -46,19 +46,21 @@
                                 {{ indicador.nome }}<br>
                             {% endfor %}
                         </td>
-                        <td colspan="2"></td>
-                    </tr>
-                {% endfor %}
-                {% for risco in objetivo.riscos %}
-                    <tr>
-                        <td></td>
-                        <td colspan="2"></td>
-                        <td>{{ risco.descricao }}</td>
-                        <td>{{ risco.acao_preventiva }}</td>
+                        <td>
+                            {% for risco in meta.riscos %}
+                                {{ risco.descricao }}<br>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for risco in meta.riscos %}
+                                {{ risco.acao_preventiva }}<br>
+                            {% endfor %}
+                        </td>
                     </tr>
                 {% endfor %}
             {% endfor %}
         </tbody>
+        
     </table>
 </div>
 

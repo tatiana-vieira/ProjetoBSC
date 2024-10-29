@@ -1,18 +1,21 @@
 {% extends 'basepro.html' %}
 
 {% block titulo %}
-    <div style="text-align: center;">
-        Gráficos de Avaliação da Coordenação
-    </div>
+    <h1 style="text-align: center; margin-bottom: 20px;">Gráficos de Autoavaliação Coordenador</h1>
 {% endblock %}
 
 {% block conteudo %}
-    <h2>Gráficos Gerados</h2>
-    
+    <h2 style="text-align: center;">Gráficos Gerados</h2>   
     <!-- Exibir gráficos gerados -->
-    {% for grafico in graficos %}
-        <img src="data:image/png;base64,{{ grafico }}" alt="Gráfico Gerado">
-    {% endfor %}
+    <div class="container my-4">
+        <div class="row">
+            {% for grafico in graficos %}
+                <div class="col-md-6 mb-4">
+                    <img src="data:image/png;base64,{{ grafico }}" class="img-fluid" alt="Gráfico Gerado">
+                </div>
+            {% endfor %}
+        </div>
+    </div>
 
     <!-- Botões de Fechar, Análise de Sentimento e Análise Estratégica com IA -->
     <div style="text-align: center; margin-top: 40px;">
