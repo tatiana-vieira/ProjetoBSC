@@ -17,24 +17,6 @@ import xlsxwriter
 relatorioindicador_route = Blueprint('relatorioindicador', __name__)
 
 
-from flask import render_template, request, flash, redirect, url_for, session, make_response
-from .models import PlanejamentoEstrategico, ObjetivoPE, MetaPE, IndicadorPlan, Valorindicador, Programa, db
-from flask_sqlalchemy import SQLAlchemy
-from flask import Blueprint
-import base64
-from io import BytesIO
-from flask_login import login_required
-import csv
-import io
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
-from reportlab.lib.enums import TA_JUSTIFY
-from reportlab.lib import colors
-import xlsxwriter
-
-relatorioindicador_route = Blueprint('relatorioindicador', __name__)
-
 @relatorioindicador_route.route('/relatindicadores')
 @login_required
 def exibir_relatorioindicador():
