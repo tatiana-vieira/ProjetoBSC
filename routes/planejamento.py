@@ -47,7 +47,7 @@ def coordenador_required(f):
 
 @planejamento_route.route('/get_coordenador', methods=['GET'])
 def get_coordenador():
-    programa_id = session.get('programa_id')  # Pegando o ID do programa da sessão
+    programa_id = session.get('programa_id')
     planejamento = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).first()
 
     if not planejamento:
@@ -63,6 +63,17 @@ def get_coordenador():
                            percentual_acoes_concluidas=percentual_acoes_concluidas,
                            programa_id=programa_id)
 
+
+def calcular_percentual_metas_atingidas(planejamento):
+    total_metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in planejamento.objetivos])).count()
+    metas_atingidas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in planejamento.objetivos]), MetaPE.status == 'Concluída').count()
+    return (metas_atingidas / total_metas * 100) if total_metas > 0 else 0
+
+def calcular_percentual_acoes_concluidas(planejamento):
+    metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in planejamento.objetivos])).all()
+    total_acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).count()
+    acoes_concluidas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Concluída').count()
+    return (acoes_concluidas / total_acoes * 100) if total_acoes > 0 else 0
 
 ##################################################################33
 @planejamento_route.route('/editar/<int:id>', methods=['GET', 'POST'])
@@ -514,6 +525,32 @@ def associar_metaspe():
     else:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('planejamento.associar_metaspe'))
+
+#########################33 calcular ####################################################
+def calcular_percentual_metas_atingidas(planejamento):
+    # Obter todas as metas associadas ao planejamento
+    metas = MetaPE.query.filter_by(objetivo_pe_id=ObjetivoPE.id).filter(
+        ObjetivoPE.planejamento_estrategico_id == planejamento.id).all()
+    total_metas = len(metas)
+    metas_atingidas = sum(1 for meta in metas if meta.status == 'Concluída')
+    
+    # Calcular o percentual
+    percentual_metas = (metas_atingidas / total_metas) * 100 if total_metas > 0 else 0
+    return percentual_metas
+
+def calcular_percentual_acoes_concluidas(planejamento):
+    # Obter todas as ações associadas ao planejamento
+    metas = MetaPE.query.filter_by(objetivo_pe_id=ObjetivoPE.id).filter(
+        ObjetivoPE.planejamento_estrategico_id == planejamento.id).all()
+    acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).all()
+    total_acoes = len(acoes)
+    acoes_concluidas = sum(1 for acao in acoes if acao.status == 'Concluída')
+
+    # Calcular o percentual
+    percentual_acoes = (acoes_concluidas / total_acoes) * 100 if total_acoes > 0 else 0
+    return percentual_acoes
+
+
 
 
 #################################################################################################
@@ -1173,32 +1210,37 @@ def resumo_planejamento():
         metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
         total_metas = len(metas)
         metas_atingidas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Concluída').count()
+        metas_em_andamento = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Em andamento').count()
+        metas_futuras = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'A iniciar').count()
         metas_no_prazo = MetaPE.query.filter(MetaPE.status != 'Concluída', MetaPE.data_termino >= datetime.now().date()).count()
         metas_atrasadas = MetaPE.query.filter(MetaPE.status != 'Concluída', MetaPE.data_termino < datetime.now().date()).count()
-        print(f"Metas no prazo: {metas_no_prazo}, Metas atrasadas: {metas_atrasadas}")
 
         percentual_metas_atingidas = (metas_atingidas / total_metas) * 100 if total_metas > 0 else 0
 
         # Busque as ações associadas às metas
         total_acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).count()
-        acoes_concluidas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Concluída').count()
-
+        acoes_concluidas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Concluída' or  AcaoPE.status == 'Concluída').count()
+        acoes_atrasadas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Atrasada').count()
         percentual_acoes_concluidas = (acoes_concluidas / total_acoes) * 100 if total_acoes > 0 else 0
 
     else:
-        total_metas = 0
-        percentual_metas_atingidas = 0
-        percentual_acoes_concluidas = 0
+        total_metas = metas_em_andamento = metas_futuras = metas_no_prazo = metas_atrasadas = 0
+        total_acoes = acoes_concluidas = acoes_atrasadas = 0
+        percentual_metas_atingidas = percentual_acoes_concluidas = 0
 
     return render_template(
         'resumo_planejamento.html',
         planejamento=planejamento,
+        total_metas=total_metas,
+        metas_em_andamento=metas_em_andamento,
+        metas_futuras=metas_futuras,
         percentual_metas_atingidas=percentual_metas_atingidas,
         percentual_acoes_concluidas=percentual_acoes_concluidas,
         metas_no_prazo=metas_no_prazo,
-        metas_atrasadas=metas_atrasadas
-)
-
+        metas_atrasadas=metas_atrasadas,
+        total_acoes=total_acoes,
+        acoes_atrasadas=acoes_atrasadas
+    )
 
 
 ######################################################################################################3

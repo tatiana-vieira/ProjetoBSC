@@ -1,174 +1,102 @@
 {% extends 'basecorden.html' %}
 
 {% block titulo %}
-    Planejamento Estratégico
+    Resumo do Planejamento Estratégico
 {% endblock %}
 
 {% block conteudo %}
-        <h2>Resumo do Planejamento Estratégico</h2>
-        <p><strong>Planejamento: </strong>{{ planejamento.nome }}</p>
-      </div>
+    <div style="text-align: center;">
+        <h2 style="text-align: center; color: #003366; font-size: 24px; font-weight: bold;">Resumo do Planejamento Estratégico</h2>
+        <p><strong>Planejamento:</strong> {{ planejamento.nome }}</p>
     </div>
-  
+
     <div class="row mt-4">
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Metas Atingidas</h5>
-            <p class="card-text">
-                <p><strong>{{ percentual_metas_atingidas }}%</strong> das metas foram atingidas no último ciclo.</p>
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Ações Concluídas</h5>
-            <p class="card-text">
-              <strong>{{ percentual_acoes_concluidas }}%</strong> das ações estão concluídas.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="row mt-5">
-        <div class="col">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Status Geral</h5>
-              <div style="width: 200px; height: 200px;"> <!-- Ajuste o tamanho aqui -->
-                <canvas id="statusChart"></canvas>
-              </div>
+        <div class="col-md-4">
+            <div class="card" style="background-color: #28a745; color: white;">
+                <div class="card-body">
+                    <h5 class="card-title">Metas Atingidas</h5>
+                    <p><strong>{{ percentual_metas_atingidas }}%</strong> das metas foram atingidas no último ciclo.</p>
+                </div>
             </div>
-          </div>
         </div>
-    </div>
-    <div class="row mt-5">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Evolução das Metas</h5>
-            <div style="width: 400px; height: 300px;">
-              <canvas id="evolucaoMetasChart"></canvas>
+        
+        <div class="col-md-4">
+            <div class="card" style="background-color: #007bff; color: white;">
+                <div class="card-body">
+                    <h5 class="card-title">Ações Concluídas</h5>
+                    <p><strong>{{ percentual_acoes_concluidas }}%</strong> das ações estão concluídas.</p>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
+
+        <div class="col-md-4">
+            <div class="card" style="background-color: #ffc107; color: black;">
+                <div class="card-body">
+                    <h5 class="card-title">Ações Atrasadas</h5>
+                    <p><strong>{{ acoes_atrasadas }}</strong> ações estão atrasadas.</p>
+                </div>
+            </div>
+        </div>
     </div>
-    
+
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Status Geral das Metas</h5>
+                    <p><strong>Total de Metas:</strong> {{ total_metas }}</p>
+                    <p><strong>Em Andamento:</strong> {{ metas_em_andamento }}</p>
+                    <p><strong>Futuras:</strong> {{ metas_futuras }}</p>
+                    <p><strong>Metas no Prazo:</strong> {{ metas_no_prazo }}</p>
+                    <p><strong>Metas Atrasadas:</strong> {{ metas_atrasadas }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Gráfico de Evolução das Metas</h5>
+                    <div style="width: 100%; height: 200px; margin: 0 auto;">
+                        <canvas id="evolucaoMetasChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-      var ctx3 = document.getElementById('evolucaoMetasChart').getContext('2d');
-      var evolucaoMetasChart = new Chart(ctx3, {
-        type: 'bar',
-        data: {
-          labels: ['Metas no Prazo', 'Metas Atrasadas'],
-          datasets: [{
-            label: 'Número de Metas',
-            data: [{{ metas_no_prazo }}, {{ metas_atrasadas }}],
-            backgroundColor: ['#36a2eb', '#ff6384'],
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true
+        // Gráfico de Evolução das Metas
+        var ctxEvolucao = document.getElementById('evolucaoMetasChart').getContext('2d');
+        new Chart(ctxEvolucao, {
+            type: 'bar',
+            data: {
+                labels: ['Metas no Prazo', 'Metas Atrasadas', 'Em Andamento', 'A Iniciar'],
+                datasets: [{
+                    label: 'Número de Metas',
+                    data: [{{ metas_no_prazo }}, {{ metas_atrasadas }}, {{ metas_em_andamento }}, {{ metas_futuras }}],
+                    backgroundColor: ['#36a2eb', '#ff6384', '#ffcd56', '#4bc0c0']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true }
+                }
             }
-          }
-        }
-      });
+        });
     </script>
-    
-    
-    <div class="row mt-5">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Sugestões Automáticas</h5>
-            <p class="card-text">
-              {% if planejamento.metas %}
-                <ul>
-                  {% for meta in planejamento.metas %}
-                    {% set sugestoes = sugerir_ajustes(meta, meta.progresso_atual, meta.valor_alvo) %}
-                    {% for sugestao in sugestoes %}
-                      <li>{{ sugestao }}</li>
-                    {% endfor %}
-                  {% endfor %}
-                </ul>
-              {% else %}
-                <p>Nenhuma sugestão no momento.</p>
-              {% endif %}
-            </p>
-          </div>
-        </div>
-      </div>
+       <div style="text-align: center;">
+        <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
     </div>
-    <div class="form-group" style="text-align: center;">
-      <a href="{{ url_for('planejamento.export_programa_pdf', programa_id=current_user.programa_id) }}" class="btn btn-primary">Exportar PDF</a>
-      <a href="{{ url_for('planejamento.export_programa_excel', programa_id=current_user.programa_id) }}" class="btn btn-success">Exportar Excel</a>
-    </div>
-      
-    <div class="form-group" style="text-align: center;">
-        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
-      </div>
-      <script>
-        function fechar() {
-            window.location.href = "{{ url_for('login.get_coordenador') }}";
-        }
-      </script>
-  </div>
-  
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    var ctx = document.getElementById('statusChart').getContext('2d');
-var myChart = new Chart(ctx, {
-  type: 'doughnut',
-  data: {
-    labels: ['Metas Atingidas', 'Ações Concluídas'],
-    datasets: [{
-      data: [{{ percentual_metas_atingidas }}, {{ percentual_acoes_concluidas }}],
-      backgroundColor: ['#36a2eb', '#ff6384'],
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false, // Isso ajuda a ajustar o gráfico ao contêiner
-    layout: {
-      padding: {
-        left: 0,
-        right: 0,
-        top: 0,
-        bottom: 0
-      }
-    }
+ </form>
+</div>
+
+<script>
+ function fechar() {
+      window.location.href = "{{ url_for('login.get_coordenador') }}";
   }
-});
-var ctx3 = document.getElementById('evolucaoMetasChart').getContext('2d');
-var evolucaoMetasChart = new Chart(ctx3, {
-    type: 'bar',
-    data: {
-        labels: ['Metas no Prazo', 'Metas Atrasadas'],
-        datasets: [{
-            label: 'Número de Metas',
-            data: [{{ metas_no_prazo }}, {{ metas_atrasadas }}], // Aqui usamos os dados dinâmicos
-            backgroundColor: ['#36a2eb', '#ff6384'],
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        }
-    }
-});
-
-
-  </script>
-  {% endblock %}
+</script>
+{% endblock %}
