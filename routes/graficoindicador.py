@@ -25,23 +25,21 @@ def exibir_graficoindicador():
 
             objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
             metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivos])).all()
+            indicadores = []
 
             for meta in metas:
-                indicadores = IndicadorPlan.query.filter_by(meta_pe_id=meta.id).all()
-                for indicador in indicadores:
+                indicadores_meta = IndicadorPlan.query.filter_by(meta_pe_id=meta.id).all()
+                for indicador in indicadores_meta:
                     valores_indicadores = Valorindicador.query.filter_by(indicadorpe_id=indicador.id).all()
-                    if valores_indicadores:
-                        # Verificar se indicador.valor_meta é None
-                        if indicador.valor_meta is not None:
-                            try:
-                                valor_meta = float(indicador.valor_meta)
-                            except ValueError:
-                                valor_meta = 0.0  # Definir um valor padrão se a conversão falhar
-                        else:
-                            valor_meta = 0.0  # Valor padrão se o valor_meta estiver ausente
+                    indicadores.append({
+                        'nome': indicador.nome,
+                        'valor_meta': float(indicador.valor_meta) if indicador.valor_meta else 0.0,
+                        'valores_indicadores': [{'ano': valor.ano, 'semestre': valor.semestre, 'valor': float(valor.valor)} for valor in valores_indicadores]
+                    })
 
-                        graph_base64 = gerar_grafico_comparativo(indicador.nome, valor_meta, valores_indicadores)
-                        graphs.append((graph_base64, indicador.nome))
+            # Gerar gráfico consolidado para todos os indicadores
+            graph_base64 = gerar_grafico_consolidado(indicadores)
+            graphs.append((graph_base64, "Indicadores Consolidado"))
 
         return render_template('graficoindicador.html', planejamentos=planejamentos, planejamento_selecionado=planejamento_selecionado, graphs=graphs)
 
@@ -50,27 +48,37 @@ def exibir_graficoindicador():
         return redirect(url_for('login.login_page'))
 
 
+def gerar_grafico_consolidado(indicadores):
+    fig, ax = plt.subplots(figsize=(14, 8))
 
+    for indicador in indicadores:
+        periodos = [f"{valor['ano']}/{valor['semestre']}" for valor in indicador['valores_indicadores']]
+        valores = [valor['valor'] for valor in indicador['valores_indicadores']]
+        valor_meta = indicador['valor_meta']
 
+        # Adiciona a linha do indicador
+        ax.plot(periodos, valores, marker='o', linestyle='-', label=indicador['nome'], linewidth=2)
 
+        # Adiciona a linha de meta
+        if valor_meta > 0:
+            ax.axhline(y=valor_meta, color='red', linestyle='--', linewidth=1, label=f"Meta {indicador['nome']} ({valor_meta}%)")
 
-def gerar_grafico_comparativo(nome_indicador, valor_meta, valores_indicadores):
-    fig, ax = plt.subplots()
+        # Adiciona os valores nos pontos
+        for i, v in enumerate(valores):
+            percentual_cumprimento = (v / valor_meta) * 100 if valor_meta > 0 else 0
+            cor = 'green' if percentual_cumprimento >= 100 else 'orange' if percentual_cumprimento >= 80 else 'red'
+            ax.text(i, v + 0.5, f"{v:.1f}% ({percentual_cumprimento:.1f}%)", ha='center', va='bottom', fontsize=8, color=cor)
 
-    periodos = [f"{valor.ano}/{valor.semestre}" for valor in valores_indicadores]
-    valores = [float(valor.valor) for valor in valores_indicadores]
-
-    ax.bar(periodos, valores, label='Valor Atual', color='b')
-    ax.axhline(y=valor_meta, color='r', linestyle='--', label=f'Meta ({valor_meta}%)')
-
+    # Configurações do gráfico
     ax.set_xlabel('Período')
-    ax.set_ylabel('Valor')
-    ax.set_title(f'Comparação do Indicador {nome_indicador}', fontsize=10)
-    ax.legend()
+    ax.set_ylabel('Valor do Indicador')
+    ax.set_title('Comparação de Indicadores com Metas')
+    ax.legend(loc='upper left', bbox_to_anchor=(1, 1), title="Indicadores", fontsize=10)
 
-    for i, v in enumerate(valores):
-        ax.text(i, float(v) + 0.1, f"{float(v)}%", ha='center', va='bottom', fontsize=8)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
 
+    # Converter para imagem base64
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)

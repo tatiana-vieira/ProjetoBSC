@@ -651,18 +651,29 @@ def listar_matriz_riscos():
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('relatoriometas.cadastrar_risco'))
 
+    # Obter todos os planejamentos para o programa atual
     planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
 
     if request.method == 'POST':
+        # Obter o planejamento selecionado
         planejamento_id = request.form['planejamento_id']
+        # Consultar riscos do planejamento atualizado
         riscos = Risco.query.join(ObjetivoPE, Risco.objetivo_pe_id == ObjetivoPE.id)\
                             .join(PlanejamentoEstrategico, ObjetivoPE.planejamento_estrategico_id == PlanejamentoEstrategico.id)\
                             .filter(PlanejamentoEstrategico.id == planejamento_id).all()
 
         # Gerar a matriz de riscos
         matriz_riscos = gerar_matriz_riscos(riscos)
-        return render_template('listar_matriz.html', planejamentos=planejamentos, selected_planejamento=planejamento_id, matriz_riscos=matriz_riscos, enumerate=enumerate)
+        
+        return render_template(
+            'listar_matriz.html',
+            planejamentos=planejamentos,
+            selected_planejamento=planejamento_id,
+            matriz_riscos=matriz_riscos,
+            enumerate=enumerate
+        )
 
+    # Exibir a página sem dados de riscos até que um planejamento seja selecionado
     return render_template('listar_matriz.html', planejamentos=planejamentos, matriz_riscos=None, enumerate=enumerate)
 
 def gerar_matriz_riscos(riscos):
@@ -670,18 +681,22 @@ def gerar_matriz_riscos(riscos):
     row_labels = ['Baixa', 'Média', 'Alta']
     col_labels = ['Insignificante', 'Moderado', 'Catastrófico']
 
-    # Inicializando a matriz 3x3
+    # Inicializando a matriz 3x3 vazia
     matriz = [[[] for _ in range(len(col_labels))] for _ in range(len(row_labels))]
 
+    # Preenchendo a matriz de riscos
     for risco in riscos:
         try:
+            # Determinar o índice da probabilidade e do impacto na matriz
             row_idx = row_labels.index(risco.probabilidade)
             col_idx = col_labels.index(risco.impacto)
+            # Adicionar a descrição do risco na célula correspondente
             matriz[row_idx][col_idx].append(risco.descricao)
         except ValueError as e:
             print(f"Erro ao processar risco '{risco.descricao}': {e}. Probabilidade: {risco.probabilidade}, Impacto: {risco.impacto}")
             continue
 
     return matriz
+
 
 

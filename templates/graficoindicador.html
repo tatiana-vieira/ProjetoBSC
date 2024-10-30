@@ -6,11 +6,10 @@
 
 {% block conteudo %}
 <body>
-    <h4 style="text-align: center; color: #003366;">PLANEJAMENTO ESTRATÉGICO (GRÁFICOS DE INDICADORES)</h4>
+    <h4 style="text-align: center; color: #003366;">Planejamento Estratégico - Gráficos dos Indicadores</h4>
 
-    {% if not planejamento_selecionado %}
-    <div style="text-align: center;">
-        <h4 style="color: #003366;">Selecione um Planejamento Estratégico:</h4>
+    <div style="text-align: center; margin-top: 20px;">
+        <h4>Selecione um Planejamento Estratégico</h4>
         <form method="GET" action="{{ url_for('graficoindicador.exibir_graficoindicador') }}">
             <select id="planejamento_estrategico" name="planejamento_selecionado" required style="width: 300px; margin-bottom: 20px;">
                 <option value="">-- Selecione --</option>
@@ -18,23 +17,26 @@
                     <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento_selecionado.id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
                 {% endfor %}
             </select>
-            <button type="submit" class="btn btn-primary">Buscar</button>
+            <button type="submit" class="btn btn-primary" style="background-color: #007bff; color: white;">Buscar</button>
         </form>
     </div>
-    {% endif %}
 
     {% if graphs %}
-    <div id="graficos-indicadores" style="text-align: center; margin-top: 20px;">
-        <h2>Gráficos dos Indicadores</h2>
-        {% for graph_base64, titulo in graphs %}
-            <h3 style="font-size: 14px;">{{ titulo }}</h3>
-            <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Valores dos Indicadores" style="max-width: 100%; height: auto;">
-        {% endfor %}
-    </div>
+        <div id="graficos-indicadores" style="margin-top: 30px;">
+            <h2 style="text-align: center; color: #003366;">Gráficos dos Indicadores</h2>
+            {% for graph_base64, titulo in graphs %}
+                <div style="text-align: center; margin-top: 20px;">
+                    <h3 style="font-size: 16px; color: #333;">{{ titulo }}</h3>
+                    <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Valores dos Indicadores" style="max-width: 90%; height: auto; border: 1px solid #ddd; padding: 10px;">
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p style="text-align: center; margin-top: 20px; color: #888;">Nenhum gráfico de indicador disponível.</p>
     {% endif %}
 
-    <div style="text-align: center; margin-top: 20px;">
-        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+    <div style="text-align: center; margin-top: 30px;">
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Fechar</button>
     </div>
 
     <script>
@@ -43,4 +45,4 @@
         }
     </script>
 </body>
-{% endblock conteudo %}
+{% endblock %}

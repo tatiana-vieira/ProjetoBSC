@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session,jsonify,send_file
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session,jsonify,send_file,make_response
 from .models import Users, Programa,CadeiaValor, PlanejamentoEstrategico,AcaoPE,Risco, PDI,Objetivo,ObjetivoPE,MetaPE,IndicadorPlan,Valorindicador,Valormeta # Certifique-se de importar seus modelos corretamente
 from routes.db import db
 from flask_bcrypt import Bcrypt
@@ -16,6 +16,11 @@ from flask import get_flashed_messages
 import matplotlib.pyplot as plt
 import base64
 import logging
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from io import BytesIO
+from fpdf import FPDF
+import tempfile
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -456,13 +461,11 @@ def associar_metaspe():
         planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
         objetivos_pe_associados = []
 
-        # Buscar objetivos associados a cada planejamento
         for planejamento in planejamentos:
             objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
             objetivos_pe_associados.extend(objetivos)
 
         if request.method == 'POST':
-            # Coletar dados do formulário
             objetivo_pe_id = request.form['objetivo_pe_id']
             nome_meta = request.form['nome']
             descricao = request.form['descricao']
@@ -470,22 +473,19 @@ def associar_metaspe():
             recursos = request.form['recursos']
             data_inicio = request.form['data_inicio']
             data_termino = request.form['data_termino']
-            status_inicial = request.form['status_inicial']
-            valor_alvo = request.form['valor_alvo']
+            status_inicial = request.form['status_inicial']  # Porcentagem
+            status_texto = request.form['status']  # Status textual
 
-            # Verificar se o objetivo existe
             objetivo_pe = ObjetivoPE.query.get(objetivo_pe_id)
             if not objetivo_pe:
                 flash('Objetivo não encontrado!', 'error')
                 return redirect(url_for('planejamento.associar_metaspe'))
 
-            # Verificar se uma meta com o mesmo nome já existe para o objetivo selecionado
             meta_existente = MetaPE.query.filter_by(nome=nome_meta, objetivo_pe_id=objetivo_pe_id).first()
             if meta_existente:
                 flash('Essa meta já existe para o objetivo selecionado!', 'warning')
                 return redirect(url_for('planejamento.associar_metaspe'))
 
-            # Tentar criar a nova meta
             try:
                 nova_meta = MetaPE(
                     objetivo_pe_id=objetivo_pe_id,
@@ -496,47 +496,25 @@ def associar_metaspe():
                     data_inicio=data_inicio,
                     data_termino=data_termino,
                     status_inicial=status_inicial,
-                    valor_alvo=valor_alvo
+                    status=status_texto  # Define o status textual
                 )
                 db.session.add(nova_meta)
                 db.session.commit()
-                meta_id = nova_meta.id  # Obter o ID da meta recém-criada
+                flash('Meta cadastrada com sucesso!', 'success')
             except Exception as e:
                 db.session.rollback()
                 flash(f'Erro ao cadastrar a meta: {str(e)}', 'error')
                 return redirect(url_for('planejamento.associar_metaspe'))
 
-            # Cadastrar os valores da meta
-            try:
-                anos = request.form.getlist('ano[]')
-                semestres = request.form.getlist('semestre[]')
-                valores = request.form.getlist('valor[]')
-
-                for ano, semestre, valor in zip(anos, semestres, valores):
-                    valor = valor.replace(',', '.')  # Substituir vírgula por ponto decimal
-                    novo_valor = Valormeta(
-                        metape_id=meta_id, 
-                        ano=int(ano), 
-                        semestre=int(semestre), 
-                        valor=float(valor)
-                    )
-                    db.session.add(novo_valor)
-
-                db.session.commit()
-                flash('Meta e valores cadastrados com sucesso!', 'success')
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Erro ao cadastrar valores da meta: {str(e)}', 'error')
-            
             return redirect(url_for('planejamento.associar_metaspe'))
 
-        # Obter todas as metas cadastradas associadas aos objetivos do planejamento
         metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos_pe_associados])).all()
         return render_template('metaspe.html', objetivos_pe=objetivos_pe_associados, metas=metas)
 
     else:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('planejamento.associar_metaspe'))
+
 
 #################################################################################################
 
@@ -575,16 +553,19 @@ def get_objetivos(planejamento_id):
     
 ##############################################################################################################################
 @planejamento_route.route('/alterar_metape/<int:metape_id>', methods=['GET', 'POST'])
+@login_required
 def alterar_metape(metape_id):
     meta_pe = MetaPE.query.get_or_404(metape_id)
     mensagem = None
 
     if request.method == 'POST':
+        # Atualiza os campos com valores recebidos do formulário
         meta_pe.nome = request.form.get('nome', meta_pe.nome)
         meta_pe.descricao = request.form.get('descricao', meta_pe.descricao)
         meta_pe.responsavel = request.form.get('responsavel', meta_pe.responsavel)
         meta_pe.recursos_necessarios = request.form.get('recursos', meta_pe.recursos_necessarios)
-        
+
+        # Atualiza data de início e data de término com validação de formato
         data_inicio = request.form.get('data_inicio')
         if data_inicio:
             try:
@@ -601,7 +582,9 @@ def alterar_metape(metape_id):
             except ValueError:
                 flash('Formato de data de término inválido. Use o formato YYYY-MM-DD.', 'danger')
 
+        # Atualiza status inicial (percentual) e status (textual)
         meta_pe.status_inicial = request.form.get('status_inicial', meta_pe.status_inicial)
+        meta_pe.status = request.form.get('status', meta_pe.status)
         meta_pe.valor_alvo = request.form.get('valor_alvo', meta_pe.valor_alvo)
 
         # Cadastrar ou atualizar os valores da meta
@@ -624,6 +607,7 @@ def alterar_metape(metape_id):
         return redirect(url_for('planejamento.associar_metaspe'))
 
     return render_template('alterarmetas.html', meta=meta_pe, mensagem=mensagem)
+
 
 #############################################################################
 #################################################################################
@@ -1004,31 +988,116 @@ def atualizar_metas():
 
     return redirect(url_for('planejamento.acompanhamento_metas'))
 
-
+########################relatorio metas###############################333
 @planejamento_route.route('/acompanhamento_metas', methods=['GET', 'POST'])
 @login_required
 def acompanhamento_metas():
     programa_id = current_user.programa_id
     planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
     metas = []
+    graph_base64 = None
+    dados_graficos = []
 
     if request.method == 'POST':
         planejamento_id = request.form.get('planejamento_id')
-        print(f"Planejamento ID selecionado: {planejamento_id}")  # Debugging print
 
         if planejamento_id:
+            planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_id)
             objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
             metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
-            print(f"Metas encontradas: {metas}")  # Debugging print
+            valoresmetas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metas])).all()
+
+            # Preparar dados para o gráfico e sugestões
+            for meta in metas:
+                valores = [valor for valor in valoresmetas if valor.metape_id == meta.id]
+                progresso = sum(valor.valor for valor in valores)
+                valor_alvo = meta.valor_alvo or 0
+                restante = max(valor_alvo - progresso, 0)
+
+                sugestoes = sugerir_ajustes(meta, progresso, restante)
+                dados_graficos.append({
+                    'meta': meta.nome,
+                    'data_inicio': meta.data_inicio,
+                    'data_termino': meta.data_termino,
+                    'progresso': progresso,
+                    'restante': restante,
+                    'sugestoes': sugestoes
+                })
+
+            # Gerar gráfico com legendas
+            if dados_graficos:
+                plt.figure(figsize=(12, 7))
+                for dado in dados_graficos:
+                    plt.barh(dado['meta'], dado['progresso'], color='skyblue', label='Progresso' if 'Progresso' not in plt.gca().get_legend_handles_labels()[1] else "")
+                    plt.barh(dado['meta'], dado['restante'], left=dado['progresso'], color='lightcoral', label='Restante' if 'Restante' not in plt.gca().get_legend_handles_labels()[1] else "")
+
+                plt.xlabel('Valor')
+                plt.title('Progresso das Metas')
+                plt.legend(loc='upper right')
+                plt.tight_layout()
+
+                img = BytesIO()
+                plt.savefig(img, format='png')
+                img.seek(0)
+                plt.close()
+
+                graph_base64 = base64.b64encode(img.getvalue()).decode()
 
             if not metas:
                 flash('Nenhuma meta encontrada para o planejamento selecionado.', 'warning')
         else:
             flash('Por favor, selecione um planejamento.', 'danger')
 
-    return render_template('acompanhamento_metas.html', metas=metas, planejamentos=planejamentos)
+    return render_template(
+        'acompanhamento_metas.html',
+        metas=metas,
+        planejamentos=planejamentos,
+        graph_base64=graph_base64,
+        dados_graficos=dados_graficos
+    )
 
 
+def gerar_grafico_metas(dados_graficos):
+    plt.figure(figsize=(12, 7))  # Ajuste do tamanho para centralizar e dar mais espaço para rótulos
+
+    for dado in dados_graficos:
+        plt.barh(dado['meta'], dado['progresso'], color='skyblue', label='Progresso' if 'Progresso' not in plt.gca().get_legend_handles_labels()[1] else "")
+        plt.barh(dado['meta'], dado['restante'], left=dado['progresso'], color='lightcoral', label='Restante' if 'Restante' not in plt.gca().get_legend_handles_labels()[1] else "")
+    
+    plt.xlabel('Valor')
+    plt.title('Progresso das Metas')
+    plt.legend(loc='upper right')  # Adicionar a legenda no canto superior direito
+    plt.tight_layout()  # Ajustar o layout para melhor centralização e legibilidade
+
+    # Salvando a imagem em base64 para exibir no HTML
+    img = BytesIO()
+    plt.savefig(img, format='png')
+    img.seek(0)
+    plt.close()
+
+    graph_base64 = base64.b64encode(img.getvalue()).decode()
+    return graph_base64
+
+
+
+def sugerir_ajustes(meta, progresso, restante):
+    """Sugere ajustes com base nos dados da meta e progresso."""
+    sugestoes = []
+    
+    if meta.data_termino:
+        dias_restantes = (meta.data_termino - datetime.now().date()).days
+    else:
+        dias_restantes = None
+    
+    valor_alvo = float(meta.valor_alvo) if meta.valor_alvo else 0
+    
+    if progresso < 0.5 * valor_alvo and (dias_restantes is not None and dias_restantes < 30):
+        sugestoes.append(f"A meta '{meta.nome}' está com progresso lento. Considere aumentar os recursos ou estender o prazo.")
+    
+    if progresso > 0.8 * valor_alvo and (dias_restantes is not None and dias_restantes > 30):
+        sugestoes.append(f"A meta '{meta.nome}' está no caminho certo. Continue monitorando.")
+
+    return sugestoes
 @planejamento_route.route('/atualizar_status_meta/<int:meta_id>', methods=['POST'])
 @login_required
 def atualizar_status_meta(meta_id):
@@ -1154,6 +1223,115 @@ def indicadores_desempenho():
         for indicador in meta.indicador_pe:
             valores = Valorindicador.query.filter_by(indicadorpe_id=indicador.id).all()
             if valores:
-                historico_valores[indicador.nome] = [(valor.ano, valor.valor) for valor in valores]
+                historico_valores[indicador.nome.title()] = [(valor.ano, valor.valor) for valor in valores]  # Capitaliza o título
 
     return render_template('indicadores_desempenho.html', historico_valores=historico_valores)
+
+
+from fpdf import FPDF
+import tempfile
+import matplotlib.pyplot as plt
+from flask import make_response
+
+@planejamento_route.route('/gerar_pdf_indicadores_desempenho')
+@login_required
+def gerar_pdf_indicadores_desempenho():
+    # Obter dados atualizados de desempenho
+    planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=current_user.programa_id).all()
+    metas = []
+    
+    for planejamento in planejamentos:
+        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+        for objetivo in objetivos:
+            metas.extend(MetaPE.query.filter_by(objetivo_pe_id=objetivo.id).all())
+    
+    historico_valores = {}
+    for meta in metas:
+        for indicador in meta.indicador_pe:
+            valores = Valorindicador.query.filter_by(indicadorpe_id=indicador.id).all()
+            if valores:
+                historico_valores[indicador.nome.title()] = [(valor.ano, valor.valor) for valor in valores]
+
+    # Inicializa o PDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt="Relatório de Indicadores de Desempenho", ln=True, align="C")
+
+    # Itera sobre os indicadores e adiciona os dados e gráficos ao PDF
+    for indicador, valores in historico_valores.items():
+        pdf.set_font("Arial", 'B', size=12)
+        pdf.cell(0, 10, f"Indicador: {indicador}", ln=True)
+
+        # Adiciona valores
+        for data, valor in valores:
+            pdf.set_font("Arial", size=10)
+            pdf.cell(0, 10, f"{data}: {valor}", ln=True)
+
+        # Gerar gráfico temporário
+        temp_img = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+        with plt.ioff():
+            plt.figure()
+            labels = [f"{data}" for data, valor in valores]
+            values = [valor for data, valor in valores]
+            plt.plot(labels, values, marker="o")
+            plt.title(f"Evolução de {indicador}")
+            plt.xlabel("Ano")
+            plt.ylabel("Valor")
+            plt.savefig(temp_img.name, format="png")
+            plt.close()
+
+        # Adiciona o gráfico ao PDF
+        pdf.image(temp_img.name, x=10, w=180)
+        temp_img.close()
+
+    # Enviar o PDF para download
+    response = make_response(pdf.output(dest="S").encode("latin1"))
+    response.headers["Content-Disposition"] = "attachment; filename=indicadores_desempenho.pdf"
+    response.headers["Content-Type"] = "application/pdf"
+    return response
+
+
+#############################################################################3
+@planejamento_route.route('/gerar_pdf_metas', methods=['GET', 'POST'])
+@login_required
+def gerar_pdf_metas():
+    # Obtém o ID do programa do usuário logado
+    programa_id = current_user.programa_id
+    planejamento_id = request.args.get('planejamento_id')
+
+    # Verifica se o planejamento foi selecionado e recupera as metas associadas
+    metas = []
+    if planejamento_id:
+        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
+        metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
+
+    # Cria um buffer para armazenar o PDF em memória
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+    pdf.setTitle("Acompanhamento de Metas")
+
+    # Configurações de layout do PDF
+    pdf.drawString(100, 750, "Acompanhamento de Metas")
+    pdf.drawString(100, 735, f"Planejamento Estratégico ID: {planejamento_id}")
+
+    y_position = 700
+    for meta in metas:
+        # Adiciona as informações da meta no PDF
+        pdf.drawString(100, y_position, f"Nome da Meta: {meta.nome}")
+        pdf.drawString(100, y_position - 15, f"Data de Início: {meta.data_inicio}")
+        pdf.drawString(100, y_position - 30, f"Data de Término: {meta.data_termino}")
+        pdf.drawString(100, y_position - 45, f"Status Atual: {meta.status or 'Não definido'}")
+        pdf.drawString(100, y_position - 60, "-"*80)  # Linha separadora
+        y_position -= 80
+
+        # Caso a posição Y atinja o fim da página, cria uma nova página
+        if y_position < 50:
+            pdf.showPage()
+            y_position = 750
+
+    pdf.save()
+    buffer.seek(0)
+
+    # Envia o PDF para download
+    return send_file(buffer, as_attachment=True, download_name="acompanhamento_metas.pdf", mimetype="application/pdf")

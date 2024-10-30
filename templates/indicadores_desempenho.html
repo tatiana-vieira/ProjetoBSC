@@ -7,7 +7,6 @@
 {% block conteudo %}
     <h2 style="text-align: center; color: #003366;">Análise de Indicadores de Desempenho</h2>
 
-    <!-- Debug de Valores em Tabela -->
     <table border="1" cellpadding="10" style="margin: 0 auto; width: 80%;">
         <thead>
             <tr>
@@ -73,10 +72,12 @@
         {% endfor %}
     </div>
 
-    <!-- Botão Fechar -->
+    <!-- Botões -->
     <div class="form-group text-center">
         <button type="button" onclick="fechar()" class="btn btn-danger btn-lg">Fechar</button>
+        <a href="{{ url_for('planejamento.gerar_pdf_indicadores_desempenho') }}" class="btn btn-primary btn-lg">Gerar PDF</a>
     </div>
+
     <script>
         function fechar() {
           window.location.href = "{{ url_for('login.get_coordenador') }}";

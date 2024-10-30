@@ -12,7 +12,7 @@
         <select name="planejamento_id" id="planejamento_id" required style="width: 50%; margin-bottom: 10px;">
             <option value="" disabled selected>Selecione um planejamento</option>
             {% for planejamento in planejamentos %}
-                <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
+                <option value="{{ planejamento.id }}" {% if selected_planejamento == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
             {% endfor %}
         </select>
         <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Exibir Matriz</button>
@@ -54,7 +54,6 @@
     </table>
     {% endif %}
 
-    <!-- Linha extra antes do botão Fechar -->
     <br><br>
     <div class="form-group" style="text-align: center;">
         <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>

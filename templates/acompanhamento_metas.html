@@ -7,6 +7,7 @@
 {% block conteudo %}
 <h3 style="text-align: center;">Acompanhamento de Metas</h3>
 
+<!-- Formulário para selecionar o planejamento -->
 <form method="POST" style="text-align: center; margin-bottom: 20px;">
   <label for="planejamento" style="margin-right: 10px;">Selecione o Planejamento:</label>
   <select name="planejamento_id" id="planejamento" style="margin-right: 10px;">
@@ -26,7 +27,7 @@
           <th>Data de Início</th>
           <th>Data de Término</th>
           <th>Status Atual</th>
-          <th>Atualizar Status</th>
+          <th>Ações</th>
       </tr>
   </thead>
   <tbody>
@@ -36,18 +37,9 @@
                   <td>{{ meta.nome }}</td>
                   <td>{{ meta.data_inicio }}</td>
                   <td>{{ meta.data_termino }}</td>
-                  <td>{{ meta.status }}</td>
+                  <td>{{ meta.status or 'Não definido' }}</td>
                   <td>
-                    <form method="POST" action="{{ url_for('planejamento.atualizar_status_meta', meta_id=meta.id) }}">
-                      <select name="status" class="form-control" style="display: inline-block; width: auto;">
-                          <option value="Não iniciado" {% if meta.status == 'Não iniciado' %}selected{% endif %}>Não iniciado</option>
-                          <option value="Em andamento" {% if meta.status == 'Em andamento' %}selected{% endif %}>Em andamento</option>
-                          <option value="Concluída" {% if meta.status == 'Concluída' %}selected{% endif %}>Concluída</option>
-                          <option value="Atrasada" {% if meta.status == 'Atrasada' %}selected{% endif %}>Atrasada</option>
-                          <option value="Pausada" {% if meta.status == 'Pausada' %}selected{% endif %}>Pausada</option>
-                      </select>
-                      <button type="submit" class="btn btn-success" style="display: inline-block; margin-left: 10px;">Atualizar</button>
-                    </form>
+                      <a href="{{ url_for('planejamento.alterar_metape', metape_id=meta.id) }}" class="btn btn-success">Atualizar</a>
                   </td>
               </tr>
           {% endfor %}
@@ -59,9 +51,65 @@
   </tbody>
 </table>
 
-<div class="form-group" style="text-align: center; margin-top: 20px;">
-  <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+<!-- Gráfico de Progresso das Metas -->
+{% if graph_base64 %}
+    <div style="text-align: center; margin-top: 20px;">
+        <h4>Gráfico de Progresso das Metas</h4>
+        <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Progresso das Metas" style="max-width: 80%; height: auto; display: block; margin: auto;">
+    </div>
+{% endif %}
+
+<!-- Tabela de Sugestões -->
+{% if dados_graficos %}
+<div style="margin-top: 40px;">
+    <h3 style="text-align: center;">Sugestões de Ajustes</h3>
+    <table class="table table-bordered table-striped" style="width: 80%; margin: auto; text-align: center;">
+        <thead>
+            <tr>
+                <th>Meta</th>
+                <th>Progresso</th>
+                <th>Restante</th>
+                <th>Sugestões</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dado in dados_graficos %}
+                <tr>
+                    <td>{{ dado.meta }}</td>
+                    <td>{{ dado.progresso }}</td>
+                    <td>{{ dado.restante }}</td>
+                    <td>
+                        {% if dado.sugestoes %}
+                            <ul style="list-style-type: none; padding: 0;">
+                                {% for sugestao in dado.sugestoes %}
+                                    <li>{{ sugestao }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>Não há sugestões no momento.</p>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
+{% endif %}
+
+<!-- Botões de ação -->
+{% if metas %}
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="{{ url_for('planejamento.gerar_pdf_metas', planejamento_id=request.form.planejamento_id) }}" class="btn btn-primary" style="padding: 10px 20px; color: white;">
+            Gerar PDF
+        </a>
+        <a href="{{ url_for('relatoriometas.export_csv_metas', planejamento_selecionado=request.form.planejamento_id) }}" class="btn btn-primary" style="padding: 10px 20px; color: white;">
+            Exportar para CSV
+        </a>
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; color: white;">
+            Fechar
+        </button>
+    </div>
+{% endif %}
 
 <script>
   function fechar() {

@@ -32,10 +32,23 @@
             <label for="data_termino">Data de Término</label>
             <input type="date" class="form-control" id="data_termino" name="data_termino" value="{{ meta.data_termino }}" required><br>
         </div>
+        
+        <!-- Campos para Status Inicial e Status -->
         <div class="form-group">
             <label for="status_inicial">Status Inicial (em %)</label>
             <input type="number" class="form-control" id="status_inicial" name="status_inicial" value="{{ meta.status_inicial }}" min="0" max="100" step="1" required><br>
         </div>
+        <div class="form-group">
+            <label for="status">Descrição do Status</label>
+            <select class="form-control" id="status" name="status" required>
+                <option value="Não iniciado" {% if meta.status == "Não iniciado" %}selected{% endif %}>Não iniciado</option>
+                <option value="Em andamento" {% if meta.status == "Em andamento" %}selected{% endif %}>Em andamento</option>
+                <option value="Concluída" {% if meta.status == "Concluída" %}selected{% endif %}>Concluída</option>
+                <option value="Atrasada" {% if meta.status == "Atrasada" %}selected{% endif %}>Atrasada</option>
+                <option value="Pausada" {% if meta.status == "Pausada" %}selected{% endif %}>Pausada</option>
+            </select><br>
+        </div>
+        
         <div class="form-group">
             <label for="valor_alvo">Valor Alvo</label>
             <input type="number" class="form-control" id="valor_alvo" name="valor_alvo" value="{{ meta.valor_alvo }}" step="0.01" required><br>

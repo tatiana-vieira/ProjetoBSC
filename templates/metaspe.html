@@ -47,6 +47,15 @@
       <label for="status_inicial" style="display: block;">Status Inicial (em %):</label>
       <input type="number" id="status_inicial" name="status_inicial" required min="0" max="100" step="1" style="width: 100%; margin-bottom: 10px;">
 
+      <label for="status" style="display: block;">Descrição do Status:</label>
+      <select id="status" name="status" required style="width: 100%; margin-bottom: 10px;">
+          <option value="Não iniciado">Não iniciado</option>
+          <option value="Em andamento">Em andamento</option>
+          <option value="Concluída">Concluída</option>
+          <option value="Atrasada">Atrasada</option>
+          <option value="Pausada">Pausada</option>
+      </select>
+
       <label for="valor_alvo" style="display: block;">Valor Alvo:</label>
       <input type="number" id="valor_alvo" name="valor_alvo" required step="0.01" style="width: 100%; margin-bottom: 10px;">
 

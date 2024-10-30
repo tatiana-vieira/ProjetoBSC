@@ -1,0 +1,106 @@
+{% extends 'basecorden.html' %}
+
+{% block titulo %}
+    Relatório Unificado de Ações
+{% endblock %}
+
+{% block conteudo %}
+<div style="text-align: center; padding: 20px;">
+    <h2>Relatório de Ações</h2>
+
+    <!-- Seleção de Planejamento -->
+    <form method="get" action="{{ url_for('relatorioacao.exibir_relatorio_unificado') }}" style="display: inline-block; margin-bottom: 20px;">
+        <label for="planejamento_selecionado" style="color: #000408; font-weight: bold; margin-right: 10px;">Selecionar Planejamento:</label>
+        <select id="planejamento_selecionado" name="planejamento_selecionado" required style="width: 300px; margin-right: 10px;">
+            <option value="">Selecione um planejamento</option>
+            {% for planejamento in planejamentos %}
+                <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento.id == planejamento_selecionado.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary" style="background-color: blue; color: white; padding: 8px 15px; border: none; border-radius: 4px;">Buscar</button>
+    </form>
+
+    <!-- Planejamento Selecionado -->
+    {% if planejamento_selecionado %}
+        <p style="margin-top: 20px; color: #003366; font-weight: bold;">Planejamento Selecionado: {{ planejamento_selecionado.nome }}</p>
+    {% endif %}
+
+    <!-- Gráfico de Gantt -->
+    {% if plot_url %}
+        <div style="margin-top: 20px;">
+            <h4>Gráfico de Gantt - Período de Execução das Ações</h4>
+            <img src="data:image/png;base64,{{ plot_url }}" class="img-fluid" alt="Gráfico de Gantt" style="max-width: 90%; height: auto;">
+        </div>
+    {% endif %}
+
+    <!-- Gráfico de Progresso das Ações -->
+    {% if graph_json %}
+        <div style="margin-top: 20px;">
+            <h4>Progresso das Ações</h4>
+            <div id="graph_progresso"></div>
+            <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+            <script>
+                var plot_data = {{ graph_json | safe }};
+                Plotly.newPlot('graph_progresso', plot_data);
+            </script>
+        </div>
+    {% else %}
+        <p>Nenhum gráfico de progresso disponível para exibição.</p>
+    {% endif %}
+
+    <!-- Tabela de Detalhes das Ações -->
+    {% if planejamento_selecionado %}
+        <h4 style="margin-top: 30px;">Detalhes das Ações</h4>
+        <table class="table table-bordered table-striped" style="width: 90%; margin: auto;">
+            <thead>
+                <tr>
+                    <th>Meta</th>
+                    <th>Ação</th>
+                    <th>Porcentagem Execução</th>
+                    <th>Data Início</th>
+                    <th>Data Término</th>
+                    <th>Responsável</th>
+                    <th>Status</th>
+                    <th>Observação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for meta in metas %}
+                    {% set acoes_filtradas = acoes|selectattr('meta_pe_id', 'equalto', meta.id)|list %}
+                    {% for acao in acoes_filtradas %}
+                        <tr>
+                            {% if loop.first %}
+                                <td rowspan="{{ acoes_filtradas|length }}">{{ meta.nome }}</td>
+                            {% endif %}
+                            <td>{{ acao.nome }}</td>
+                            <td>{{ acao.porcentagem_execucao }}%</td>
+                            <td>{{ acao.data_inicio }}</td>
+                            <td>{{ acao.data_termino }}</td>
+                            <td>{{ acao.responsavel }}</td>
+                            <td>{{ acao.status }}</td>
+                            <td>{{ acao.observacao }}</td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <!-- Botões de Ação -->
+    <div style="margin-top: 30px;">
+        <a href="{{ url_for('relatorioacao.export_pdf_unificado', planejamento_selecionado=planejamento_selecionado.id) }}" class="btn btn-primary" style="background-color: blue; color: white; padding: 10px 20px; border: none; border-radius: 4px; margin-right: 10px;">
+            Gerar Relatório Unificado PDF
+        </a>
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="background-color: red; color: white; padding: 10px 20px; border: none; border-radius: 4px;">
+            Fechar
+        </button>
+    </div>
+</div>
+
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
+</script>
+
+{% endblock %}

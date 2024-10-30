@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import base64  # Certifique-se de importar base64
 from plotly.utils import PlotlyJSONEncoder
 import json
+import pandas as pd
 
 
 relatorioacao_route = Blueprint('relatorioacao', __name__)
@@ -313,3 +314,179 @@ def gerar_notificacoes(acoespe):
         if 'atrasada' in alerta or 'próxima do prazo' in alerta:
             notificacoes.append(f"Ação '{acao.nome}' está {alerta.lower()}.")
     return notificacoes
+
+
+#######################Junatr relatorios de ação#####################################33
+@relatorioacao_route.route('/relatorio_unificado', methods=['GET', 'POST'])
+@login_required
+def exibir_relatorio_unificado():
+    if session.get('role') != 'Coordenador':
+        flash('Você não tem permissão para acessar esta página.', 'danger')
+        return redirect(url_for('login.login_page'))
+
+    coordenador_programa_id = session.get('programa_id')
+    programa = Programa.query.get(coordenador_programa_id)
+
+    if not programa:
+        flash('Não foi possível encontrar o programa associado ao coordenador.', 'warning')
+        return redirect(url_for('login.get_coordenador'))
+
+    planejamentos = programa.planejamentos
+    planejamento_selecionado_id = request.args.get('planejamento_selecionado')
+    planejamento_selecionado = None
+    objetivospe = []
+    metaspe = []
+    acoespe = []
+    plot_url = None
+    graph_json = None
+    traces = []
+
+    if planejamento_selecionado_id:
+        planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
+        if not planejamento_selecionado:
+            flash('Planejamento não encontrado.', 'warning')
+            return redirect(url_for('relatorio_unificado.exibir_relatorio_unificado'))
+
+        # Obter objetivos, metas e ações associadas ao planejamento
+        objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
+        metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
+        acoespe = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()
+
+        # Gerar gráfico de Gantt
+        if acoespe:
+            df = pd.DataFrame([(acao.nome, acao.data_inicio, acao.data_termino) for acao in acoespe], columns=['Ação', 'Início', 'Término'])
+            fig, ax = plt.subplots(figsize=(10, 6))
+            for i, (acao, inicio, termino) in enumerate(zip(df['Ação'], df['Início'], df['Término'])):
+                ax.barh(acao, (termino - inicio).days, left=inicio, height=0.4)
+
+            ax.set_xlabel('Data')
+            ax.set_ylabel('Ação')
+            ax.set_title('Período de execução das Ações')
+            img = io.BytesIO()
+            plt.savefig(img, format='png', bbox_inches='tight')
+            img.seek(0)
+            plot_url = base64.b64encode(img.getvalue()).decode('utf8')
+            plt.close(fig)
+
+        # Gerar gráfico de progresso das ações
+        if acoespe:
+            acoes_unicas = list({acao.id: acao for acao in acoespe}.values())
+            for acao in acoes_unicas:
+                trace = go.Bar(
+                    x=[acao.porcentagem_execucao],
+                    y=[acao.nome],
+                    name=acao.nome,
+                    text=f"Data Início: {acao.data_inicio}<br>Data Término: {acao.data_termino}<br>Status: {acao.status}",
+                    hoverinfo='text',
+                    marker=dict(
+                        color='green' if acao.porcentagem_execucao == 100 else ('red' if datetime.now().date() > acao.data_termino else 'yellow')
+                    ),
+                    orientation='h'
+                )
+                traces.append(trace)
+
+            if traces:
+                layout = go.Layout(
+                    title="Progresso das Ações",
+                    xaxis=dict(title="Progresso (%)"),
+                    yaxis=dict(title="Ação")
+                )
+                fig = go.Figure(data=traces, layout=layout)
+                graph_json = json.dumps(fig, cls=PlotlyJSONEncoder)
+
+    return render_template('relatorio_unificado.html', 
+                           planejamentos=planejamentos, 
+                           planejamento_selecionado=planejamento_selecionado, 
+                           objetivos=objetivospe, metas=metaspe, acoes=acoespe, 
+                           plot_url=plot_url, graph_json=graph_json)
+
+
+
+@relatorioacao_route.route('/export_pdf_unificado', methods=['GET'])
+@login_required
+def export_pdf_unificado():
+    if session.get('role') != 'Coordenador':
+        flash('Você não tem permissão para acessar esta página.', 'danger')
+        return redirect(url_for('login.login_page'))
+
+    planejamento_selecionado_id = request.args.get('planejamento_selecionado')
+    if not planejamento_selecionado_id:
+        flash('Nenhum planejamento selecionado.', 'warning')
+        return redirect(url_for('relatorio_unificado.exibir_relatorio_unificado'))
+
+    planejamento_selecionado = PlanejamentoEstrategico.query.get(planejamento_selecionado_id)
+    if not planejamento_selecionado:
+        flash('Planejamento não encontrado.', 'warning')
+        return redirect(url_for('relatorio_unificado.exibir_relatorio_unificado'))
+
+    objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_selecionado_id).all()
+    metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
+    acoespe = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()
+
+    if not acoespe:
+        flash('Nenhuma ação disponível para exportar.', 'warning')
+        return redirect(url_for('relatorio_unificado.exibir_relatorio_unificado'))
+
+    # Gera o gráfico de Gantt
+    gantt_img = BytesIO()
+    df = pd.DataFrame([(acao.nome, acao.data_inicio, acao.data_termino) for acao in acoespe], columns=['Ação', 'Início', 'Término'])
+    fig, ax = plt.subplots(figsize=(8, 4))
+    for i, (acao, inicio, termino) in enumerate(zip(df['Ação'], df['Início'], df['Término'])):
+        ax.barh(acao, (termino - inicio).days, left=inicio, height=0.3, color='skyblue')
+    ax.set_xlabel('Data')
+    ax.set_ylabel('Ação')
+    ax.set_title('Gráfico de Gantt - Período de Execução das Ações')
+    plt.savefig(gantt_img, format='png', bbox_inches='tight')
+    gantt_img.seek(0)
+    plt.close(fig)
+
+    # Gera o gráfico de Progresso das Ações
+    progress_img = BytesIO()
+    traces = []
+    for acao in acoespe:
+        trace = go.Bar(
+            x=[acao.porcentagem_execucao],
+            y=[acao.nome],
+            name=acao.nome,
+            marker=dict(
+                color='green' if acao.porcentagem_execucao == 100 else ('red' if datetime.now().date() > acao.data_termino else 'yellow')
+            ),
+            orientation='h'
+        )
+        traces.append(trace)
+    if traces:
+        layout = go.Layout(
+            title="Progresso das Ações",
+            xaxis=dict(title="Progresso (%)"),
+            yaxis=dict(title="Ação")
+        )
+        fig = go.Figure(data=traces, layout=layout)
+        fig.write_image(progress_img, format='png')
+    progress_img.seek(0)
+
+    # Cria o PDF unificado
+    pdf_buffer = BytesIO()
+    c = canvas.Canvas(pdf_buffer, pagesize=letter)
+
+    # Adiciona título
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(180, 780, "Relatório Unificado de Ações")
+
+    # Adiciona o gráfico de Gantt
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, 740, "Gráfico de Gantt - Período de Execução das Ações")
+    c.drawImage(gantt_img, 50, 480, width=500, height=250)  # Ajusta a posição e o tamanho da imagem de Gantt
+
+    # Adiciona o gráfico de Progresso das Ações
+    c.drawString(50, 460, "Gráfico de Progresso das Ações")
+    c.drawImage(progress_img, 50, 200, width=500, height=250)  # Ajusta a posição e o tamanho da imagem de Progresso
+
+    # Adiciona a data no PDF
+    c.setFont("Helvetica", 10)
+    c.drawString(50, 180, f"Data de geração: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    c.showPage()
+    c.save()
+    pdf_buffer.seek(0)
+
+    return send_file(pdf_buffer, download_name='relatorio_unificado_acoes.pdf', as_attachment=True)
