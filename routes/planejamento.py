@@ -13,7 +13,6 @@ from reportlab.lib import colors
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 from flask import get_flashed_messages
-import matplotlib.pyplot as plt
 import base64
 import logging
 from reportlab.lib.pagesizes import letter
@@ -21,6 +20,10 @@ from reportlab.pdfgen import canvas
 from io import BytesIO
 from fpdf import FPDF
 import tempfile
+from fpdf import FPDF
+import tempfile
+import matplotlib.pyplot as plt
+
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -1270,10 +1273,6 @@ def indicadores_desempenho():
     return render_template('indicadores_desempenho.html', historico_valores=historico_valores)
 
 
-from fpdf import FPDF
-import tempfile
-import matplotlib.pyplot as plt
-from flask import make_response
 
 @planejamento_route.route('/gerar_pdf_indicadores_desempenho')
 @login_required
