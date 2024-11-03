@@ -1,25 +1,211 @@
-{% extends 'basecord.html' %}
+{% extends 'basecorden.html' %}
 
 {% block titulo %}
-  Gráficos dos Indicadores de Desempenho
+    Indicadores - Relatório
 {% endblock %}
 
 {% block conteudo %}
-<body>
-    <h4 style="text-align: center; color: #003366;">Gráficos dos Indicadores de Desempenho</h4>
+<h3 class="text-center" style="color: #003366;">Indicadores de Discentes</h3>
 
-    <div style="text-align: center; margin-top: 20px;">
-        <img src="data:image/png;base64,{{ graph_url }}" alt="Gráficos dos Indicadores">
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Taxa de Conclusão</h4>
     </div>
-
-    <div style="text-align: center; margin-top: 20px;">
-        <button type="button" onclick="fechar()" style="background-color: red; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Ano</th>
+                    <th>Taxa de Conclusão (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ano, taxa in taxa_conclusao.items() %}
+                <tr>
+                    <td>{{ ano }}</td>
+                    <td>{{ "%.3f"|format(taxa) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+</div>
 
-    <script>
-        function fechar() {
-            window.location.href = "{{ url_for('login.get_coordenador') }}";
-        }
-    </script>
-</body>
-{% endblock conteudo %}
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Taxa de Abandono</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Ano</th>
+                    <th>Taxa de Abandono (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ano, taxa in taxa_abandono.items() %}
+                <tr>
+                    <td>{{ ano }}</td>
+                    <td>{{ "%.3f"|format(taxa) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<h3 class="text-center mt-5" style="color: #003366;">Indicadores de Docentes</h3>
+
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Distribuição de Titulação</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nível</th>
+                    <th>Percentual (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for nivel, percentual in distribuicao_titulacao.items() %}
+                <tr>
+                    <td>{{ nivel }}</td>
+                    <td>{{ "%.3f"|format(percentual) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Carga Horária Média</h4>
+    </div>
+    <div class="card-body text-center">
+        <p>{{ "%.3f"|format(carga_horaria_media) }} horas</p>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Atividades de Orientação Média</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Média</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tipo, media in atividades_orientacao_media.items() %}
+                <tr>
+                    <td>{{ tipo }}</td>
+                    <td>{{ "%.3f"|format(media) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Distribuição por Regime de Trabalho</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Regime de Trabalho</th>
+                    <th>Percentual (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for regime, percentual in distribuicao_regime_trabalho.items() %}
+                <tr>
+                    <td>{{ regime }}</td>
+                    <td>{{ "%.3f"|format(percentual) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Distribuição por Sexo</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Sexo</th>
+                    <th>Percentual (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sexo, percentual in distribuicao_sexo.items() %}
+                <tr>
+                    <td>{{ sexo }}</td>
+                    <td>{{ "%.3f"|format(percentual) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Distribuição por Categoria</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Categoria</th>
+                    <th>Percentual (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for categoria, percentual in distribuicao_categoria.items() %}
+                <tr>
+                    <td>{{ categoria }}</td>
+                    <td>{{ "%.3f"|format(percentual) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Idade Média dos Docentes</h4>
+    </div>
+    <div class="card-body text-center">
+        <p>{{ "%.3f"|format(idade_media_docentes) }} anos</p>
+    </div>
+</div>
+
+<!-- Botões de Exportação e Fechar -->
+<div class="text-center mt-4">
+    <a href="{{ url_for('calculoindicadores.exportar_graficos_pdf', programa_id=programa_id) }}" class="btn btn-primary">Exportar PDF</a>
+    <a href="{{ url_for('calculoindicadores.gerar_excel_completo', programa_id=programa_id) }}" class="btn btn-primary">Exportar Excel</a>
+    <button type="button" onclick="fechar()" class="btn btn-danger">Fechar</button>
+</div>
+
+<script>
+function fechar() {
+    window.location.href = "{{ url_for('login.get_coordenador') }}";
+}
+</script>
+
+{% endblock %}

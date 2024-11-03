@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Alterar Meta</h2>
+
+{% if meta %}
+    <form method="POST" action="{{ url_for('alterar_meta', meta_id=meta.id) }}">
+        <label>Nome da Meta:</label>
+        <input type="text" name="nome" value="{{ meta.nome }}" required>
+
+        <label>Porcentagem de Execução:</label>
+        <input type="number" name="porcentagem_execucao" value="{{ meta.porcentagem_execucao }}" required min="0" max="100" step="1">
+
+        <button type="submit">Salvar Alterações</button>
+    </form>
+{% else %}
+    <p>Meta não encontrada.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Selecione um Objetivo</h2>
+<ul>
+    {% for objetivo in objetivos %}
+        <li>
+            <a href="{{ url_for('alterar_meta', objetivo_id=objetivo.id, pdi_id=pdi_id) }}">{{ objetivo.nome }}</a>
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}

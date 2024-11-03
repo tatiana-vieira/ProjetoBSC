@@ -5,52 +5,109 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Simples</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .card {
+            max-width: 600px;
+            margin: 20px auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        .card-header {
+            background-color: #054b91;
+            padding: 10px;
+            text-align: center;
+        }
+        .card-header h4 {
+            color: #ffffff;
+            margin: 0;
+        }
+        .card-body {
+            padding: 20px;
+            text-align: center;
+        }
+        .card-body p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
-    <h1>Dashboard Resumido</h1>
-    
-    <!-- Mostrando os valores diretamente -->
-    <p>Metas Atingidas: <strong>{{ percentual_metas_atingidas }}%</strong></p>
-    <p>Ações Concluídas: <strong>{{ percentual_acoes_concluidas }}%</strong></p>
-    
-    <!-- Gráfico de Barras Simples para Metas Atingidas -->
-    <canvas id="metasChart" width="400" height="200"></canvas>
 
-    <!-- Gráfico de Barras Simples para Ações Concluídas -->
-    <canvas id="acoesChart" width="400" height="200"></canvas>
+<div class="card">
+    <div class="card-header">
+        <h4>Dashboard Resumido</h4> <!-- Texto em branco com fundo azul -->
+    </div>
+    <div class="card-body">
+        <!-- Exibindo valores diretamente -->
+        <p>Metas Atingidas: <strong>{{ percentual_metas_atingidas }}%</strong></p>
+        <p>Ações Concluídas: <strong>{{ percentual_acoes_concluidas }}%</strong></p>
 
-    <script>
-        // Gráfico de Barras para Metas Atingidas
-        var ctx = document.getElementById('metasChart').getContext('2d');
-        var metasChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Metas Atingidas'],
-                datasets: [{
-                    label: 'Metas Atingidas (%)',
-                    data: [{{ percentual_metas_atingidas }}], // Usando variável do Flask
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }]
+        <!-- Gráficos para Metas Atingidas e Ações Concluídas -->
+        <canvas id="metasChart" width="400" height="200"></canvas>
+        <canvas id="acoesChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+<script>
+    // Dados do Flask
+    const percentualMetasAtingidas = {{ percentual_metas_atingidas }};
+    const percentualAcoesConcluidas = {{ percentual_acoes_concluidas }};
+
+    // Configuração do Gráfico de Barras para Metas Atingidas
+    const ctxMetas = document.getElementById('metasChart').getContext('2d');
+    new Chart(ctxMetas, {
+        type: 'bar',
+        data: {
+            labels: ['Metas Atingidas'],
+            datasets: [{
+                label: 'Metas Atingidas (%)',
+                data: [percentualMetasAtingidas],
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
             }
-        });
+        }
+    });
 
-        // Gráfico de Barras para Ações Concluídas
-        var ctxAcoes = document.getElementById('acoesChart').getContext('2d');
-        var acoesChart = new Chart(ctxAcoes, {
-            type: 'bar',
-            data: {
-                labels: ['Ações Concluídas'],
-                datasets: [{
-                    label: 'Ações Concluídas (%)',
-                    data: [{{ percentual_acoes_concluidas }}], // Usando variável do Flask
-                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                    borderColor: 'rgba(153, 102, 255, 1)',
-                    borderWidth: 1
-                }]
+    // Configuração do Gráfico de Barras para Ações Concluídas
+    const ctxAcoes = document.getElementById('acoesChart').getContext('2d');
+    new Chart(ctxAcoes, {
+        type: 'bar',
+        data: {
+            labels: ['Ações Concluídas'],
+            datasets: [{
+                label: 'Ações Concluídas (%)',
+                data: [percentualAcoesConcluidas],
+                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                borderColor: 'rgba(153, 102, 255, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
             }
-        });
-    </script>
+        }
+    });
+</script>
+
 </body>
 </html>

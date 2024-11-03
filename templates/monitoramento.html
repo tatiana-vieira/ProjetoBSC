@@ -7,136 +7,178 @@
 {% block conteudo %}
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    <div class="container monitoramento-container">
-        <!-- Título centralizado -->
-        <h2 class="monitoramento-titulo" style="text-align: center;">Dados do Planejamento</h2><br>
-
-        <section>
-            <div class="form-container" style="text-align: center;">
-                <h5>Selecione um Planejamento Estratégico</h5>
-                <form method="POST">
-                    <label for="planejamento_id">Planejamento:</label>
-                    <select name="planejamento_id" id="planejamento_id" required style="margin-bottom: 10px;">
-                        <option value="" disabled selected>Selecione um planejamento</option>
-                        {% for planejamento in planejamentos %}
-                            <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
-                        {% endfor %}
-                    </select>
-                    <!-- Botão Exibir dados em azul escuro com texto branco -->
-                    <button type="submit" class="btn btn-primary" style="background-color: #003366; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Exibir dados</button>
-                </form>
-            </div>
-        </section>
-
-        {% if planejamento_selecionado %}
-        <section class="dados-planejamento">
-            <h3 class="monitoramento-titulo">Objetivos</h3>
-            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for objetivo in objetivos %}
-                    <tr>
-                        <td>{{ objetivo.nome }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <h3 class="monitoramento-titulo">Metas</h3>
-            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Status Inicial</th>
-                        <th>Tempo Restante (dias)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for meta in metas %}
-                    <tr>
-                        <td>{{ meta.nome }}</td>
-                        <td>{{ meta.status_inicial }}</td>
-                        <td>{{ meta.tempo_restante }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <h3 class="monitoramento-titulo">Indicadores</h3>
-            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Peso</th>
-                        <th>Frequência de Coleta</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for indicador in indicadores %}
-                    <tr>
-                        <td>{{ indicador.nome }}</td>
-                        <td>{{ indicador.peso }}</td>
-                        <td>{{ indicador.frequencia_coleta }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <h3 class="monitoramento-titulo">Ações</h3>
-            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Porcentagem de Execução</th>
-                        <th>Status</th>
-                        <th>Tempo Restante (dias)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for acao in acoes %}
-                    <tr>
-                        <td>{{ acao.nome }}</td>
-                        <td>{{ acao.porcentagem_execucao }}</td>
-                        <td>{{ acao.status }}</td>
-                        <td>{{ acao.tempo_restante }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <h3 class="monitoramento-titulo">Riscos</h3>
-            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
-                <thead>
-                    <tr>
-                        <th>Descrição</th>
-                        <th>Ação Preventiva</th>
-                        <th>Impacto</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for risco in riscos %}
-                    <tr>
-                        <td>{{ risco.descricao }}</td>
-                        <td>{{ risco.acao_preventiva }}</td>
-                        <td>{{ risco.impacto }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </section>
-
-        <!-- Botões de Ação -->
-        <div style="text-align: center; margin-top: 20px;">
-            <a href="{{ url_for('gerar_pdf', planejamento_id=planejamento_selecionado.id) }}" target="_blank">
-                <button class="btn btn-primary" style="background-color: #003366; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Gerar PDF</button>
-            </a>
-            <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; margin-left: 10px; border: none; border-radius: 4px;">Fechar</button>
+    <div class="card">
+        <div class="card-header" style="background-color: #054b91;">
+            <h4 style="text-align: center; color: #ffffff;">Dados de Planejamento</h4> <!-- Texto em branco com fundo azul -->
         </div>
-        {% endif %}
+        <div class="card-body">
+
+            <section>
+                <div class="form-container" style="text-align: center;">
+                    <h5>Selecione um Planejamento Estratégico</h5>
+                    <form method="POST">
+                        <label for="planejamento_id">Planejamento:</label>
+                        <select name="planejamento_id" id="planejamento_id" required style="margin-bottom: 10px;">
+                            <option value="" disabled selected>Selecione um planejamento</option>
+                            {% for planejamento in planejamentos %}
+                                <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
+                            {% endfor %}
+                        </select>
+                        <!-- Botão Exibir dados em azul escuro com texto branco -->
+                        <button type="submit" class="btn btn-primary" style="background-color: #003366; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Exibir dados</button>
+                    </form>
+                </div>
+            </section>
+
+            {% if planejamento_selecionado %}
+                <section class="dados-planejamento">
+                    
+                    <!-- Objetivos -->
+                    <div class="card mt-4">
+                        <div class="card-header" style="background-color: #054b91;">
+                            <h4 style="text-align: center; color: #ffffff;">Objetivos</h4>
+                        </div>
+                        <div class="card-body">
+                            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for objetivo in objetivos %}
+                                        <tr>
+                                            <td>{{ objetivo.nome }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Metas -->
+                    <div class="card mt-4">
+                        <div class="card-header" style="background-color: #054b91;">
+                            <h4 style="text-align: center; color: #ffffff;">Metas</h4>
+                        </div>
+                        <div class="card-body">
+                            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Status Inicial</th>
+                                        <th>Tempo Restante (dias)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for meta in metas %}
+                                        <tr>
+                                            <td>{{ meta.nome }}</td>
+                                            <td>{{ meta.status_inicial }}</td>
+                                            <td>{{ meta.tempo_restante }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Indicadores -->
+                    <div class="card mt-4">
+                        <div class="card-header" style="background-color: #054b91;">
+                            <h4 style="text-align: center; color: #ffffff;">Indicadores</h4>
+                        </div>
+                        <div class="card-body">
+                            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Peso</th>
+                                        <th>Frequência de Coleta</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for indicador in indicadores %}
+                                        <tr>
+                                            <td>{{ indicador.nome }}</td>
+                                            <td>{{ indicador.peso }}</td>
+                                            <td>{{ indicador.frequencia_coleta }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Ações -->
+                    <div class="card mt-4">
+                        <div class="card-header" style="background-color: #054b91;">
+                            <h4 style="text-align: center; color: #ffffff;">Ações</h4>
+                        </div>
+                        <div class="card-body">
+                            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Porcentagem de Execução</th>
+                                        <th>Status</th>
+                                        <th>Tempo Restante (dias)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for acao in acoes %}
+                                        <tr>
+                                            <td>{{ acao.nome }}</td>
+                                            <td>{{ acao.porcentagem_execucao }}</td>
+                                            <td>{{ acao.status }}</td>
+                                            <td>{{ acao.tempo_restante }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Riscos -->
+                    <div class="card mt-4">
+                        <div class="card-header" style="background-color: #054b91;">
+                            <h4 style="text-align: center; color: #ffffff;">Riscos</h4>
+                        </div>
+                        <div class="card-body">
+                            <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
+                                <thead>
+                                    <tr>
+                                        <th>Descrição</th>
+                                        <th>Ação Preventiva</th>
+                                        <th>Impacto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for risco in riscos %}
+                                        <tr>
+                                            <td>{{ risco.descricao }}</td>
+                                            <td>{{ risco.acao_preventiva }}</td>
+                                            <td>{{ risco.impacto }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- Botões de Ação -->
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="{{ url_for('gerar_pdf', planejamento_id=planejamento_selecionado.id) }}" target="_blank" class="btn btn-primary" style="background-color: #003366; color: white; padding: 10px 20px; border: none; border-radius: 4px;">
+                        Gerar PDF
+                    </a>
+                    <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; margin-left: 10px; border: none; border-radius: 4px;">
+                        Fechar
+                    </button>
+                </div>
+            {% endif %}
+        </div>
     </div>
 
     <script>

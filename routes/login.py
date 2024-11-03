@@ -1,59 +1,45 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session, current_app
-from .models import Users, Programa  # Certifique-se de importar seus modelos corretamente
+from .models import Users, Programa
 from routes.db import db
 from flask_bcrypt import Bcrypt
 from flask_login import login_user, login_required, LoginManager, current_user
 
 login_route = Blueprint('login', __name__)
-bcrypt = Bcrypt()  # Inicialize o Bcrypt
-
+bcrypt = Bcrypt()
 login_manager = LoginManager()
 
 @login_manager.user_loader
 def load_user(user_id):
-   return db.session.query(Users).get(int(user_id))
-######################################################################################################################3
-@login_route.route('/get_coordenador')
-def get_coordenador():
-    # Acessando o contexto do aplicativo Flask
-    permanent_session_lifetime_ms = current_app.config.get('PERMANENT_SESSION_LIFETIME_MS')
+    return db.session.query(Users).get(int(user_id))
 
-    programa_id = current_user.programa_id
-    
-      # Recuperar o programa_id do usuário logado
-    # Seu código para recuperar os dados do coordenador
-    return render_template('indexcord.html', permanent_session_lifetime_ms=permanent_session_lifetime_ms,programa_id=programa_id)
-######################################################################################################################
-@login_route.route('/get_proreitor')
-def get_proreitor():
-    # Acessando o contexto do aplicativo Flask
+@login_route.route('/get_coordenador')
+@login_required
+def get_coordenador():
     permanent_session_lifetime_ms = current_app.config.get('PERMANENT_SESSION_LIFETIME_MS')
-    
-    # Seu código para recuperar os dados do pro-reitor
+    programa_id = current_user.programa_id
+    return render_template('indexcord.html', permanent_session_lifetime_ms=permanent_session_lifetime_ms, programa_id=programa_id)
+
+@login_route.route('/get_proreitor')
+@login_required
+def get_proreitor():
+    permanent_session_lifetime_ms = current_app.config.get('PERMANENT_SESSION_LIFETIME_MS')
     return render_template('indexpro.html', permanent_session_lifetime_ms=permanent_session_lifetime_ms)
-######################################################################################################################
+
 @login_route.route('/login', methods=['GET', 'POST'])
 def login_page():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-
         user = Users.query.filter_by(email=email).first()
 
         if user and bcrypt.check_password_hash(user.password_hash, password):
-            login_user(user)  # Registrar o usuário
+            login_user(user)
             session['email'] = email  
             session['user_id'] = user.id  
-
-            if user.role == 'Coordenador':
-                session['role'] = 'Coordenador'  # Definindo a função do usuário na sessão
-            else:
-                session['role'] = 'Outro'  # Defina a função do usuário de outra forma, se necessário
+            session['role'] = user.role if user.role in ['Coordenador', 'Pro-reitor'] else 'Outro'
+            session['programa_id'] = user.programa_id
 
             flash('Login bem-sucedido!', 'success')
-
-            # Aqui você pode definir o programa_id na sessão usando o valor real do usuário
-            session['programa_id'] = user.programa_id
 
             if user.role == 'Coordenador':
                 return redirect(url_for('login.get_coordenador'))
@@ -63,29 +49,27 @@ def login_page():
                 return redirect(url_for('login.dashboard'))
         else:
             flash('Credenciais inválidas. Por favor, tente novamente.', 'danger')
-
     return render_template('login.html')
-######################################################################################################################
+
 @login_route.route('/logout')
+@login_required
 def logout():
     session.clear()
     flash('Você saiu do sistema.', 'info')
-    return redirect(url_for('login.login_page'))  
-######################################################################################################################
+    return redirect(url_for('login.login_page'))
+
 @login_route.route('/cancelar', methods=['GET', 'POST'])
 def cancelar():
     if request.method == 'POST':
         return redirect(request.referrer)
-    
-    # Se a requisição não for POST, então redirecionar com base no papel do usuário na sessão
     role = session.get('role')
     if role == 'Coordenador':
         return redirect(url_for('login.get_coordenador'))
     elif role == 'Pro-reitor':
         return redirect(url_for('login.get_proreitor'))
     else:
-        return redirect(url_for('index'))  # Redireciona para a página inicial
-######################################################################################################################
+        return redirect(url_for('index'))
+
 @login_route.route('/get_role')
 @login_required
 def get_role():
@@ -95,4 +79,3 @@ def get_role():
     else:
         flash('Acesso não autorizado.', 'danger')
         return redirect(url_for('login.login_page'))
-######################################################################################################################

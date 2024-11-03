@@ -5,44 +5,48 @@
 {% endblock %}
 
 {% block conteudo %}
-<body>
-    <h4 style="text-align: center; color: #003366;">Planejamento Estratégico - Gráficos dos Indicadores</h4>
-
-    <div style="text-align: center; margin-top: 20px;">
-        <h4>Selecione um Planejamento Estratégico</h4>
-        <form method="GET" action="{{ url_for('graficoindicador.exibir_graficoindicador') }}">
-            <select id="planejamento_estrategico" name="planejamento_selecionado" required style="width: 300px; margin-bottom: 20px;">
-                <option value="">-- Selecione --</option>
-                {% for planejamento in planejamentos %}
-                    <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento_selecionado.id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
-                {% endfor %}
-            </select>
-            <button type="submit" class="btn btn-primary" style="background-color: #007bff; color: white;">Buscar</button>
-        </form>
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Planejamento Estratégico - Gráficos dos Indicadores</h4>
     </div>
 
-    {% if graphs %}
-        <div id="graficos-indicadores" style="margin-top: 30px;">
-            <h2 style="text-align: center; color: #003366;">Gráficos dos Indicadores</h2>
-            {% for graph_base64, titulo in graphs %}
-                <div style="text-align: center; margin-top: 20px;">
-                    <h3 style="font-size: 16px; color: #333;">{{ titulo }}</h3>
-                    <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Valores dos Indicadores" style="max-width: 90%; height: auto; border: 1px solid #ddd; padding: 10px;">
-                </div>
-            {% endfor %}
+    <div class="card-body">
+        <div class="text-center mb-4">
+            <h4>Selecione um Planejamento Estratégico</h4>
+            <form method="GET" action="{{ url_for('graficoindicador.exibir_graficoindicador') }}">
+                <select id="planejamento_estrategico" name="planejamento_selecionado" required class="form-select d-inline-block" style="width: 600px;">
+                    <option value="">-- Selecione --</option>
+                    {% for planejamento in planejamentos %}
+                        <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento_selecionado.id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary ms-2">Buscar</button>
+            </form>
         </div>
-    {% else %}
-        <p style="text-align: center; margin-top: 20px; color: #888;">Nenhum gráfico de indicador disponível.</p>
-    {% endif %}
 
-    <div style="text-align: center; margin-top: 30px;">
-        <button type="button" onclick="fechar()" class="btn btn-danger" style="background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Fechar</button>
+        {% if graphs %}
+            <div id="graficos-indicadores" class="mt-4">
+                <h2 class="text-center" style="color: #003366;">Gráficos dos Indicadores</h2>
+                {% for graph_base64, titulo in graphs %}
+                    <div class="text-center my-4">
+                        <h3 style="font-size: 16px; color: #333;">{{ titulo }}</h3>
+                        <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Valores dos Indicadores" style="max-width: 90%; height: auto; border: 1px solid #ddd; padding: 10px;">
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-center mt-4" style="color: #888;">Nenhum gráfico de indicador disponível.</p>
+        {% endif %}
+
+        <div class="text-center mt-4">
+            <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border-radius: 4px;">Fechar</button>
+        </div>
     </div>
+</div>
 
-    <script>
-        function fechar() {
-            window.location.href = "{{ url_for('login.get_coordenador') }}";
-        }
-    </script>
-</body>
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
+</script>
 {% endblock %}

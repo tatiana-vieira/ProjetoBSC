@@ -1,24 +1,31 @@
 {% extends 'basecorden.html' %}
 
 {% block titulo %}
-    Editar Indicador - PRPPG
+    Editar Planejamento
 {% endblock %}
 
 {% block conteudo %}
-    <title>Editar Planejamento</title>
-</head>
-<body>
-    <h4 style="text-align: center; color: #003366;">Editar Planejamento</h4>
-    <form method="POST" action="{{ url_for('planejamento.editar_planejamento', id=planejamento.id) }}">
-        <!-- Campo do nome do planejamento para editar -->
-        <div class="form-group">
-            <label for="nome">Nome do Planejamento</label>
-            <input type="text" class="form-control" id="nome" name="nome" value="{{ planejamento.nome }}"><br>
+<div class="container" style="max-width: 80%; margin-top: 30px;">
+    <div class="card">
+        <div class="card-header" style="background-color: #054b91;">
+            <h4 style="text-align: center; color: #ffffff;">Editar Planejamento</h4> <!-- Título com fundo azul e texto branco -->
         </div>
-        <button type="submit" class="btn btn-success">Salvar</button>
-        <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
-    </form>
-</body>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('planejamento.editar_planejamento', id=planejamento.id) }}">
+                <!-- Campo do nome do planejamento para editar -->
+                <div class="form-group">
+                    <label for="nome">Nome do Planejamento</label>
+                    <input type="text" class="form-control" id="nome" name="nome" value="{{ planejamento.nome }}" required>
+                </div>
+                <div style="text-align: center; margin-top: 40px;">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
+                </div>
+            </form>
+        </div> <!-- card-body -->
+    </div> <!-- card -->
+</div> <!-- container -->
+
 <script>
     function fechar() {
         window.location.href = "{{ url_for('planejamento.cadastro_planejamentope') }}";

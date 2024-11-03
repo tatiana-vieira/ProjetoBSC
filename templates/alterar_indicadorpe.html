@@ -6,97 +6,105 @@
 
 {% block conteudo %}
 <div class="container" style="max-width: 80%; margin-top: 30px;">
-  <h3>Alterar Indicador</h3>
+  <div class="card">
+    <div class="card-header" style="background-color: #054b91;">
+      <h4 style="text-align: center; color: #ffffff;">Alterar Indicador</h4> <!-- Título com fundo azul e texto branco -->
+    </div>
 
-  <!-- Exibir mensagens flash -->
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="alert-container">
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }}">
-            {{ message }}
+    <!-- Exibir mensagens flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alert-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}">
+
+        <!-- Nome do Indicador -->
+        <div class="form-group">
+          <label for="nome">Nome do Indicador:</label>
+          <input type="text" id="nome" name="nome" value="{{ indicador.nome }}" required class="form-control" autocomplete="off">
+        </div>
+
+        <!-- Descrição -->
+        <div class="form-group">
+          <label for="descricao">Descrição:</label>
+          <input type="text" id="descricao" name="descricao" value="{{ indicador.descricao }}" required class="form-control" autocomplete="off">
+        </div>
+
+        <!-- Frequência de Coleta -->
+        <div class="form-group">
+          <label for="frequencia_coleta">Frequência de Coleta:</label>
+          <select id="frequencia_coleta" name="frequencia_coleta" required class="form-control">
+            <option value="diário" {% if indicador.frequencia_coleta == 'diário' %}selected{% endif %}>Diário</option>
+            <option value="semanal" {% if indicador.frequencia_coleta == 'semanal' %}selected{% endif %}>Semanal</option>
+            <option value="mensal" {% if indicador.frequencia_coleta == 'mensal' %}selected{% endif %}>Mensal</option>
+            <option value="trimestral" {% if indicador.frequencia_coleta == 'trimestral' %}selected{% endif %}>Trimestral</option>
+            <option value="semestral" {% if indicador.frequencia_coleta == 'semestral' %}selected{% endif %}>Semestral</option>
+            <option value="anual" {% if indicador.frequencia_coleta == 'anual' %}selected{% endif %}>Anual</option>
+          </select>
+        </div>
+
+        <!-- Peso -->
+        <div class="form-group">
+          <label for="peso">Peso:</label>
+          <input type="number" id="peso" name="peso" value="{{ indicador.peso }}" required class="form-control" step="0.01" min="0" autocomplete="off">
+        </div>
+
+        <!-- Responsável -->
+        <div class="form-group">
+          <label for="responsavel">Responsável pelo Indicador:</label>
+          <input type="text" id="responsavel" name="responsavel" value="{{ indicador.responsavel }}" required class="form-control" autocomplete="off">
+        </div>
+
+        <!-- Data de Início -->
+        <div class="form-group">
+          <label for="data_inicio">Data de Início:</label>
+          <input type="date" id="data_inicio" name="data_inicio" value="{{ indicador.data_inicio }}" required class="form-control">
+        </div>
+
+        <!-- Data de Fim -->
+        <div class="form-group">
+          <label for="data_fim">Data de Fim:</label>
+          <input type="date" id="data_fim" name="data_fim" value="{{ indicador.data_fim }}" required class="form-control">
+        </div>
+
+        <!-- Valores do Indicador -->
+        <div class="card-header" style="background-color: #054b91;">
+          <h4 style="text-align: center; color: #ffffff;">Valores do Indicador</h4> <!-- Título com fundo azul e texto branco -->
+        </div>
+        {% for valorindicador in valores_indicadores %}
+        <div class="row">
+          <div class="col-md-4">
+            <label for="semestre{{ loop.index }}">Semestre:</label>
+            <input type="number" id="semestre{{ loop.index }}" name="semestres[]" value="{{ valorindicador.semestre }}" required class="form-control" autocomplete="off">
           </div>
+          <div class="col-md-4">
+            <label for="ano{{ loop.index }}">Ano:</label>
+            <input type="number" id="ano{{ loop.index }}" name="anos[]" value="{{ valorindicador.ano }}" required class="form-control" autocomplete="off">
+          </div>
+          <div class="col-md-4">
+            <label for="valor{{ loop.index }}">Valor:</label>
+            <input type="text" id="valor{{ loop.index }}" name="valores[]" value="{{ valorindicador.valor }}" required class="form-control" autocomplete="off">
+          </div>
+        </div>
         {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
 
-  <form method="POST" action="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}">
-
-    <!-- Nome do Indicador -->
-    <div class="form-group">
-      <label for="nome">Nome do Indicador:</label>
-      <input type="text" id="nome" name="nome" value="{{ indicador.nome }}" required class="form-control" autocomplete="off">
+        <!-- Botões -->
+        <div class="form-group text-center">
+          <button type="submit" class="btn btn-primary">Salvar</button>
+          <button type="button" onclick="fechar()" class="btn btn-danger">Cancelar</button>
+        </div>
+      </form>
     </div>
-
-    <!-- Descrição -->
-    <div class="form-group">
-      <label for="descricao">Descrição:</label>
-      <input type="text" id="descricao" name="descricao" value="{{ indicador.descricao }}" required class="form-control" autocomplete="off">
-    </div>
-
-    <!-- Frequência de Coleta -->
-    <div class="form-group">
-      <label for="frequencia_coleta">Frequência de Coleta:</label>
-      <select id="frequencia_coleta" name="frequencia_coleta" required class="form-control">
-        <option value="diário" {% if indicador.frequencia_coleta == 'diário' %}selected{% endif %}>Diário</option>
-        <option value="semanal" {% if indicador.frequencia_coleta == 'semanal' %}selected{% endif %}>Semanal</option>
-        <option value="mensal" {% if indicador.frequencia_coleta == 'mensal' %}selected{% endif %}>Mensal</option>
-        <option value="trimestral" {% if indicador.frequencia_coleta == 'trimestral' %}selected{% endif %}>Trimestral</option>
-        <option value="semestral" {% if indicador.frequencia_coleta == 'semestral' %}selected{% endif %}>Semestral</option>
-        <option value="anual" {% if indicador.frequencia_coleta == 'anual' %}selected{% endif %}>Anual</option>
-      </select>
-    </div>
-
-    <!-- Peso -->
-    <div class="form-group">
-      <label for="peso">Peso:</label>
-      <input type="number" id="peso" name="peso" value="{{ indicador.peso }}" required class="form-control" step="0.01" min="0" autocomplete="off">
-    </div>
-
-    <!-- Responsável -->
-    <div class="form-group">
-      <label for="responsavel">Responsável pelo Indicador:</label>
-      <input type="text" id="responsavel" name="responsavel" value="{{ indicador.responsavel }}" required class="form-control" autocomplete="off">
-    </div>
-
-    <!-- Data de Início -->
-    <div class="form-group">
-      <label for="data_inicio">Data de Início:</label>
-      <input type="date" id="data_inicio" name="data_inicio" value="{{ indicador.data_inicio }}" required class="form-control">
-    </div>
-
-    <!-- Data de Fim -->
-    <div class="form-group">
-      <label for="data_fim">Data de Fim:</label>
-      <input type="date" id="data_fim" name="data_fim" value="{{ indicador.data_fim }}" required class="form-control">
-    </div>
-
-    <!-- Valores do Indicador -->
-    <h4>Valores do Indicador</h4>
-    {% for valorindicador in valores_indicadores %}
-    <div class="row">
-      <div class="col-md-4">
-        <label for="semestre{{ loop.index }}">Semestre:</label>
-        <input type="number" id="semestre{{ loop.index }}" name="semestres[]" value="{{ valorindicador.semestre }}" required class="form-control" autocomplete="off">
-      </div>
-      <div class="col-md-4">
-        <label for="ano{{ loop.index }}">Ano:</label>
-        <input type="number" id="ano{{ loop.index }}" name="anos[]" value="{{ valorindicador.ano }}" required class="form-control" autocomplete="off">
-      </div>
-      <div class="col-md-4">
-        <label for="valor{{ loop.index }}">Valor:</label>
-        <input type="text" id="valor{{ loop.index }}" name="valores[]" value="{{ valorindicador.valor }}" required class="form-control" autocomplete="off">
-      </div>
-    </div>
-    {% endfor %}
-
-    <!-- Botões -->
-    <div class="form-group mt-4">
-      <button type="submit" class="btn btn-primary">Salvar</button>
-      <button type="button" onclick="fechar()" class="btn btn-danger">Cancelar</button>
-    </div>
-  </form>
+  </div>
 </div>
 
 <script>

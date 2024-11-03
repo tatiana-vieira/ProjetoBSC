@@ -5,44 +5,41 @@
 {% endblock %}
 
 {% block conteudo %}
-<body>
-    <h4 style="text-align: center; color: #003366;">Período de execução</h4> 
-
-    <div style="text-align: center;">
-        <form method="get" action="{{ url_for('graficogrant.exibir_gantt') }}">
-            <div class="form-group text-center">
-                <label for="planejamento_selecionado" style="color: #000408;">Selecionar Planejamento:</label>
-                <select id="planejamento_selecionado" name="planejamento_selecionado" required style="width: 300px; margin-bottom: 20px;">
-                    <option value="">Selecione um planejamento</option>
-                    {% for planejamento in planejamentos %}
-                        <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento.id == planejamento_selecionado.id %}selected{% endif %}>{{ planejamento.nome }}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit" class="btn btn-primary" style="background-color: blue; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Buscar</button>
-            </div>
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Período de Execução</h4> <!-- Texto em branco com fundo azul -->
+    </div>
+    <div class="card-body text-center">
+        <form method="GET" action="{{ url_for('graficogrant.exibir_gantt') }}" class="mb-4">
+            <label for="planejamento_selecionado" class="me-2" style="color: #000408;">Selecionar Planejamento:</label>
+            <select id="planejamento_selecionado" name="planejamento_selecionado" required class="form-select d-inline-block" style="width: 650px;">
+                <option value="">Selecione um planejamento</option>
+                {% for planejamento in planejamentos %}
+                    <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento.id == planejamento_selecionado.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary ms-2" style="padding: 10px 20px; border-radius: 4px;">Buscar</button>
         </form>
 
         {% if planejamento_selecionado %}
-            <h5 style="color: #00070d;">Planejamento Selecionado: {{ planejamento_selecionado.nome }}</h5>
+            <h5 class="mt-3" style="color: #00070d;">Planejamento Selecionado: {{ planejamento_selecionado.nome }}</h5>
         {% endif %}
 
         {% if plot_url %}
-            <div class="text-center">
-                <img src="data:image/png;base64,{{ plot_url }}" class="img-fluid" alt="Gráfico de Gantt">
+            <div class="text-center mt-4">
+                <img src="data:image/png;base64,{{ plot_url }}" class="img-fluid" alt="Gráfico de Gantt" style="max-width: 80%; height: auto;">
             </div>
         {% endif %}
     </div>
-    <div style="text-align: center; margin-top: 20px;">
-        <button type="button" onclick="fechar()" style="background-color: #ab081b; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
-    </div>
 
-    <script>
-        function fechar() {
-            window.location.href = "{{ url_for('login.get_coordenador') }}";
-        }
-    </script>
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
-</body>
+    <div class="text-center mt-4 mb-4">
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border-radius: 4px;">Fechar</button>
+    </div>
+</div>
+
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
+</script>
 {% endblock %}

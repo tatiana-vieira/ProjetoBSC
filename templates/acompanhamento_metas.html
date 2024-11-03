@@ -5,64 +5,66 @@
 {% endblock %}
 
 {% block conteudo %}
-<h3 style="text-align: center;">Acompanhamento de Metas</h3>
-
-<!-- Formulário para selecionar o planejamento -->
-<form method="POST" style="text-align: center; margin-bottom: 20px;">
-  <label for="planejamento" style="margin-right: 10px;">Selecione o Planejamento:</label>
-  <select name="planejamento_id" id="planejamento" style="margin-right: 10px;">
-      <option value="" disabled selected>Selecione</option>
-      {% for planejamento in planejamentos %}
-          <option value="{{ planejamento.id }}" {% if request.form.planejamento_id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
-      {% endfor %}
-  </select>
-  <button type="submit" class="btn btn-primary">Filtrar Metas</button>
-</form>
-
-<!-- Tabela de acompanhamento de metas -->
-<table class="table table-striped" style="width: 80%; margin: auto; text-align: center;">
-  <thead>
-      <tr>
-          <th>Nome da Meta</th>
-          <th>Data de Início</th>
-          <th>Data de Término</th>
-          <th>Status Atual</th>
-          <th>Ações</th>
-      </tr>
-  </thead>
-  <tbody>
-      {% if metas %}
-          {% for meta in metas %}
-              <tr>
-                  <td>{{ meta.nome }}</td>
-                  <td>{{ meta.data_inicio }}</td>
-                  <td>{{ meta.data_termino }}</td>
-                  <td>{{ meta.status or 'Não definido' }}</td>
-                  <td>
-                      <a href="{{ url_for('planejamento.alterar_metape', metape_id=meta.id) }}" class="btn btn-success">Atualizar</a>
-                  </td>
-              </tr>
-          {% endfor %}
-      {% else %}
-          <tr>
-              <td colspan="5">Nenhuma meta encontrada para o planejamento selecionado.</td>
-          </tr>
-      {% endif %}
-  </tbody>
-</table>
-
-<!-- Gráfico de Progresso das Metas -->
-{% if graph_base64 %}
-    <div style="text-align: center; margin-top: 20px;">
-        <h4>Gráfico de Progresso das Metas</h4>
-        <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Progresso das Metas" style="max-width: 80%; height: auto; display: block; margin: auto;">
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Acompanhamento de Metas</h4>
     </div>
+    <div class="card-body text-center">
+        <form method="POST" action="{{ url_for('relatorioplanejamento.exibir_detalhes_planejamentocadeia') }}">
+            <label for="planejamento" class="form-label" style="margin-right: 10px;">Selecione o Planejamento:</label>
+            <select name="planejamento_id" id="planejamento" class="form-select d-inline-block" style="width: 300px; margin-right: 10px;">
+                <option value="" disabled selected>Selecione</option>
+                {% for planejamento in planejamentos %}
+                    <option value="{{ planejamento.id }}" {% if request.form.planejamento_id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Filtrar Metas</button>
+        </form>
+    </div>
+</div>
+
+{% if metas %}
+<!-- Tabela de acompanhamento de metas -->
+<table class="table table-striped mt-4" style="width: 80%; margin: auto; text-align: center;">
+    <thead>
+        <tr>
+            <th>Nome da Meta</th>
+            <th>Data de Início</th>
+            <th>Data de Término</th>
+            <th>Status Atual</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for meta in metas %}
+            <tr>
+                <td>{{ meta.nome }}</td>
+                <td>{{ meta.data_inicio }}</td>
+                <td>{{ meta.data_termino }}</td>
+                <td>{{ meta.status or 'Não definido' }}</td>
+                <td>
+                    <a href="{{ url_for('planejamento.alterar_metape', metape_id=meta.id) }}" class="btn btn-success">Atualizar</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-center mt-4">Nenhuma meta encontrada para o planejamento selecionado.</p>
 {% endif %}
 
-<!-- Tabela de Sugestões -->
+{% if graph_base64 %}
+<!-- Gráfico de Progresso das Metas -->
+<div style="text-align: center; margin-top: 20px;">
+    <h4>Gráfico de Progresso das Metas</h4>
+    <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Progresso das Metas" style="max-width: 80%; height: auto;">
+</div>
+{% endif %}
+
 {% if dados_graficos %}
+<!-- Tabela de Sugestões -->
 <div style="margin-top: 40px;">
-    <h3 style="text-align: center;">Sugestões de Ajustes</h3>
+    <h3 class="text-center">Sugestões de Ajustes</h3>
     <table class="table table-bordered table-striped" style="width: 80%; margin: auto; text-align: center;">
         <thead>
             <tr>
@@ -80,7 +82,7 @@
                     <td>{{ dado.restante }}</td>
                     <td>
                         {% if dado.sugestoes %}
-                            <ul style="list-style-type: none; padding: 0;">
+                            <ul style="list-style-type: none; padding: 0; margin: 0;">
                                 {% for sugestao in dado.sugestoes %}
                                     <li>{{ sugestao }}</li>
                                 {% endfor %}
@@ -96,24 +98,24 @@
 </div>
 {% endif %}
 
-<!-- Botões de ação -->
 {% if metas %}
-    <div style="text-align: center; margin-top: 20px;">
-        <a href="{{ url_for('planejamento.gerar_pdf_metas', planejamento_id=request.form.planejamento_id) }}" class="btn btn-primary" style="padding: 10px 20px; color: white;">
-            Gerar PDF
-        </a>
-        <a href="{{ url_for('relatoriometas.export_csv_metas', planejamento_selecionado=request.form.planejamento_id) }}" class="btn btn-primary" style="padding: 10px 20px; color: white;">
-            Exportar para CSV
-        </a>
-        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; color: white;">
-            Fechar
-        </button>
-    </div>
+<!-- Botões de ação -->
+<div class="text-center mt-4">
+    <a href="{{ url_for('planejamento.gerar_pdf_metas', planejamento_id=request.form.planejamento_id) }}" class="btn btn-warning" style="padding: 10px 20px;">
+        Gerar PDF
+    </a>
+    <a href="{{ url_for('relatoriometas.export_csv_metas', planejamento_selecionado=request.form.planejamento_id) }}" class="btn btn-warning ms-2" style="padding: 10px 20px;">
+        Exportar para CSV
+    </a>
+    <button type="button" onclick="fechar()" class="btn btn-danger ms-2" style="padding: 10px 20px;">
+        Fechar
+    </button>
+</div>
 {% endif %}
 
 <script>
-  function fechar() {
-      window.location.href = "{{ url_for('login.get_coordenador') }}";
-  }
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
 </script>
 {% endblock %}

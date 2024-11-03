@@ -5,7 +5,11 @@
 {% endblock %}
 
 {% block conteudo %}
-    <h4 style="text-align: center; color: #003366;">Editar Meta</h4>
+<div class="container" style="max-width: 80%; margin-top: 30px;">
+    <div class="card">
+      <div class="card-header" style="background-color: #054b91;">
+        <h4 style="text-align: center; color: #ffffff;">Alterar Metas</h4> <!-- Título com fundo azul e texto branco -->
+      </div>
     <form method="POST" action="{{ url_for('planejamento.alterar_metape', metape_id=meta.id) }}">
         <!-- Campos para editar a meta -->
         <div class="form-group">
@@ -55,8 +59,11 @@
         </div>
 
         <!-- Botões de salvar e fechar -->
-        <button type="submit" class="btn btn-success">Salvar</button>
-        <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
+        <div style="text-align: center; margin-top: 40px;">
+
+            <button type="submit" class="btn btn-primary">Salvar</button>
+            <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
+        </div>
     </form>
 
     <!-- Script para fechar a página e voltar -->

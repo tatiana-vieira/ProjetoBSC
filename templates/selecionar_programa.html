@@ -5,25 +5,35 @@
 {% endblock %}
 
 {% block conteudo %}
-<body>
-    <h4 style="text-align: center; color: #003366;">Selecionar Programa</h4>
-    <form method="POST" action="{{ url_for('altpdi.selecionar_programa') }}" style="text-align: center; margin: auto; width: 50%;">
-        <label for="pdi_id">Programa:</label>
-        <select id="pdi_id" name="pdi_id" required style="width: 100%; margin-bottom: 10px;">
-            {% for pdi in pdis %}
-                <option value="{{ pdi.id }}">{{ pdi.nome }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Visualizar Dados</button>
-    </form>
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div style="text-align: center; margin-top: 20px; color: red;">
-                {% for message in messages %}
-                    <p>{{ message }}</p>
-                {% endfor %}
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Selecionar Programa</h4>
+    </div>
+    <div class="card-body">
+
+        <form method="POST" action="{{ url_for('altpdi.selecionar_programa') }}" style="text-align: center; max-width: 400px; margin: auto;">
+            <div class="form-group">
+                <label for="pdi_id">Programa:</label>
+                <select id="pdi_id" name="pdi_id" class="form-control" required>
+                    <option value="" disabled selected>-- Selecione um programa --</option>
+                    {% for pdi in pdis %}
+                        <option value="{{ pdi.id }}">{{ pdi.nome }}</option>
+                    {% endfor %}
+                </select>
             </div>
-        {% endif %}
-    {% endwith %}
-</body>
+            <button type="submit" class="btn btn-primary mt-3" style="background-color: darkblue; color: white; border: none; border-radius: 4px; padding: 10px 20px;">Visualizar Dados</button>
+        </form>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="mt-4 text-center text-danger">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+    </div>
+</div>
 {% endblock %}

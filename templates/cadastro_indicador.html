@@ -5,9 +5,11 @@
 {% endblock %}
 
 {% block conteudo %}
-    <div style="margin: auto; width: 90%; text-align: center;">
-        <div class="form-block"><br>
-            <h2>CADASTRO DE INDICADOR</h2><br>
+<div class="container" style="max-width: 80%; margin-top: 30px;">
+    <div class="card">
+      <div class="card-header" style="background-color: #054b91;">
+        <h4 style="text-align: center; color: #ffffff;">Cadastro de Indicador</h4> <!-- Título com fundo azul e texto branco -->
+      </div>
             {% if success_message %}
                 <div style="color: green; margin-bottom: 20px;">{{ success_message }}</div>
             {% endif %}
@@ -32,10 +34,11 @@
 
                 <label for="nome">Nome do Indicador:</label><br>
                 <input type="text" id="nome" name="nome" required style="width: 100%; margin-bottom: 10px;"><br>
-                
+            <div class="text-center"></div>
                 <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
                 <button type="button" onclick="alterarIndicador()" style="background-color: #065110; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Alterar</button>
                 <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>            
+            </div>
             </form>
         </div>
     </div>

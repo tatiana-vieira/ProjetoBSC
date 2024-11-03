@@ -15,14 +15,12 @@ from datetime import datetime
 from flask import get_flashed_messages
 import base64
 import logging
-from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from io import BytesIO
 from fpdf import FPDF
 import tempfile
-from fpdf import FPDF
-import tempfile
 import matplotlib.pyplot as plt
+import nltk
 
 
 # Configurar logging
@@ -35,7 +33,10 @@ login_manager = LoginManager(planejamento_route)
 
 # Implemente o decorador coordenador_required
 
-
+try:
+    nltk.data.find('sentiment/vader_lexicon.zip')
+except LookupError:
+    nltk.download('vader_lexicon')
 
 def coordenador_required(f):
     @wraps(f)
@@ -46,26 +47,7 @@ def coordenador_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-
-
-@planejamento_route.route('/get_coordenador', methods=['GET'])
-def get_coordenador():
-    programa_id = session.get('programa_id')
-    planejamento = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).first()
-
-    if not planejamento:
-        return render_template('indexcord.html', planejamento=None, percentual_metas_atingidas=0, percentual_acoes_concluidas=0)
-
-    # Calculando os percentuais das metas e ações atingidas
-    percentual_metas_atingidas = calcular_percentual_metas_atingidas(planejamento)
-    percentual_acoes_concluidas = calcular_percentual_acoes_concluidas(planejamento)
-
-    return render_template('indexcord.html', 
-                           planejamento=planejamento, 
-                           percentual_metas_atingidas=percentual_metas_atingidas,
-                           percentual_acoes_concluidas=percentual_acoes_concluidas,
-                           programa_id=programa_id)
-
+#########################################
 
 def calcular_percentual_metas_atingidas(planejamento):
     total_metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in planejamento.objetivos])).count()
@@ -819,41 +801,6 @@ def associar_cadeiavalor():
         return render_template('cadeia_valor.html', planejamentos=planejamentos)
     
 
-###################################  Dashboard  principal ########################################################################3
-@planejamento_route.route('/tela_principal')
-@login_required
-def tela_principal():
-    programa_id = current_user.programa_id
-    planejamento = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).first()
-
-    if planejamento:
-        # Busque os objetivos associados ao planejamento
-        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
-
-        # Busque as metas associadas aos objetivos do planejamento
-        metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
-        total_metas = len(metas)
-        metas_atingidas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Concluída').count()
-
-        percentual_metas_atingidas = (metas_atingidas / total_metas) * 100 if total_metas > 0 else 0
-
-        # Busque as ações associadas às metas
-        total_acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).count()
-        acoes_concluidas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Concluída').count()
-
-        percentual_acoes_concluidas = (acoes_concluidas / total_acoes) * 100 if total_acoes > 0 else 0
-    else:
-        percentual_metas_atingidas = 0
-        percentual_acoes_concluidas = 0
-
-    return render_template(
-        'basecord.html',  # O template da tela principal
-        planejamento=planejamento,
-        percentual_metas_atingidas=percentual_metas_atingidas,
-        percentual_acoes_concluidas=percentual_acoes_concluidas
-    )
-
-
 
 def obter_planejamento():
     # Supondo que você esteja buscando o primeiro planejamento cadastrado no banco de dados
@@ -1197,56 +1144,139 @@ def calcular_progresso(meta):
     elif meta.status == "Revisão":
         # Pode colocar em espera até a revisão ser concluída
         return meta.progresso_atual
+####################################################################################################################3
 
+@planejamento_route.route('/selecao_planejamento', methods=['GET'])
+@login_required
+def selecionar_planejamento():
+    # Obtenha todos os planejamentos do programa do coordenador
+    programa_id = current_user.programa_id
+    planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
 
+    # Verifique se há planejamentos cadastrados
+    if not planejamentos:
+        flash("Não há planejamentos estratégicos cadastrados para o seu programa.")
+        return redirect(url_for('outra_pagina'))  # Substitua 'outra_pagina' pelo endpoint desejado
+
+    # Renderizar a página com a lista de planejamentos para seleção
+    return render_template('selecionarplanej.html', planejamentos=planejamentos)
 @planejamento_route.route('/resumo_planejamento')
 @login_required
 def resumo_planejamento():
+    planejamento_id = request.args.get('planejamento_id', type=int)
     programa_id = current_user.programa_id
-    planejamento = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).first()
     
-    if planejamento:
-        # Busque os objetivos associados ao planejamento
-        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
-        
-        # Busque as metas associadas aos objetivos do planejamento
-        metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
-        total_metas = len(metas)
-        metas_atingidas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Concluída').count()
-        metas_em_andamento = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Em andamento').count()
-        metas_futuras = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'A iniciar').count()
-        metas_no_prazo = MetaPE.query.filter(MetaPE.status != 'Concluída', MetaPE.data_termino >= datetime.now().date()).count()
-        metas_atrasadas = MetaPE.query.filter(MetaPE.status != 'Concluída', MetaPE.data_termino < datetime.now().date()).count()
+    planejamento = PlanejamentoEstrategico.query.filter_by(id=planejamento_id, id_programa=programa_id).first()
+    
+    if not planejamento:
+        flash("Planejamento estratégico não encontrado ou não pertence ao seu programa.")
+        return redirect(url_for('novo_selecionar_planejamento'))
 
-        percentual_metas_atingidas = (metas_atingidas / total_metas) * 100 if total_metas > 0 else 0
+    objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+    metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
+    total_metas = len(metas)
+    metas_atingidas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Concluída').count()
+    percentual_metas_atingidas = (metas_atingidas / total_metas) * 100 if total_metas > 0 else 0
 
-        # Busque as ações associadas às metas
-        total_acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).count()
-        acoes_concluidas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Concluída' or  AcaoPE.status == 'Concluída').count()
-        acoes_atrasadas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Atrasada').count()
-        percentual_acoes_concluidas = (acoes_concluidas / total_acoes) * 100 if total_acoes > 0 else 0
-
-    else:
-        total_metas = metas_em_andamento = metas_futuras = metas_no_prazo = metas_atrasadas = 0
-        total_acoes = acoes_concluidas = acoes_atrasadas = 0
-        percentual_metas_atingidas = percentual_acoes_concluidas = 0
+    total_acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).count()
+    acoes_concluidas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Concluída').count()
+    acoes_atrasadas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Atrasada').count()
+    percentual_acoes_concluidas = (acoes_concluidas / total_acoes) * 100 if total_acoes > 0 else 0
 
     return render_template(
         'resumo_planejamento.html',
         planejamento=planejamento,
         total_metas=total_metas,
-        metas_em_andamento=metas_em_andamento,
-        metas_futuras=metas_futuras,
+        metas_atingidas=metas_atingidas,
         percentual_metas_atingidas=percentual_metas_atingidas,
-        percentual_acoes_concluidas=percentual_acoes_concluidas,
-        metas_no_prazo=metas_no_prazo,
-        metas_atrasadas=metas_atrasadas,
         total_acoes=total_acoes,
+        acoes_concluidas=acoes_concluidas,
+        percentual_acoes_concluidas=percentual_acoes_concluidas,  # Garanta que essa variável seja passada
+        acoes_atrasadas=acoes_atrasadas
+    )
+
+      
+############################# Resumo ##################################################################3
+@planejamento_route.route('/get_coordenador', methods=['GET'])
+@login_required
+def get_planejamento_do_coordenador():
+    # Verifique o programa_id do usuário logado
+    programa_id = current_user.programa_id
+    print(f"[DEBUG] ID do programa do usuário atual: {programa_id}")  # Deve ser o ID real do programa do usuário, por exemplo, 7
+
+    # Tente buscar o planejamento estratégico do programa
+    planejamento = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).first()
+    print(f"[DEBUG] Planejamento encontrado: {planejamento}")  # Deve mostrar detalhes do planejamento ou None se não encontrado
+
+    # Verifique se o planejamento foi encontrado
+    if not planejamento:
+        flash("Nenhum planejamento estratégico encontrado para o programa.")
+        return render_template('indexcord.html', planejamento=None)
+
+    # Se o planejamento foi encontrado, colete os dados das metas e ações
+    objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+    print(f"[DEBUG] Objetivos associados ao planejamento: {objetivos}")  # Lista os objetivos encontrados
+
+    metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
+    total_metas = len(metas)
+    print(f"[DEBUG] Total de metas encontradas: {total_metas}")
+
+    # Cálculo de metas atingidas
+    metas_atingidas = MetaPE.query.filter(
+        MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]),
+        MetaPE.status == 'Concluída'
+    ).count()
+    print(f"[DEBUG] Metas atingidas: {metas_atingidas}")
+
+    # Percentual de metas atingidas
+    percentual_metas_atingidas = (metas_atingidas / total_metas) * 100 if total_metas > 0 else 0
+    print(f"[DEBUG] Percentual de metas atingidas: {percentual_metas_atingidas:.2f}%")
+
+    # Cálculo de ações
+    total_acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).count()
+    print(f"[DEBUG] Total de ações encontradas: {total_acoes}")
+
+    # Ações concluídas
+    acoes_concluidas = AcaoPE.query.filter(
+        AcaoPE.meta_pe_id.in_([meta.id for meta in metas]),
+        AcaoPE.status == 'Concluída'
+    ).count()
+    print(f"[DEBUG] Ações concluídas: {acoes_concluidas}")
+
+    # Ações atrasadas
+    acoes_atrasadas = AcaoPE.query.filter(
+        AcaoPE.meta_pe_id.in_([meta.id for meta in metas]),
+        AcaoPE.status == 'Atrasada'
+    ).count()
+    print(f"[DEBUG] Ações atrasadas: {acoes_atrasadas}")
+
+    # Percentual de ações concluídas
+    percentual_acoes_concluidas = (acoes_concluidas / total_acoes) * 100 if total_acoes > 0 else 0
+    print(f"[DEBUG] Percentual de ações concluídas: {percentual_acoes_concluidas:.2f}%")
+
+    # Renderizar o template com os dados coletados
+    return render_template(
+        'indexcord.html',
+        planejamento=planejamento,
+        percentual_metas_atingidas=percentual_metas_atingidas,
+        total_metas=total_metas,
+        metas_atingidas=metas_atingidas,
+        percentual_acoes_concluidas=percentual_acoes_concluidas,
+        total_acoes=total_acoes,
+        acoes_concluidas=acoes_concluidas,
         acoes_atrasadas=acoes_atrasadas
     )
 
 
-######################################################################################################3
+
+##################################################3333
+
+@planejamento_route.route('/test_prints/<int:planejamento_id>', methods=['GET'])
+def test_prints(planejamento_id):
+    print("Este é um teste de prints!")
+    print("Planejamento ID:", planejamento_id)
+    return "Verifique os prints no console"
+#####################################################################################################3
 @planejamento_route.route('/indicadores_desempenho')
 @login_required
 def indicadores_desempenho():

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Selecione um PDI</h2>
+<ul>
+    {% for pdi in lista_pdis %}
+        <li>
+            <a href="{{ url_for('escolher_objetivo_para_alteracao', pdi_id=pdi.id) }}">{{ pdi.nome }}</a>
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}

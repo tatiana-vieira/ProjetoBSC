@@ -1,83 +1,88 @@
 {% extends 'base.html' %}
 
 {% block titulo %}
-    lista de Objetivos - PRPPG
+    Lista de Objetivos - PRPPG
 {% endblock %}
 
 {% block conteudo %}
-<body>
-    <h4 style="text-align: center; color: #003366;">PDI - LISTA DE OBJETIVOS</h4>
-
-    <style>
-        table {
-            width: 90%;
-            border-collapse: collapse;
-            margin: auto; /* Centraliza a tabela */
-        }
-        th, td {
-            padding: 10px;
-            text-align: center;
-            border: 1px solid #dddddd;
-        }
-        th {
-            background-color: #f2f2f2;
-            color: #003366;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        tr:nth-child(odd) {
-            background-color: #ffffff;
-        }
-        .button-container {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .button-container a, .button-container button {
-            background-color: darkblue;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            margin-left: 10px;
-            display: inline-block;
-        }
-        .button-container button.cancel {
-            background-color: #f44336;
-        }
-    </style>
-    <table>
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>BSC</th>
-                <th>PDI</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for objetivo in objetivos %}
-            <tr>
-                <td>{{ objetivo.nome }}</td>
-                <td>{{ objetivo.bsc }}</td>
-                <td>{{ objetivo.pdi.nome }}</td> <!-- Acessa o nome do PDI associado -->
-                <td>
-                    <a href="{{ url_for('editar_objetivo', objetivo_id=objetivo.id) }}" style="color: blue; text-decoration: none;">Editar</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <div class="button-container">
-        <a href="{{ url_for('cadastro_objetivo') }}">Cadastrar Novo Objetivo</a>
-        <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>
+<div class="container" style="max-width: 80%; margin-top: 30px;">
+    <div class="card">
+        <div class="card-header" style="background-color: #054b91;">
+            <h4 style="text-align: center; color: #ffffff;">PDI - Lista de Objetivos</h4> <!-- Título com fundo azul e texto branco -->
+        </div>
+        <div class="card-body">
+            <style>
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: auto; /* Centraliza a tabela */
+                }
+                th, td {
+                    padding: 10px;
+                    text-align: center;
+                    border: 1px solid #dddddd;
+                }
+                th {
+                    background-color: #f2f2f2;
+                    color: #003366;
+                }
+                tr:nth-child(even) {
+                    background-color: #f2f2f2;
+                }
+                tr:nth-child(odd) {
+                    background-color: #ffffff;
+                }
+                .button-container {
+                    text-align: center;
+                    margin-top: 20px;
+                }
+                .button-container a, .button-container button {
+                    background-color: darkblue;
+                    color: white;
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    text-decoration: none;
+                    margin-left: 10px;
+                    display: inline-block;
+                }
+                .button-container button.cancel {
+                    background-color: #f44336;
+                }
+            </style>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>BSC</th>
+                        <th>PDI</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for objetivo in objetivos %}
+                    <tr>
+                        <td>{{ objetivo.nome }}</td>
+                        <td>{{ objetivo.bsc }}</td>
+                        <td>{{ objetivo.pdi.nome }}</td> <!-- Acessa o nome do PDI associado -->
+                        <td>
+                            <a href="{{ url_for('editar_objetivo', objetivo_id=objetivo.id) }}" style="color: #003366; text-decoration: none;">Editar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="button-container">
+                <a href="{{ url_for('cadastro_objetivo') }}" class="btn">Cadastrar Novo Objetivo</a>
+                <button type="button" onclick="fechar()" class="btn cancel">Fechar</button>
+            </div>
+        </div>
     </div>
-    <script>
-        function fechar() {
-            window.location.href = "{{ url_for('login.get_proreitor') }}";
-        }
-    </script>
-</body>
+</div>
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_proreitor') }}";
+    }
+</script>
 {% endblock %}

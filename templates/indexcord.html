@@ -5,71 +5,75 @@
 {% endblock %}
 
 {% block conteudo %}
-  <h2 style="text-align: center;"> PPGEXPLORER </h2>
+  <h2 style="text-align: center; margin-top: 30px;"> PPGEXPLORER </h2>
   <hr>
   <style>
-    /* Adiciona estilos para centralizar as imagens */
+    .container {
+      text-align: center;
+      margin-top: 65px;
+      max-width: 100%; /* Garante que o contêiner ocupe toda a largura */
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 50px; /* Espaçamento entre os botões */
+      overflow-x: auto; /* Permite rolagem horizontal se necessário */
+      white-space: nowrap; /* Impede quebra de linha */
+    }
+
     .image-button-wrapper {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      width: 160px; /* Tamanho fixo para os itens */
     }
 
     .image-button-wrapper img {
-      width: 100%;
-      max-width: 150px; /* Defina a largura máxima desejada para as imagens */
-      height: auto;
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      margin-bottom: 10px;
     }
 
     .image-button-wrapper button {
-      width: 100%;
-      max-width: 150px; /* Defina a largura máxima desejada para os botões */
-      text-align: center; /* Alinha o texto ao centro */
-      margin-top: 10px; /* Adiciona espaço entre a imagem e o botão */
-      white-space: nowrap; /* Impede a quebra de linha no texto */
-    }
-
-    .col-spacing {
-      margin: 0 15px; /* Adiciona espaçamento horizontal entre as colunas */
+      width: 145px;
+      height: 50px;
+      text-align: center;
     }
   </style>
+
   <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-md-2 col-spacing">
-        <div class="content-wrapper">
-          <div class="image-button-wrapper">
-            <img src="{{ url_for('static', filename='comparar.png') }}" alt="Imagem 1">
-            <button type="button" class="btn btn-primary btn-block" onclick="visualizarpdi()">PDI</button>
-          </div>
-        </div>
+    <div class="button-row">
+      <div class="image-button-wrapper">
+        <img src="{{ url_for('static', filename='comparar.png') }}" alt="Imagem 1">
+        <button type="button" class="btn btn-primary" onclick="visualizarpdi()">PDI</button>
       </div>
- 
-      <div class="col-md-2 col-spacing">
-        <div class="content-wrapper">
-          <div class="image-button-wrapper">
-            <img src="{{ url_for('static', filename='PDI.png') }}" alt="Imagem 2">
-            <button type="button" class="btn btn-primary btn-block" onclick="visualizaracao()">Plano de Ação</button>
-          </div>
-        </div>
+
+      <div class="image-button-wrapper">
+        <img src="{{ url_for('static', filename='PDI.png') }}" alt="Imagem 2">
+        <button type="button" class="btn btn-primary" onclick="visualizaracao()">Plano de Ação</button>
       </div>
-      
-      <div class="col-md-2 col-spacing">
-        <div class="content-wrapper">
-          <div class="image-button-wrapper">
-            <img src="{{ url_for('static', filename='ideia.png') }}" alt="Imagem 3">
-            <button type="button" class="btn btn-primary btn-block" onclick="visualizarelatorio()">Metas</button>
-          </div>
-        </div>
+
+      <div class="image-button-wrapper">
+        <img src="{{ url_for('static', filename='multi.png') }}" alt="Imagem 3">
+        <button type="button" class="btn btn-primary" onclick="visualizarelatorio()">Metas</button>
       </div>
-      
-      <div class="col-md-2 col-spacing">
-        <div class="content-wrapper">
-          <div class="image-button-wrapper">
-            <img src="{{ url_for('static', filename='grafico.png') }}" alt="Imagem 4">
-            <button type="button" class="btn btn-primary btn-block" onclick="visualizarindicadorcomum()" style="white-space: nowrap;">Indicador Comum</button>
-          </div>
-        </div>
+
+      <div class="image-button-wrapper">
+        <img src="{{ url_for('static', filename='grafico.png') }}" alt="Imagem 4">
+        <button type="button" class="btn btn-primary" onclick="visualizarindicadorcomum()">Indicador Comum</button>
+      </div>
+
+      <div class="image-button-wrapper">
+        <img src="{{ url_for('static', filename='grafico1.png') }}" alt="Imagem 5">
+        <button type="button" class="btn btn-primary" onclick="resumo_planejamento()">Planejamento</button>
+      </div>
+
+      <div class="image-button-wrapper">
+        <img src="{{ url_for('static', filename='riscos5.png') }}" alt="Imagem 6">
+        <button type="button" class="btn btn-primary" onclick="resumo_riscos()">Riscos</button>
       </div>
     </div>
   </div>
@@ -78,7 +82,7 @@
     function visualizarpdi() {
       window.location.href = "{{ url_for('exibir_altpdi') }}";
     }
-    
+
     function visualizarelatorio() {
       window.location.href = "{{ url_for('relatoriocompleto.relatorio_completo') }}";
     }
@@ -88,12 +92,17 @@
     }
 
     function visualizarindicadorcomum() {
-      window.location.href = "{{ url_for('calculoindicadores.visualizar_indicadores', programa_id=programa_id) }}"; }
-    
-    // Certifique-se de que programa_id está disponível como uma variável de JavaScript
+      window.location.href = "{{ url_for('calculoindicadores.visualizar_indicadores', programa_id=programa_id) }}";
+    }
+
+    function resumo_planejamento() {
+      window.location.href = "{{ url_for('planejamento.selecionar_planejamento') }}";
+    }
+
+    function resumo_riscos() {
+      window.location.href = "{{ url_for('relatoriometas.listar_matriz_riscos') }}";
+    }
+
     var programa_id = "{{ programa_id }}";
   </script>
-
-
-
 {% endblock %}

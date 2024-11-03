@@ -7,36 +7,43 @@
 {% endblock %}
 
 {% block conteudo %}
-<table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
-    <thead>
-        <tr>
-            <th style="text-align: left; padding: 10px;">Programa</th>
-            <th style="text-align: left; padding: 10px;">Recomendações</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for programa, recomendacoes in recomendacoes.items() %}
-        <tr>
-            <td style="padding: 10px; vertical-align: top;">{{ programa }}</td>
-            <td style="padding: 10px;">
-                {% if recomendacoes %}
-                    <ul>
-                        {% for recomendacao in recomendacoes %}
-                        <li>{{ recomendacao }}</li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p>Sem recomendações específicas.</p>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="card">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 style="text-align: center; color: #ffffff;">Recomendações Estratégicas por Coordenador</h4> <!-- Texto em branco com fundo azul -->
+    </div>
+    <div class="card-body">
+        <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align: left; padding: 10px;">Programa</th>
+                    <th style="text-align: left; padding: 10px;">Recomendações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for programa, recomendacoes in recomendacoes.items() %}
+                <tr>
+                    <td style="padding: 10px; vertical-align: top;">{{ programa }}</td>
+                    <td style="padding: 10px;">
+                        {% if recomendacoes %}
+                            <ul>
+                                {% for recomendacao in recomendacoes %}
+                                <li>{{ recomendacao }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>Sem recomendações específicas.</p>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
-<div style="text-align: center; margin-top: 40px;">
-    <button onclick="window.history.back()" style="padding: 10px 20px; font-size: 16px;">Voltar</button>
-    <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+        <div style="text-align: center; margin-top: 40px;">
+            <button onclick="window.history.back()" style="padding: 10px 20px; font-size: 16px;">Voltar</button>
+            <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+        </div>
+    </div>
 </div>
 
 <!-- Script para fechar a página -->

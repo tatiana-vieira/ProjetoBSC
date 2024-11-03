@@ -1,53 +1,63 @@
 {% extends 'basepro.html' %}
 
 {% block titulo %}
-    <h2 style="color: #003366;">CADASTRAR META - PRPPG</h2>
+    <h2 style="color: #003366; text-align: center;">Cadastrar Meta - PRPPG</h2>
 {% endblock %}
 
 {% block conteudo %}
-    <div style="margin: auto; width: 50%; text-align: center;">
-        <div class="form-block"><br>
-            <h2>Cadastro de Meta</h2><br>
-            <form id="MetaForm" method="POST">
-                <label for="pdi_id">PDI:</label>
-                <select id="pdi_id" name="pdi_id" required style="width: 100%; margin-bottom: 10px;">
-                    {% for pdi in lista_pdis %}
-                        <option value="{{ pdi.id }}">{{ pdi.nome }}</option>
-                    {% endfor %}
-                </select><br>
-                <label for="objetivo_id">Objetivo:</label>
-                <select id="objetivo_id" name="objetivo_id" required style="width: 100%; margin-bottom: 10px;">
-                    {% for objetivo in objetivos %}
-                        <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
-                    {% endfor %}
-                </select>
-                <label for="nome">Nome da Meta:</label>
-                <input type="text" id="nome" name="nome" required style="width: 100%; margin-bottom: 10px;"><br>
-                <label for="porcentagem_execucao">Porcentagem de Execução:</label>
-                <input type="number" id="porcentagem_execucao" name="porcentagem_execucao" required style="width: 100%; margin-bottom: 10px;"><br>
-                <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
-                <button type="button" onclick="alterarMeta()" style="background-color: #065110; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Alterar</button>
-                <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>
-            </form>
-            <script>
-                function alterarMeta() {
-                    window.location.href = "{{ url_for('alterar_meta') }}";
-                }
-                function fechar() {
-                    window.location.href = "{{ url_for('login.get_proreitor') }}";
-                }
-            </script>
+<div class="container" style="max-width: 80%; margin-top: 30px;">
+    <div class="card">
+        <div class="card-header" style="background-color: #054b91;">
+            <h4 style="text-align: center; color: #ffffff;">Cadastro de Meta</h4> <!-- Título com fundo azul e texto branco -->
         </div>
-        <!-- Exibir objetivos relacionados ao PDI selecionado -->
-        <div>
-            <ul>
-                {% for objetivo in objetivos %}
-                    <li>{{ objetivo.nome }}</li>
-                {% endfor %}
-            </ul>
+        <div class="card-body">
+            <form id="MetaForm" method="POST">
+                <div class="form-group">
+                    <label for="pdi_id">PDI:</label>
+                    <select id="pdi_id" name="pdi_id" class="form-control" required>
+                        {% for pdi in lista_pdis %}
+                            <option value="{{ pdi.id }}">{{ pdi.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="objetivo_id">Objetivo:</label>
+                    <select id="objetivo_id" name="objetivo_id" class="form-control" required>
+                        {% for objetivo in objetivos %}
+                            <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="nome">Nome da Meta:</label>
+                    <input type="text" id="nome" name="nome" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="porcentagem_execucao">Porcentagem de Execução:</label>
+                    <input type="number" id="porcentagem_execucao" name="porcentagem_execucao" class="form-control" required>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary" style="background-color: darkblue;">Cadastrar</button>
+                    <button type="button" onclick="alterarMeta()" class="btn btn-success ml-2">Alterar</button>
+                    <button type="button" onclick="fechar()" class="btn btn-danger ml-2">Fechar</button>
+                </div>
+            </form>
         </div>
     </div>
+
     <script>
+        function alterarMeta() {
+            window.location.href = "{{ url_for('alterar_meta') }}";
+        }
+        
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_proreitor') }}";
+        }
+
         document.getElementById('pdi_id').addEventListener('change', function() {
             var pdiId = this.value;
             fetch('/objetivos_relacionados_pdi/' + pdiId)
@@ -55,7 +65,7 @@
                 .then(data => {
                     var selectObjetivos = document.getElementById('objetivo_id');
                     selectObjetivos.innerHTML = '';
-    
+
                     data.forEach(objetivo => {
                         var option = document.createElement('option');
                         option.value = objetivo.id;
@@ -66,4 +76,5 @@
                 .catch(error => console.error('Erro ao buscar objetivos:', error));
         });
     </script>
+</div>
 {% endblock %}

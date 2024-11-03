@@ -5,71 +5,57 @@
 {% endblock %}
 
 {% block conteudo %}
-<body>
-    <h4 style="text-align: center; color: #003366;">PLANO DE DESENVOLVIMENTO INSTITUCIONAL</h4>
+<div class="container" style="max-width: 80%; margin-top: 30px;">
+    <div class="card">
+        <div class="card-header" style="background-color: #054b91;">
+            <h4 style="text-align: center; color: #ffffff;">Plano de Desenvolvimento Institucional - PDI</h4> <!-- Título com fundo azul e texto branco -->
+        </div>
 
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 10px;
-            text-align: center;
-            border: 1px solid #dddddd;
-        }
-        th {
-            background-color: #f2f2f2;
-            color: #003366;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        tr:nth-child(odd) {
-            background-color: #ffffff;
-        }
-    </style>
-    <table>
-        <thead>
-            <tr> 
-                <th>Objetivo</th>         
-                <th>Meta</th>           
-                <th>Indicador</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for objetivo in objetivos %}
-                {% for meta in metas if meta.objetivo_id == objetivo.id %}
-                    {% for indicador in indicadores if indicador.meta_pdi_id == meta.id %}
-                        <tr>
-                            <td>{{ objetivo.nome }}</td>
-                            <td>{{ meta.nome }}</td>
-                            <td>{{ indicador.nome }}</td>
-                        </tr>
-                    {% endfor %}
-                    {% if loop.last %}
-                        {% for _ in range(2 - loop.length) %}
-                            <tr><td colspan="3"></td></tr>
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Objetivo</th>
+                        <th>Meta</th>
+                        <th>Indicador</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for objetivo in objetivos %}
+                        {% set metas_objetivo = metas | selectattr('objetivo_id', 'equalto', objetivo.id) | list %}
+                        {% for meta in metas_objetivo %}
+                            {% set indicadores_meta = indicadores | selectattr('meta_pdi_id', 'equalto', meta.id) | list %}
+                            <tr>
+                                <td rowspan="{{ indicadores_meta | length }}">{{ objetivo.nome }}</td>
+                                <td rowspan="{{ indicadores_meta | length }}">{{ meta.nome }}</td>
+                                <td>{{ indicadores_meta[0].nome }}</td>
+                            </tr>
+                            {% for indicador in indicadores_meta[1:] %}
+                                <tr>
+                                    <td>{{ indicador.nome }}</td>
+                                </tr>
+                            {% endfor %}
                         {% endfor %}
-                    {% endif %}
-                {% endfor %}
-            {% endfor %}
-        </tbody>
-    </table>
-    <div style="text-align: center; margin-top: 20px;">
-        <form action="{{ url_for('pdiprppg.export_pdi_excel') }}" method="GET" style="display: inline;">
-            <button type="submit" class="btn btn-secondary">Exportar Excel</button>
-        </form>
-        <form action="{{ url_for('pdiprppg.export_pdi_pdf') }}" method="GET" style="display: inline;">
-            <button type="submit" class="btn btn-secondary">Exportar PDF</button>
-        </form>
-        <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
-    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
 
-    <script>
-        function fechar() {
-            window.location.href = "{{ url_for('login.get_coordenador') }}";
-        }
-    </script>
-</body>
+            <div class="text-center mt-4">
+                <form action="{{ url_for('pdiprppg.export_pdi_excel') }}" method="GET" style="display: inline;">
+                    <button type="submit" class="btn" style="background-color:#d46707; color: white;">Exportar Excel</button>
+                </form>
+                <form action="{{ url_for('pdiprppg.export_pdi_pdf') }}" method="GET" style="display: inline;">
+                    <button type="submit" class="btn" style="background-color: #d46707; color: white;">Exportar PDF</button>
+                </form>
+                <button type="button" onclick="fechar()" class="btn btn-danger ms-2">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
+</script>
 {% endblock %}

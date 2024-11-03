@@ -5,8 +5,11 @@
 {% endblock %}
 
 {% block conteudo %}
-<div class="container">
-    <h2 style="text-align: center; color: #003366;">Editar Objetivo</h2>
+<div class="container" style="max-width: 80%; margin-top: 30px;">
+    <div class="card">
+        <div class="card-header" style="background-color: #054b91;">
+            <h3 style="text-align: center; color: #ffffff;">Editar Objetivo</h3> <!-- Título com fundo azul e texto branco -->
+        </div>
     <!-- Mensagens Flash -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -46,8 +49,12 @@
             <label for="nome">Nome do Objetivo PE:</label>
             <input type="text" id="nome" name="nome" class="form-control" value="{{ objetivo.nome }}" required>
         </div>
-    
-        <button type="submit" class="btn btn-primary">Atualizar</button>
+        <div style="text-align: center; margin-top: 40px;">
+
+           <button type="submit" class="btn btn-primary">Salvar</button>
+           <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
+
+        </div>
     </form>
 </div>
 

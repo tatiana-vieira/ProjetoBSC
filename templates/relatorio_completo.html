@@ -5,123 +5,73 @@
 {% endblock %}
 
 {% block conteudo %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatório de Metas</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        h1 {
-            text-align: center;
-            color: #000080; /* azul escuro */
-        }
-        label, select, button {
-            font-size: 1.4em;
-        }
-        form {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        form label {
-            margin-right: 10px;
-        }
-        form select {
-            margin-right: 10px;
-        }
-        form button {
-            margin-left: 10px;
-            padding: 5px 15px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-        form button:hover {
-            background-color: #0056b3;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        table, th, td {
-            border: 1px solid black;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-            font-size: 0.8em; /* Diminuindo o tamanho da fonte */
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-    </style>
-</head>
-<body>
-    <h1>Relatório Completo: {{ planejamento_selecionado.nome if planejamento_selecionado else '' }}</h1>
-    
-    <form method="GET" action="{{ url_for('relatoriocompleto.relatorio_completo') }}">
-        <label for="planejamento_selecionado">Selecione o Planejamento:</label>
-        <select name="planejamento_selecionado" id="planejamento_selecionado">
-            {% for planejamento in planejamentos %}
-                <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento.id == planejamento_selecionado.id %}selected{% endif %}>{{ planejamento.nome }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit">Buscar</button>
-        {% if planejamento_selecionado %}
-            <button type="button" onclick="window.location.href='{{ url_for('relatoriocompleto.export_pdf', planejamento_selecionado=planejamento_selecionado.id) }}'">Gerar PDF</button>
-        {% endif %}
-    </form>
-    
+<div class="container" style="max-width: 80%; margin-top: 30px;">
+    <div class="card">
+        <div class="card-header" style="background-color: #054b91;">
+            <h4 style="text-align: center; color: #ffffff;">Relatório de Metas</h4>
+        </div>
+        <div class="card-body">
+            <h1 style="text-align: center; color: #000080;">Relatório Completo: {{ planejamento_selecionado.nome if planejamento_selecionado else '' }}</h1>
+            
+            <form method="GET" action="{{ url_for('relatoriocompleto.relatorio_completo') }}" class="text-center mb-4">
+                <label for="planejamento_selecionado" style="font-size: 1.2em; margin-right: 10px;">Selecione o Planejamento:</label>
+                <select name="planejamento_selecionado" id="planejamento_selecionado" style="font-size: 1.2em; padding: 5px 10px;">
+                    {% for planejamento in planejamentos %}
+                        <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento.id == planejamento_selecionado.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary ml-2">Buscar</button>
 
-    {% if planejamento_selecionado %}
-    <table>
-        <thead>
-            <tr>
-                <th>Objetivo</th>
-                <th>Meta</th>
-                <th>Ano Meta</th>
-                <th>Semestre Meta</th>
-                <th>Valor Meta</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for objetivo in objetivos %}
-                {% set metas = metas|selectattr('objetivo_pe_id', 'equalto', objetivo.id)|list %}
-                {% for meta in metas %}
-                    {% set valores_meta_filtrados = valores_meta|selectattr('metape_id', 'equalto', meta.id)|list %}
+                {% if planejamento_selecionado %}
+                    <button type="button" onclick="window.location.href='{{ url_for('relatoriocompleto.export_pdf', planejamento_selecionado=planejamento_selecionado.id) }}'" class="btn btn-primary ml-2">Gerar PDF</button>
+                {% endif %}
+            </form>
+
+            {% if planejamento_selecionado %}
+            <table class="table table-bordered table-striped mt-4">
+                <thead>
                     <tr>
-                        {% if loop.first %}
-                            <td rowspan="{{ metas|length }}">{{ objetivo.nome }}</td>
-                        {% endif %}
-                        <td>{{ meta.nome }}</td>
-                        {% if valores_meta_filtrados %}
-                            <td>{{ valores_meta_filtrados[0].ano }}</td>
-                            <td>{{ valores_meta_filtrados[0].semestre }}</td>
-                            <td>{{ valores_meta_filtrados[0].valor }}%</td>
-                        {% else %}
-                            <td colspan="3">Dados não disponíveis</td>
-                        {% endif %}
+                        <th>Objetivo</th>
+                        <th>Meta</th>
+                        <th>Ano Meta</th>
+                        <th>Semestre Meta</th>
+                        <th>Valor Meta</th>
                     </tr>
-                {% endfor %}
-            {% endfor %}
-        </tbody>
-    </table>
-    
-    <div style="text-align: center; margin-top: 20px;">
-        <button type="button" onclick="fechar()" style="background-color: #cb1f28; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
-    </div>
+                </thead>
+                <tbody>
+                    {% for objetivo in objetivos %}
+                        {% set metas = metas|selectattr('objetivo_pe_id', 'equalto', objetivo.id)|list %}
+                        {% for meta in metas %}
+                            {% set valores_meta_filtrados = valores_meta|selectattr('metape_id', 'equalto', meta.id)|list %}
+                            <tr>
+                                {% if loop.first %}
+                                    <td rowspan="{{ metas|length }}">{{ objetivo.nome }}</td>
+                                {% endif %}
+                                <td>{{ meta.nome }}</td>
+                                {% if valores_meta_filtrados %}
+                                    <td>{{ valores_meta_filtrados[0].ano }}</td>
+                                    <td>{{ valores_meta_filtrados[0].semestre }}</td>
+                                    <td>{{ valores_meta_filtrados[0].valor }}%</td>
+                                {% else %}
+                                    <td colspan="3">Dados não disponíveis</td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
 
-    <script>
-        function fechar() {
-            window.location.href = "{{ url_for('login.get_coordenador') }}";
-        }
-    </script>
-    {% endif %}
-</body>
+            <div class="text-center mt-4">
+                <button type="button" onclick="fechar()" class="btn btn-danger">Fechar</button>
+            </div>
+
+            <script>
+                function fechar() {
+                    window.location.href = "{{ url_for('login.get_coordenador') }}";
+                }
+            </script>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}

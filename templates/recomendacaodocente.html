@@ -1,5 +1,8 @@
 {% block content %}
-<h1>Recomendações por Programa  - Docentes</h1>
+<div class="card">
+    <div class="card-header" style="background-color: #054b91;">
+      <h4 style="text-align: center; color: #ffffff;">Recomendações por Programa - Docentes</h4> <!-- Texto em branco com fundo azul -->
+    </div>
 
 <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
     <thead>
@@ -33,10 +36,10 @@
     <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
 </div>
 
-    <!-- Script para fechar a página -->
-   <script>
-     function fechar() {
-        window.location.href = "{{ url_for('login.get_proreitor') }}";
-     }
-   </script>
+<!-- Script para fechar a página -->
+<script>
+   function fechar() {
+      window.location.href = "{{ url_for('login.get_proreitor') }}";
+   }
+</script>
 {% endblock %}

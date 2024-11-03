@@ -5,34 +5,38 @@
 {% endblock %}
 
 {% block conteudo %}
-<div style="margin: auto; width: 80%; text-align: center;">
-    <h2>Progresso das Metas</h2>
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Progresso das Metas</h4>
+    </div>
+    <div class="card-body text-center">
+        <form method="GET" action="{{ url_for('relatoriometas.exibir_graficometas') }}" class="mb-4">
+            <label for="planejamento_selecionado" class="me-2">Selecionar Planejamento:</label>
+            <select id="planejamento_selecionado" name="planejamento_selecionado" class="form-select d-inline-block" style="width: 800px;">
+                <option value="">--Selecione o Planejamento--</option>
+                {% for planejamento in planejamentos %}
+                    <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento.id == planejamento_selecionado.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary ms-2">Buscar</button>
+        </form>
 
-    <form method="GET" action="{{ url_for('relatoriometas.exibir_graficometas') }}">
-        <label for="planejamento_selecionado">Selecionar Planejamento:</label>
-        <select id="planejamento_selecionado" name="planejamento_selecionado">
-            <option value="">--Selecione o Planejamento--</option>
-            {% for planejamento in planejamentos %}
-                <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento.id == planejamento_selecionado.id %}selected{% endif %}>{{ planejamento.nome }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit" style="background-color: blue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Buscar</button>
-    </form>
-
-    {% if graph_base64 %}
-        <div style="margin: 20px 0;">
-            <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Metas" style="max-width: 80%; height: auto; display: block; margin: auto;">
-        </div>
-        <br>
-        <a href="{{ url_for('relatoriometas.gerar_pdf', planejamento_selecionado=planejamento_selecionado.id) }}" style="background-color: blue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">Exportar PDF</a>
-        <button type="button" onclick="fechar()" style="background-color: red; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
-    {% endif %}
+        {% if graph_base64 %}
+            <div class="my-4">
+                <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Metas" style="max-width: 80%; height: auto;">
+            </div>
+            <div class="d-flex justify-content-center mt-3">
+                <a href="{{ url_for('relatoriometas.gerar_pdf', planejamento_selecionado=planejamento_selecionado.id) }}" class="btn btn-warning me-2" style="padding: 10px 20px;">Exportar PDF</a>
+                <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px;">Fechar</button>
+            </div>
+        {% endif %}
+    </div>
 </div>
 
 {% if dados_graficos %}
-<div style="margin-top: 40px;">
-    <h3>Sugestões de Ajustes</h3>
-    <table class="table table-bordered table-striped">
+<div class="mt-5">
+    <h3 class="text-center">Sugestões de Ajustes</h3>
+    <table class="table table-bordered table-striped mt-3" style="width: 80%; margin: auto; text-align: center;">
         <thead>
             <tr>
                 <th>Meta</th>
@@ -49,7 +53,7 @@
                     <td>{{ dado.restante }}</td>
                     <td>
                         {% if dado.sugestoes %}
-                            <ul>
+                            <ul class="list-unstyled mb-0">
                                 {% for sugestao in dado.sugestoes %}
                                     <li>{{ sugestao }}</li>
                                 {% endfor %}

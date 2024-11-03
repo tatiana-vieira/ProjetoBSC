@@ -1,41 +1,57 @@
 {% extends 'basepro.html' %}
 
 {% block titulo %}
-    Importar Planilha de Egresso
+    <h2 style="text-align: center; margin-bottom: 20px;">Importar Planilha de Egressos</h2>
 {% endblock %}
 
 {% block conteudo %}
-<div class="container" style="text-align: center; padding-top: 50px;">
-    <h2 style="text-align: center; color: #003366; padding-bottom: 20px;">Importar Planilha de Egresso</h2>
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 style="text-align: center; color: #ffffff;">Importar Planilha de Egressos</h4> <!-- Texto em branco com fundo azul -->
+    </div>
+    <div class="card-body text-center">
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}" role="alert">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+        <!-- Exibir mensagens de feedback -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" role="alert" style="text-align: center;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-    <form action="{{ url_for('avaliacaoegresso.importar_planilhaegresso') }}" method="POST" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="file" style="color: #003366;">Selecionar Arquivo</label>
-            <input type="file" class="form-control-file" id="file" name="file" style="display: none;" onchange="displayFileName()">
-            <label for="file" class="btn btn-primary" style="background-color: #003366; border-color: #003366; margin-bottom: 20px;">Escolher arquivo</label>
-            <small id="fileHelp" class="form-text text-muted">Exemplo: <a href="{{ url_for('static', filename='uploads/egresso.xlsx') }}" download>Baixar Exemplo</a></small>
-        </div>
-        <div id="fileName" class="form-text text-muted" style="margin-top: 10px;">Nenhum arquivo selecionado</div>
-        <div>
-            <button type="submit" class="btn btn-primary" style="background-color: #003366; border-color: #003366; width: 150px;">Upload</button>
-        </div>
-    </form>
+        <!-- Formulário de Upload -->
+        <form action="{{ url_for('avaliacaoegresso.importar_planilhaegresso') }}" method="POST" enctype="multipart/form-data" style="text-align: center;">
+            <div class="form-group">
+                <label for="file" style="color: #003366; font-weight: bold;">Selecionar Arquivo</label><br>
+                <input type="file" class="form-control-file" id="file" name="file" style="display: none;" onchange="displayFileName()">
+                <label for="file" class="btn btn-primary" style="background-color: #003366; border-color: #003366; margin-top: 10px;">Escolher arquivo</label><br>
+                <small id="fileHelp" class="form-text text-muted" style="margin-top: 10px;">
+                    Exemplo: <a href="{{ url_for('static', filename='uploads/egresso.xlsx') }}" download>Baixar Exemplo</a>
+                </small>
+            </div>
+            <div id="fileName" class="form-text text-muted" style="margin-top: 10px;">Nenhum arquivo selecionado</div>
+
+            <!-- Botões de Upload e Fechar centralizados -->
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn btn-primary" style="background-color: #003366; border-color: #003366; width: 150px; margin-right: 10px;">Upload</button>
+                <button type="button" onclick="fechar()" class="btn btn-danger" style="width: 150px;">Fechar</button>
+            </div>
+        </form>
+    </div>
 </div>
 
+<!-- Scripts -->
 <script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_proreitor') }}";
+    }
+
     function displayFileName() {
-        var input = document.getElementById('file');
-        var fileName = input.files[0] ? input.files[0].name : 'Nenhum arquivo selecionado';
+        const input = document.getElementById('file');
+        const fileName = input.files[0] ? input.files[0].name : 'Nenhum arquivo selecionado';
         document.getElementById('fileName').innerText = 'Arquivo selecionado: ' + fileName;
     }
 </script>

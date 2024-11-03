@@ -7,10 +7,12 @@
 {% endblock %}
 
 {% block conteudo %}
-<div style="margin-top: 20px; text-align: center; font-family: Arial, sans-serif;">
-    <h3 style="color: #333;">Métricas do Modelo</h3>
+<div class="card">
+    <div class="card-header" style="background-color: #054b91;">
+      <h4 style="text-align: center; color: #ffffff;">Métricas do Modelo</h4> <!-- Texto em branco com fundo azul -->
+    </div>
 
-    <!-- Criando uma tabela para organizar os resultados por programa -->
+    <!-- Tabela de Resultados por Programa -->
     <table style="width: 80%; margin: 0 auto; border-collapse: collapse; font-family: Arial, sans-serif;">
         <thead>
             <tr style="background-color: #f2f2f2;">
@@ -46,14 +48,10 @@
         </tbody>
     </table>
 
-    <!-- Botões de Voltar e Fechar -->
+    <!-- Botões de Navegação -->
     <div style="margin-top: 40px;">
-        <!-- Botão Voltar -->
         <a href="{{ url_for('discente.gerar_graficos') }}" class="btn btn-primary" style="margin-right: 10px; padding: 10px 20px;">Voltar para Gráficos</a>
-        
-        <!-- Botão Fechar -->
         <button type="button" onclick="window.close();" class="btn btn-danger" style="padding: 10px 20px;">Fechar</button>
     </div>
 </div>
 {% endblock %}
-

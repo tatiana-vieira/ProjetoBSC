@@ -5,8 +5,12 @@
 {% endblock %}
 
 {% block conteudo %}
-<body>
-    <h4 style="text-align: center; color: #003366;">PLANO DE DESENVOLVIMENTO INSTITUCIONAL</h4>
+<div class="container" style="max-width: 80%; margin-top: 30px;">
+    <div class="card">
+        <div class="card-header" style="background-color: #054b91;">
+            <h4 style="text-align: center; color: #ffffff;">PLANO DE DESENVOLVIMENTO INSTITUCIONAL</h4> <!-- Título com fundo azul e texto branco -->
+        </div>
+    </div>
 
     <style>
         table {
@@ -80,6 +84,6 @@
         function cancelar() {
             window.location.href = "{{ url_for('login.get_proreitor') }}";
         }
-    </script> 
-</body> 
+    </script>
+</div>
 {% endblock %}

@@ -5,98 +5,98 @@
 {% endblock %}
 
 {% block conteudo %}
-<div style="margin: auto; width: 80%; text-align: left;">
-
+<div class="container" style="max-width: 80%; margin-top: 30px;">
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="alert alert-{{ category }}" role="alert">
+                <div class="alert alert-{{ category }} text-center" role="alert">
                     {{ message }}
                 </div>
             {% endfor %}
         {% endif %}
     {% endwith %}
 
-    <div class="form-block">
-        <h2 style="text-align: center;">Cadastro de Risco</h2><br>
-        <form method="POST" action="{{ url_for('relatoriometas.cadastrar_risco') }}">
-            <label for="planejamento_id">Selecione o Planejamento:</label><br>
-            <select name="planejamento_id" id="planejamento_id" required style="width: 90%; margin-bottom: 10px;">
-                <option value="" disabled selected>Selecione um planejamento</option>
-                {% for planejamento in planejamentos %}
-                    <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
-                {% endfor %}
-            </select>
-            <br>
+    <div class="card mt-4">
+        <div class="card-header" style="background-color: #054b91;">
+            <h3 class="text-center text-white">Cadastro de Risco</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('relatoriometas.cadastrar_risco') }}">
+                <div class="form-group mb-3">
+                    <label for="planejamento_id">Selecione o Planejamento:</label>
+                    <select name="planejamento_id" id="planejamento_id" required class="form-control">
+                        <option value="" disabled selected>Selecione um planejamento</option>
+                        {% for planejamento in planejamentos %}
+                            <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <label for="objetivo_pe_id">Selecione o Objetivo:</label><br>
-            <select name="objetivo_pe_id" id="objetivo_pe_id" required style="width: 90%; margin-bottom: 10px;" disabled>
-                <option value="" disabled selected>Selecione um objetivo</option>
-            </select>
-            <br>
+                <div class="form-group mb-3">
+                    <label for="objetivo_pe_id">Selecione o Objetivo:</label>
+                    <select name="objetivo_pe_id" id="objetivo_pe_id" required class="form-control" disabled>
+                        <option value="" disabled selected>Selecione um objetivo</option>
+                    </select>
+                </div>
 
-            <label for="meta_pe_id">Selecione a Meta:</label><br>
-            <select name="meta_pe_id" id="meta_pe_id" required style="width: 90%; margin-bottom: 10px;" disabled>
-                <option value="" disabled selected>Selecione uma meta</option>
-            </select>
-            <br>
+                <div class="form-group mb-3">
+                    <label for="meta_pe_id">Selecione a Meta:</label>
+                    <select name="meta_pe_id" id="meta_pe_id" required class="form-control" disabled>
+                        <option value="" disabled selected>Selecione uma meta</option>
+                    </select>
+                </div>
 
-            <!-- Descrição do Risco -->
-            <div class="form-group">
-                <label for="descricao">Descrição do Risco:</label>
-                <input type="text" id="descricao" name="descricao" required class="form-control" style="width: 80%; margin-bottom: 10px;">
-            </div>
+                <div class="form-group mb-3">
+                    <label for="descricao">Descrição do Risco:</label>
+                    <input type="text" id="descricao" name="descricao" required class="form-control">
+                </div>
 
-            <!-- Probabilidade -->
-            <div class="form-group">
-                <label for="probabilidade">Probabilidade:</label>
-                <select id="probabilidade" name="probabilidade" required class="form-control" style="width: 80%; margin-bottom: 10px;">
-                    <option value="Baixa">Baixa</option>
-                    <option value="Média">Média</option>
-                    <option value="Alta">Alta</option>
-                </select>
-            </div>
+                <div class="form-group mb-3">
+                    <label for="probabilidade">Probabilidade:</label>
+                    <select id="probabilidade" name="probabilidade" required class="form-control">
+                        <option value="Baixa">Baixa</option>
+                        <option value="Média">Média</option>
+                        <option value="Alta">Alta</option>
+                    </select>
+                </div>
 
-            <!-- Impacto -->
-            <div class="form-group">
-                <label for="impacto">Impacto:</label>
-                <select id="impacto" name="impacto" required class="form-control" style="width: 80%; margin-bottom: 10px;">
-                    <option value="Baixo">Baixo</option>
-                    <option value="Médio">Médio</option>
-                    <option value="Alto">Alto</option>
-                </select>
-            </div>
+                <div class="form-group mb-3">
+                    <label for="impacto">Impacto:</label>
+                    <select id="impacto" name="impacto" required class="form-control">
+                        <option value="Baixo">Baixo</option>
+                        <option value="Médio">Médio</option>
+                        <option value="Alto">Alto</option>
+                    </select>
+                </div>
 
-            <!-- Ação Preventiva -->
-            <div class="form-group">
-                <label for="acao_preventiva">Ação Preventiva:</label>
-                <input type="text" id="acao_preventiva" name="acao_preventiva" class="form-control" style="width: 80%; margin-bottom: 10px;">
-            </div>
+                <div class="form-group mb-3">
+                    <label for="acao_preventiva">Ação Preventiva:</label>
+                    <input type="text" id="acao_preventiva" name="acao_preventiva" class="form-control">
+                </div>
 
-            <!-- Botões centralizados com o mesmo tamanho -->
-            <div style="text-align: center; margin-top: 20px;">
-                <button type="submit" class="btn btn-primary" style="padding: 10px 20px; margin-right: 10px;">Cadastrar</button>
-                <button type="button" onclick="cancelar()" class="btn btn-danger" style="padding: 10px 20px; margin-right: 10px;">Cancelar</button>
-                <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px;">Fechar</button>
-            </div>
-        </form>
-        <br>
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary" style="margin-right: 10px;">Cadastrar</button>
+                    <button type="button" onclick="canecelar()" class="btn btn-danger">Cancelar</button>
+                    <button type="button" onclick="fechar()" class="btn btn-danger">Fechar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-        <!-- Listagem dos Riscos -->
-        <h3 style="text-align: center;">Riscos Cadastrados</h3><br> 
-         <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
-            <thead>
-                <tr>
-                    <th>Descrição</th>
-                    <th>Nível</th>
-                    <th>Probabilidade</th>
-                    <th>Impacto</th>
-                    <th>Ação Preventiva</th>
-                    <th>Editar</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for risco in riscos %}
+    <h3 class="text-center mt-5">Riscos Cadastrados</h3>
+    <table class="table table-bordered table-striped mt-3">
+        <thead class="table-light">
+            <tr>
+                <th>Descrição</th>
+                <th>Nível</th>
+                <th>Probabilidade</th>
+                <th>Impacto</th>
+                <th>Ação Preventiva</th>
+                <th>Editar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for risco in riscos %}
                 <tr>
                     <td>{{ risco.descricao }}</td>
                     <td>{{ risco.nivel }}</td> <!-- Verifique se "nivel" realmente existe no modelo Risco -->
@@ -104,59 +104,59 @@
                     <td>{{ risco.impacto }}</td>
                     <td>{{ risco.acao_preventiva }}</td>
                     <td>
-                        <a href="{{ url_for('relatoriometas.editar_risco', risco_id=risco.id) }}" class="btn btn-success">Editar</a>
+                        <a href="{{ url_for('relatoriometas.editar_risco', risco_id=risco.id) }}" class="btn btn-success btn-sm">Editar</a>
                     </td>
                 </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <div style="text-align: center; margin-top: 20px;">
-            <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px;">Fechar</button>
-      </div>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="text-center mt-4">
+        <button type="button" onclick="fechar()" class="btn btn-danger">Fechar</button>
     </div>
 </div>
 
 <script>
-  function fechar() {
-      window.location.href = "{{ url_for('login.get_coordenador') }}";
-  }
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
 
-  document.getElementById('planejamento_id').addEventListener('change', function() {
-      var planejamentoId = this.value;
-      fetch(`/objetivos_por_planejamento/${planejamentoId}`)
-          .then(response => response.json())
-          .then(data => {
-              var objetivoSelect = document.getElementById('objetivo_pe_id');
-              objetivoSelect.innerHTML = '<option value="" disabled selected>Selecione um objetivo</option>';
-              data.forEach(function(objetivo) {
-                  var option = document.createElement('option');
-                  option.value = objetivo.id;
-                  option.text = objetivo.nome;
-                  objetivoSelect.add(option);
-              });
-              objetivoSelect.disabled = false;
-          });
-  });
+    document.getElementById('planejamento_id').addEventListener('change', function() {
+        var planejamentoId = this.value;
+        fetch(`/objetivos_por_planejamento/${planejamentoId}`)
+            .then(response => response.json())
+            .then(data => {
+                var objetivoSelect = document.getElementById('objetivo_pe_id');
+                objetivoSelect.innerHTML = '<option value="" disabled selected>Selecione um objetivo</option>';
+                data.forEach(function(objetivo) {
+                    var option = document.createElement('option');
+                    option.value = objetivo.id;
+                    option.text = objetivo.nome;
+                    objetivoSelect.add(option);
+                });
+                objetivoSelect.disabled = false;
+            });
+    });
 
-  document.getElementById('objetivo_pe_id').addEventListener('change', function() {
-      var objetivoId = this.value;
-      fetch(`/metas_por_objetivo/${objetivoId}`)
-          .then(response => response.json())
-          .then(data => {
-              var metaSelect = document.getElementById('meta_pe_id');
-              metaSelect.innerHTML = '<option value="" disabled selected>Selecione uma meta</option>';
-              data.forEach(function(meta) {
-                  var option = document.createElement('option');
-                  option.value = meta.id;
-                  option.text = meta.nome;
-                  metaSelect.add(option);
-              });
-              metaSelect.disabled = false;
-          });
-  });
+    document.getElementById('objetivo_pe_id').addEventListener('change', function() {
+        var objetivoId = this.value;
+        fetch(`/metas_por_objetivo/${objetivoId}`)
+            .then(response => response.json())
+            .then(data => {
+                var metaSelect = document.getElementById('meta_pe_id');
+                metaSelect.innerHTML = '<option value="" disabled selected>Selecione uma meta</option>';
+                data.forEach(function(meta) {
+                    var option = document.createElement('option');
+                    option.value = meta.id;
+                    option.text = meta.nome;
+                    metaSelect.add(option);
+                });
+                metaSelect.disabled = false;
+            });
+    });
 
-  function cancelar() {
-      window.history.back();
-  }
+    function cancelar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
 </script>
 {% endblock %}

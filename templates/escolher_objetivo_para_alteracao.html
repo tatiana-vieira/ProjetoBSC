@@ -5,20 +5,28 @@
 {% endblock %}
 
 {% block conteudo %}
-    <div style="margin: auto; width: 50%; text-align: center;">
-        <div class="form-block"><br>
-            <h2>ESCOLHER UM OBJETIVO PARA ALTERAR</h2><br>
+<div class="container" style="max-width: 60%; margin-top: 30px;">
+    <div class="card">
+        <div class="card-header" style="background-color: #054b91;">
+            <h4 style="text-align: center; color: #ffffff;">Escolher um Objetivo para Alterar</h4> <!-- Título com fundo azul e texto branco -->
+        </div>
+        <div class="card-body">
             <form id="EscolherObjetivoForm" method="GET" action="{{ url_for('alterar_meta') }}">
                 <input type="hidden" name="pdi_id" value="{{ pdi_id }}">
-                <label for="objetivo_id">Objetivo:</label>
-                <select id="objetivo_id" name="objetivo_id" required style="width: 100%; margin-bottom: 10px;">
-                    <option value="">Selecione um objetivo</option>
-                    {% for objetivo in objetivos %}
-                        <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Continuar</button>
+                <div class="form-group">
+                    <label for="objetivo_id" style="font-weight: bold;">Objetivo:</label>
+                    <select id="objetivo_id" name="objetivo_id" class="form-control" required>
+                        <option value="">Selecione um objetivo</option>
+                        {% for objetivo in objetivos %}
+                            <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Continuar</button>
+                </div>
             </form>
         </div>
     </div>
+</div>
 {% endblock %}
