@@ -5,112 +5,59 @@
 {% endblock %}
 
 {% block conteudo %}
-<div class="container" style="max-width: 80%; margin-top: 30px;">
-    <div class="card">
-      <div class="card-header" style="background-color: #054b91;">
-        <h4 style="text-align: center; color: #ffffff;">Alterar Meta</h4> <!-- Título com fundo azul e texto branco -->
-      </div>
-      <div class="card-body">
-        {% if meta %}
-        <form id="MetaForm" method="POST" action="{{ url_for('relatoriometas.salvar_alteracao_meta', meta_id=meta.id) }}">
-            
-            <!-- PDI Selection -->
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 style="text-align: center; color: #ffffff;">Alterar Meta</h4> <!-- Texto em branco com fundo azul -->
+    </div>
+    <div class="card-body">
+        <form id="MetaForm" method="POST">
             <label for="pdi_id">PDI:</label>
-            <select id="pdi_id" name="pdi_id" class="form-control mb-3" required>
+            <select id="pdi_id" name="pdi_id" required style="width: 100%; margin-bottom: 10px;">
                 {% for pdi in lista_pdis %}
-                    <option value="{{ pdi.id }}" {% if pdi.id == meta.objetivo_pe.planejamento_estrategico_id %}selected{% endif %}>{{ pdi.nome }}</option>
+                    <option value="{{ pdi.id }}" {% if pdi.id == meta.objetivo.pdi_id %}selected{% endif %}>{{ pdi.nome }}</option>
                 {% endfor %}
             </select>
+            <br>
 
-            <!-- Objetivo Selection -->
             <label for="objetivo_id">Objetivo:</label>
-            <select id="objetivo_id" name="objetivo_id" class="form-control mb-3" required>
+            <select id="objetivo_id" name="objetivo_id" required style="width: 100%; margin-bottom: 10px;">
                 {% for objetivo in objetivos %}
-                    <option value="{{ objetivo.id }}" {% if objetivo.id == meta.objetivo_pe_id %}selected{% endif %}>{{ objetivo.nome }}</option>
+                    <option value="{{ objetivo.id }}" {% if objetivo.id == meta.objetivo_id %}selected{% endif %}>{{ objetivo.nome }}</option>
                 {% endfor %}
             </select>
+            <br>
 
-            <!-- Meta Information -->
             <label for="nome">Nome da Meta:</label>
-            <input type="text" id="nome" name="nome" value="{{ meta.nome }}" class="form-control mb-3" required>
+            <input type="text" id="nome" name="nome" value="{{ meta.nome }}" required style="width: 100%; margin-bottom: 10px;">
+            <br>
 
-            <label for="descricao">Descrição da Meta:</label>
-            <textarea id="descricao" name="descricao" class="form-control mb-3" required>{{ meta.descricao }}</textarea>
+            <label for="porcentagem_execucao">Porcentagem de Execução:</label>
+            <input type="number" id="porcentagem_execucao" name="porcentagem_execucao" value="{{ meta.porcentagem_execucao }}" required style="width: 100%; margin-bottom: 10px;">
+            <br>
 
-            <label for="responsavel">Responsável:</label>
-            <input type="text" id="responsavel" name="responsavel" value="{{ meta.responsavel }}" class="form-control mb-3" required>
-
-            <label for="recursos">Recursos Necessários:</label>
-            <textarea id="recursos" name="recursos" class="form-control mb-3" required>{{ meta.recursos_necessarios }}</textarea>
-
-            <label for="data_inicio">Data de Início:</label>
-            <input type="date" id="data_inicio" name="data_inicio" value="{{ meta.data_inicio }}" class="form-control mb-3" required>
-
-            <label for="data_termino">Data de Término:</label>
-            <input type="date" id="data_termino" name="data_termino" value="{{ meta.data_termino }}" class="form-control mb-3" required>
-
-            <label for="status_inicial">Status Inicial (em %):</label>
-            <input type="number" id="status_inicial" name="status_inicial" value="{{ meta.status_inicial }}" class="form-control mb-3" required min="0" max="100" step="1">
-
-            <label for="valor_alvo">Valor Alvo (em %):</label>
-            <input type="number" id="valor_alvo" name="valor_alvo" value="{{ meta.valor_alvo }}" class="form-control mb-3" required step="0.01">
-
-            <!-- Valores da Meta -->
-            <h5 style="color: darkblue;">Valores da Meta</h5>
-            <table class="table table-bordered mb-3">
-                <thead>
-                    <tr>
-                        <th>Ano</th>
-                        <th>Semestre</th>
-                        <th>Valor</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for valor in valores_meta %}
-                        <tr>
-                            <td><input type="number" name="anos[]" value="{{ valor.ano }}" class="form-control" required></td>
-                            <td>
-                                <select name="semestres[]" class="form-control" required>
-                                    <option value="1" {% if valor.semestre == 1 %}selected{% endif %}>1º Semestre (Jan-Jun)</option>
-                                    <option value="2" {% if valor.semestre == 2 %}selected{% endif %}>2º Semestre (Jul-Dez)</option>
-                                </select>
-                            </td>
-                            <td><input type="number" step="0.01" name="valores[]" value="{{ valor.valor }}" class="form-control" required></td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <!-- Submit Buttons -->
-            <div class="text-center">
-                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                <button type="button" onclick="fechar()" class="btn btn-danger ml-3">Fechar</button>
+            <div style="text-align: center;">
+                <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Salvar Alterações</button>
+                <button type="button" onclick="cancelar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button>
             </div>
         </form>
-        {% else %}
-            <div class="alert alert-danger" role="alert">
-                Meta não encontrada. Por favor, selecione uma meta válida para alteração.
-            </div>
-        {% endif %}
-      </div>
     </div>
 </div>
 
 <script>
-    function fechar() {
-        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    function cancelar() {
+        window.location.href = "{{ url_for('cadastro_meta') }}";
     }
 
-    // Update the objective list when the PDI is changed
+    // Atualiza a lista de objetivos ao selecionar um PDI
     document.getElementById('pdi_id').addEventListener('change', function() {
-        const pdiId = this.value;
-        fetch(`/objetivos_relacionados_pdi/${pdiId}`)
+        var pdiId = this.value;
+        fetch('/objetivos_relacionados_pdi/' + pdiId)
             .then(response => response.json())
             .then(data => {
-                const selectObjetivos = document.getElementById('objetivo_id');
+                var selectObjetivos = document.getElementById('objetivo_id');
                 selectObjetivos.innerHTML = '';
                 data.forEach(objetivo => {
-                    const option = document.createElement('option');
+                    var option = document.createElement('option');
                     option.value = objetivo.id;
                     option.text = objetivo.nome;
                     selectObjetivos.appendChild(option);

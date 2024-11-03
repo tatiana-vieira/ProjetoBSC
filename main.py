@@ -487,7 +487,7 @@ def cadastro_meta():
 
     # Renderiza a página com a lista de PDI e os objetivos relacionados
     return render_template('cadastro_meta.html', lista_pdis=lista_pdis, objetivos=objetivos)
-
+#########################################################################################333
 def processar_formulario_meta():
     # Verifica se o usuário está logado e é um Pró-reitor
     if 'email' not in session:
@@ -529,12 +529,31 @@ def objetivos_relacionados_pdi(pdi_id):
     objetivos_data = [{'id': objetivo.id, 'nome': objetivo.nome} for objetivo in objetivos]
     return jsonify(objetivos_data)
 #####################################################################3
-
 @app.route('/selecionar_pdi_para_alteracao', methods=['GET'])
 def selecionar_pdi_para_alteracao():
-    # Obtém a lista de PDIs para seleção
+    # Obter a lista de PDIs do banco de dados
     lista_pdis = PDI.query.all()
     return render_template('selecionar_pdi_meta.html', lista_pdis=lista_pdis)
+
+@app.route('/alterar_meta', methods=['GET', 'POST'])
+def alterar_meta():
+    objetivo_id = request.args.get('objetivo_id')
+    if not objetivo_id:
+        return redirect(url_for('selecionar_pdi_para_alteracao'))
+
+    if request.method == 'POST':
+        return processar_formulario_alterar_meta(objetivo_id)
+
+    # Buscar a meta a ser alterada no banco de dados
+    meta = Meta.query.filter_by(objetivo_id=objetivo_id).first()
+    if not meta:
+        return 'Meta não encontrada', 404
+
+    # Obter a lista de PDIs e objetivos relacionados
+    lista_pdis = PDI.query.all()
+    objetivos = buscar_objetivos_relacionados_pdi(meta.objetivo.pdi_id)
+
+    return render_template('alterarmetapdi.html', meta=meta, lista_pdis=lista_pdis, objetivos=objetivos)
 
 @app.route('/escolher_objetivo_para_alteracao', methods=['GET'])
 def escolher_objetivo_para_alteracao():
@@ -542,59 +561,22 @@ def escolher_objetivo_para_alteracao():
     if not pdi_id:
         return redirect(url_for('selecionar_pdi_para_alteracao'))
 
-    # Busca os objetivos relacionados ao PDI selecionado
+    # Buscar objetivos relacionados ao PDI selecionado
     objetivos = buscar_objetivos_relacionados_pdi(int(pdi_id))
     return render_template('escolher_objetivo_meta.html', pdi_id=pdi_id, objetivos=objetivos)
-
-@app.route('/selecionar_pdi_para_alteracao', methods=['GET'], endpoint='selecionar_pdi_alteracao_1')
-def selecionar_pdi_para_alteracao_1():
-    pdi_id = request.args.get('pdi_id')
-    if not pdi_id:
-        return redirect(url_for('selecionar_pdi_para_alteracao'))
-
-    # Busca os objetivos relacionados ao PDI selecionado
-    objetivos = buscar_objetivos_relacionados_pdi(int(pdi_id))
-    return render_template('escolher_objetivo_meta.html', pdi_id=pdi_id, objetivos=objetivos)
-
-@app.route('/alterar_meta', methods=['GET', 'POST'])
-def alterar_meta():
-    if request.method == 'POST':
-        meta_id = request.form.get('meta_id')
-        if meta_id:
-            result = processar_formulario_alterar_meta(meta_id)
-            if result == "Meta alterada com sucesso":
-                flash(result, 'success')
-                return redirect(url_for('selecionar_pdi_para_alteracao'))
-            else:
-                flash(result, 'error')
-                return redirect(url_for('alterar_meta'))
-
-    # GET request logic
-    lista_pdis = PDI.query.all()
-    pdi_id = request.args.get('pdi_id')
-    objetivo_id = request.args.get('objetivo_id')
-    meta = None
-    objetivos = []
-
-    if pdi_id:
-        objetivos = buscar_objetivos_relacionados_pdi(int(pdi_id))
-        
-    if objetivo_id:
-        meta = Meta.query.filter_by(objetivo_id=int(objetivo_id)).first()
-
-    return render_template('alterarmetapdi.html', lista_pdis=lista_pdis, objetivos=objetivos, meta=meta)
-
 
 def processar_formulario_alterar_meta(meta_id):
-    # Ensure user is logged in and authorized
+    # Verificar se o usuário está logado e autorizado
     if 'email' not in session:
-        return "Acesso não autorizado"
+        flash("Acesso não autorizado", "error")
+        return redirect(url_for('login'))
 
     user = Users.query.filter_by(email=session['email']).first()
     if user.role != 'Pro-reitor':
-        return "Acesso não autorizado"
+        flash("Acesso não autorizado", "error")
+        return redirect(url_for('login'))
 
-    # Fetch the meta entry and update it
+    # Buscar e atualizar a meta
     meta = Meta.query.get(meta_id)
     if not meta:
         return "Meta não encontrada"
@@ -602,76 +584,15 @@ def processar_formulario_alterar_meta(meta_id):
     meta.objetivo_id = request.form['objetivo_id']
     meta.nome = request.form['nome']
     meta.porcentagem_execucao = request.form['porcentagem_execucao']
-    
-    db.session.commit()
-    return "Meta alterada com sucesso"
-
-
-
-###################################################################################
-@app.route('/alterar_meta', methods=['GET', 'POST'])
-def alterar_meta():
-    success_message = None
-    if request.method == 'POST':
-        meta_id = request.form.get('meta_id')
-        if meta_id:
-            success_message = processar_formulario_alterar_meta(meta_id)
-    
-    lista_pdis = PDI.query.all()
-    pdi_id = request.args.get('pdi_id')
-    objetivos = []
-    meta = None
-    
-    if pdi_id:
-        objetivos = buscar_objetivos_relacionados_pdi(int(pdi_id))
-        
-    objetivo_id = request.args.get('objetivo_id')
-    if objetivo_id:
-        meta = Meta.query.filter_by(objetivo_id=int(objetivo_id)).first()
-
-    return render_template('alterarmetapdi.html', lista_pdis=lista_pdis, objetivos=objetivos, meta=meta, success_message=success_message)
-
-def processar_formulario_alterar_meta(meta_id):
-    if 'email' not in session:
-        return 'Acesso não autorizado'
-
-    user = Users.query.filter_by(email=session['email']).first()
-    if user.role != 'Pro-reitor':
-        return 'Acesso não autorizado'
-
-    meta = Meta.query.get(meta_id)
-    if not meta:
-        return 'Meta não encontrada', 404
-
-    objetivo_id = request.form['objetivo_id']
-    nome = request.form['nome']
-    porcentagem_execucao = request.form['porcentagem_execucao']
-
-    meta.objetivo_id = objetivo_id
-    meta.nome = nome
-    meta.porcentagem_execucao = porcentagem_execucao
     db.session.commit()
 
-    return "Meta alterada com sucesso"
+    flash("Meta alterada com sucesso", "success")
+    return redirect(url_for('selecionar_pdi_para_alteracao'))
 
-
-#################################33333
-
-@app.route('/selecionar_pdi_para_alteracao', methods=['GET'])
-def selecionar_pdi_para_alteracao():
-    # Obtém a lista de PDI do banco de dados
-    lista_pdis = PDI.query.all()
-    return render_template('selecionarpdimeta.html', lista_pdis=lista_pdis)
-
-@app.route('/escolher_objetivo_para_alteracao', methods=['GET'])
-def escolher_objetivo_para_alteracao():
-    pdi_id = request.args.get('pdi_id')
-    if not pdi_id:
-        return redirect(url_for('selecionar_pdi_para_alteracao'))
-
-    # Busca os objetivos relacionados ao PDI
-    objetivos = buscar_objetivos_relacionados_pdi(int(pdi_id))
-    return render_template('escolher_objetivo_para_alteracao.html', pdi_id=pdi_id, objetivos=objetivos)
+# Função auxiliar para buscar objetivos relacionados ao PDI
+def buscar_objetivos_relacionados_pdi(pdi_id):
+    # Buscar objetivos baseados em um ID de PDI
+    return Objetivo.query.filter_by(pdi_id=pdi_id).all()
 
     
 ################################################################################################################################
