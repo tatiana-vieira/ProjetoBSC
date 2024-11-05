@@ -1213,17 +1213,28 @@ def resumo_planejamento():
 
     total_acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).count()
     acoes_concluidas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Concluída').count()
-    acoes_atrasadas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Atrasada').count()  # Correção aqui
+    acoes_atrasadas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Atrasada').count()
     percentual_acoes_concluidas = (acoes_concluidas / total_acoes) * 100 if total_acoes > 0 else 0
 
-    # Obter indicadores para cada meta
+    # Obter indicadores e valores de metas
     indicadores_por_meta = {}
+    valores_por_meta = {}
     for meta in metas:
-        indicadores = IndicadorPlan.query.filter_by(meta_pe_id=meta.id).all()  # Busca os indicadores associados à meta
-        indicadores_por_meta[meta.id] = indicadores  # Adiciona ao dicionário
+        indicadores = IndicadorPlan.query.filter_by(meta_pe_id=meta.id).all()
+        valores_metas = Valormeta.query.filter_by(metape_id=meta.id).all()  # Obtém os valores associados
 
-    # Adicionando print para debug
-    print("Metas e seus Indicadores:", {meta_id: [ind.nome for ind in inds] for meta_id, inds in indicadores_por_meta.items()})
+        # Armazena indicadores e valores em dicionários
+        indicadores_por_meta[meta.id] = indicadores
+        valores_por_meta[meta.id] = valores_metas
+
+    # Print para depuração
+    print("Metas, Indicadores e Valores:", {
+        meta_id: {
+            "indicadores": [ind.nome for ind in inds],
+            "valores": [{"ano": val.ano, "semestre": val.semestre, "valor": val.valor} for val in vals]
+        }
+        for meta_id, (inds, vals) in zip(indicadores_por_meta.keys(), zip(indicadores_por_meta.values(), valores_por_meta.values()))
+    })
 
     return render_template(
         'resumo_planejamento.html',
@@ -1234,12 +1245,14 @@ def resumo_planejamento():
         total_acoes=total_acoes,
         acoes_concluidas=acoes_concluidas,
         percentual_acoes_concluidas=percentual_acoes_concluidas,
-        acoes_atrasadas=acoes_atrasadas,  # Incluindo a variável corrigida aqui
+        acoes_atrasadas=acoes_atrasadas,
         metas_em_andamento=metas_em_andamento,
         metas_atrasadas=metas_atrasadas,
         indicadores_por_meta=indicadores_por_meta,
-        metas=metas  # Passar as metas para o template para iterar sobre elas
+        valores_por_meta=valores_por_meta,  # Enviando os valores para o template
+        metas=metas
     )
+
 
       
 ############################# Resumo ##################################################################3

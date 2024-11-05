@@ -41,6 +41,7 @@
                 </div>
             </div>
         </div>
+        
     </div>
 
     <!-- Seção de Status Geral das Metas -->
@@ -73,35 +74,51 @@
 
     <div class="mt-5">
         <h5 class="text-center">Detalhamento das Metas e Indicadores</h5>
-        {% for meta in metas %}
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h5 class="card-title">Meta: {{ meta.nome }}</h5>
-                    <p><strong>Status:</strong> {{ meta.status }}</p>
-                    <p><strong>Progresso:</strong> {{ meta.status_inicial }}% até {{ meta.valor_alvo }}%</p>
-                    
-                    <!-- Lista de Indicadores da Meta -->
-                    <h6>Indicadores:</h6>
-                    <ul>
-                        {% if indicadores_por_meta[meta.id] %}
-                            {% for indicador in indicadores_por_meta[meta.id] %}
-                                <li>
-                                    <strong>{{ indicador.nome }}</strong>
-                                    <p>Descrição: {{ indicador.descricao }}</p>
-                                    <p>Valor Meta: {{ indicador.valor_meta }}</p>
-                                    <p>Frequência de Coleta: {{ indicador.frequencia_coleta }}</p>
-                                    <p>Peso: {{ indicador.peso }}</p>
-                                    <p>Responsável: {{ indicador.responsavel }}</p>
-                                </li>
-                            {% endfor %}
-                        {% else %}
-                            <p>Nenhum indicador associado a esta meta.</p>
-                        {% endif %}
-                    </ul>
+        <div class="accordion" id="metasAccordion">
+            {% for meta in metas %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ meta.id }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ meta.id }}" aria-expanded="false" aria-controls="collapse{{ meta.id }}">
+                            {{ meta.nome }} - Status: {{ meta.status }} - Progresso: {{ meta.status_inicial }}% até {{ meta.valor_alvo }}%
+                        </button>
+                    </h2>
+                    <div id="collapse{{ meta.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ meta.id }}" data-bs-parent="#metasAccordion">
+                        <div class="accordion-body">
+                            <!-- Detalhes dos Indicadores -->
+                            <h6>Indicadores:</h6>
+                            <ul>
+                                {% if indicadores_por_meta[meta.id] %}
+                                    {% for indicador in indicadores_por_meta[meta.id] %}
+                                        <li>
+                                            <strong>{{ indicador.nome }}</strong>
+                                            <p>Descrição: {{ indicador.descricao }}</p>
+                                            <p>Valor Meta: {{ indicador.valor_meta }}</p>
+                                            <p>Frequência de Coleta: {{ indicador.frequencia_coleta }}</p>
+                                            <p>Peso: {{ indicador.peso }}</p>
+                                            <p>Responsável: {{ indicador.responsavel }}</p>
+                                        </li>
+                                    {% endfor %}
+                                {% else %}
+                                    <p>Nenhum indicador associado a esta meta.</p>
+                                {% endif %}
+                            </ul>
+    
+                            <!-- Valores da Meta -->
+                            <h6>Valores da Meta:</h6>
+                            <ul>
+                                {% for valor_meta in meta.valores_metas %}
+                                    <li>Ano: {{ valor_meta.ano }}, Semestre: {{ valor_meta.semestre }}, Valor: {{ valor_meta.valor }}</li>
+                                {% else %}
+                                    <li>Nenhum valor associado.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        {% endfor %}
+            {% endfor %}
+        </div>
     </div>
+    
      
     
     
