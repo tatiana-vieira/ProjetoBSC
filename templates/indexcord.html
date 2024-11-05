@@ -7,40 +7,62 @@
 {% block conteudo %}
   <h2 style="text-align: center; margin-top: 30px;"> PPGEXPLORER </h2>
   <hr>
+
+  <!-- Contêiner para exibir notificações -->
+  <div id="alertas" class="alertas-container">
+    <!-- Notificações serão carregadas aqui -->
+  </div>
+
   <style>
-    .container {
-      text-align: center;
-      margin-top: 65px;
-      max-width: 100%; /* Garante que o contêiner ocupe toda a largura */
+    .alertas-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px; /* Espaço entre as colunas */
+        margin: 20px auto;
+        max-width: 1200px; /* Ajuste de largura máxima */
+        animation: fadeIn 1s ease-in-out; /* Animação de fade-in */
     }
 
-    .button-row {
-      display: flex;
-      justify-content: center;
-      gap: 50px; /* Espaçamento entre os botões */
-      overflow-x: auto; /* Permite rolagem horizontal se necessário */
-      white-space: nowrap; /* Impede quebra de linha */
+    .alert {
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        font-size: 1rem;
+        font-weight: bold;
+        color: #fff;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .image-button-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 160px; /* Tamanho fixo para os itens */
+    .alert-danger {
+        background-color: #ff4d4d;
+        border: 1px solid #ff1a1a;
     }
 
-    .image-button-wrapper img {
-      width: 120px;
-      height: 120px;
-      object-fit: contain;
-      margin-bottom: 10px;
+    .alert-warning {
+        background-color: #ffcc00;
+        border: 1px solid #ff9900;
+        color: #000;
     }
 
-    .image-button-wrapper button {
-      width: 145px;
-      height: 50px;
-      text-align: center;
+    .alert:hover {
+        transform: translateY(-5px);
+        box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Ícones para os alertas */
+    .alert-icon {
+        margin-right: 10px;
+        font-size: 1.5rem;
+    }
+
+    /* Animação de fade-in */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
     }
   </style>
 
@@ -77,6 +99,82 @@
       </div>
     </div>
   </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch("{{ url_for('planejamento.carregar_avisos') }}")
+            .then(response => {
+                if (!response.ok) {
+                    console.error("Erro ao carregar alertas:", response.statusText);
+                    return [];
+                }
+                return response.json();
+            })
+            .then(alertas => {
+                const alertasContainer = document.getElementById("alertas");
+                if (alertas.length > 0) {
+                    alertas.forEach(alerta => {
+                        const alertDiv = document.createElement("div");
+                        alertDiv.className = alerta.tipo === 'urgente' ? 'alert alert-danger' : 'alert alert-warning';
+
+                        // Ícone baseado no tipo de alerta
+                        const icon = document.createElement("span");
+                        icon.className = "alert-icon";
+                        icon.innerHTML = alerta.tipo === 'urgente' ? "&#9888;" : "&#128712;"; // Emoji de alerta ou aviso
+                        alertDiv.appendChild(icon);
+
+                        // Mensagem do alerta
+                        const message = document.createElement("span");
+                        message.innerHTML = alerta.mensagem;
+                        alertDiv.appendChild(message);
+
+                        alertasContainer.appendChild(alertDiv);
+                    });
+                } else {
+                    console.log("Nenhum alerta para exibir.");
+                    alertasContainer.innerHTML = "<div class='alert alert-info'>Nenhum alerta no momento.</div>";
+                }
+            })
+            .catch(error => console.error("Erro ao carregar alertas:", error));
+    });
+  </script>
+
+  <style>
+    .container {
+      text-align: center;
+      margin-top: 65px;
+      max-width: 100%;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 50px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .image-button-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 160px;
+    }
+
+    .image-button-wrapper img {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      margin-bottom: 10px;
+    }
+
+    .image-button-wrapper button {
+      width: 145px;
+      height: 50px;
+      text-align: center;
+    }
+  </style>
 
   <script>
     function visualizarpdi() {

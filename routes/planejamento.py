@@ -905,7 +905,7 @@ def indicadores_chave():
     )
 
 #####################################################################33
-@planejamento_route.route('/avisos_alertas')
+@planejamento_route.route('/carregar_avisos')
 @login_required
 def carregar_avisos():
     coordenador_programa_id = session.get('programa_id')
@@ -913,29 +913,31 @@ def carregar_avisos():
     alertas = []
 
     if programa:
-        # Obter metas e ações relacionadas
         planejamentos = programa.planejamentos
         for planejamento in planejamentos:
-            metas = planejamento.metas
-            for meta in metas:
-                dias_restantes = (meta.data_termino - datetime.now().date()).days
-                if dias_restantes <= 7:
-                    alertas.append({
-                        'mensagem': f"Meta '{meta.nome}' está a {dias_restantes} dias do vencimento!",
-                        'tipo': 'urgente' if dias_restantes <= 3 else 'aviso'
-                    })
-
-                acoes = meta.acoes
-                for acao in acoes:
-                    dias_restantes_acao = (acao.data_termino - datetime.now().date()).days
-                    if dias_restantes_acao <= 7:
+            # Acessar objetivos associados ao planejamento
+            for objetivo in planejamento.objetivos_pe:
+                # Acessar metas associadas a cada objetivo
+                for meta in objetivo.metas:
+                    dias_restantes = (meta.data_termino - datetime.now().date()).days
+                    if dias_restantes <= 7:
                         alertas.append({
-                            'mensagem': f"Ação '{acao.nome}' da meta '{meta.nome}' está a {dias_restantes_acao} dias do vencimento!",
-                            'tipo': 'urgente' if dias_restantes_acao <= 3 else 'aviso'
+                            'mensagem': f"Meta '{meta.nome}' está a {dias_restantes} dias do vencimento!",
+                            'tipo': 'urgente' if dias_restantes <= 3 else 'aviso'
                         })
 
-    # Renderiza a página principal com os alertas
-    return render_template('basecord.html', alertas=alertas)
+                    # Acessar ações associadas à meta
+                    for acao in meta.acao_pe:
+                        dias_restantes_acao = (acao.data_termino - datetime.now().date()).days
+                        if dias_restantes_acao <= 7:
+                            alertas.append({
+                                'mensagem': f"Ação '{acao.nome}' da meta '{meta.nome}' está a {dias_restantes_acao} dias do vencimento!",
+                                'tipo': 'urgente' if dias_restantes_acao <= 3 else 'aviso'
+                            })
+
+    return jsonify(alertas)
+
+
 
 def carregar_alertas():
     alertas = []
