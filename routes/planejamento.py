@@ -378,7 +378,13 @@ def associar_indicadorespe():
             valor = request.form.getlist('valor[]')
 
             for ano, valor in zip(ano, valor):
-                novo_valor = Valorindicador(indicadorpe_id=indicador_id, ano=ano, valor=valor)
+                try:
+                    valor_numeric = float(valor)  # Converte o valor para número
+                except ValueError:
+                    flash('Por favor, insira um valor numérico para o indicador.', 'error')
+                    return redirect(url_for('planejamento.associar_indicadorespe'))
+                
+                novo_valor = Valorindicador(indicadorpe_id=indicador_id, ano=ano, valor=valor_numeric)
                 db.session.add(novo_valor)
 
             db.session.commit()
@@ -462,6 +468,7 @@ def associar_metaspe():
             objetivos_pe_associados.extend(objetivos)
 
         if request.method == 'POST':
+            # Obtém os dados do formulário
             objetivo_pe_id = request.form['objetivo_pe_id']
             nome_meta = request.form['nome']
             descricao = request.form['descricao']
@@ -469,20 +476,23 @@ def associar_metaspe():
             recursos = request.form['recursos']
             data_inicio = request.form['data_inicio']
             data_termino = request.form['data_termino']
-            status_inicial = request.form['status_inicial']  # Porcentagem
-            status_texto = request.form['status']  # Status textual
+            status_inicial = request.form['status_inicial']
+            status_texto = request.form['status']
+            valor_alvo = request.form['valor_alvo']
 
             objetivo_pe = ObjetivoPE.query.get(objetivo_pe_id)
             if not objetivo_pe:
                 flash('Objetivo não encontrado!', 'error')
                 return redirect(url_for('planejamento.associar_metaspe'))
 
+            # Verifica se a meta já existe
             meta_existente = MetaPE.query.filter_by(nome=nome_meta, objetivo_pe_id=objetivo_pe_id).first()
             if meta_existente:
                 flash('Essa meta já existe para o objetivo selecionado!', 'warning')
                 return redirect(url_for('planejamento.associar_metaspe'))
 
             try:
+                # Cria a nova meta
                 nova_meta = MetaPE(
                     objetivo_pe_id=objetivo_pe_id,
                     nome=nome_meta,
@@ -492,9 +502,26 @@ def associar_metaspe():
                     data_inicio=data_inicio,
                     data_termino=data_termino,
                     status_inicial=status_inicial,
-                    status=status_texto  # Define o status textual
+                    status=status_texto,
+                    valor_alvo=valor_alvo
                 )
                 db.session.add(nova_meta)
+                db.session.commit()
+
+                # Salva os valores de ano, semestre e valor na tabela Valormeta
+                anos = request.form.getlist('ano[]')
+                semestres = request.form.getlist('semestre[]')
+                valores = request.form.getlist('valor[]')
+
+                for ano, semestre, valor in zip(anos, semestres, valores):
+                    novo_valor_meta = Valormeta(
+                        metape_id=nova_meta.id,
+                        ano=int(ano),
+                        semestre=int(semestre),
+                        valor=float(valor)
+                    )
+                    db.session.add(novo_valor_meta)
+
                 db.session.commit()
                 flash('Meta cadastrada com sucesso!', 'success')
             except Exception as e:
@@ -510,6 +537,7 @@ def associar_metaspe():
     else:
         flash('Programa não encontrado!', 'error')
         return redirect(url_for('planejamento.associar_metaspe'))
+
 
 #########################33 calcular ####################################################
 def calcular_percentual_metas_atingidas(planejamento):
@@ -1160,6 +1188,7 @@ def selecionar_planejamento():
 
     # Renderizar a página com a lista de planejamentos para seleção
     return render_template('selecionarplanej.html', planejamentos=planejamentos)
+##### resumo ##################################3
 @planejamento_route.route('/resumo_planejamento')
 @login_required
 def resumo_planejamento():
@@ -1178,10 +1207,23 @@ def resumo_planejamento():
     metas_atingidas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Concluída').count()
     percentual_metas_atingidas = (metas_atingidas / total_metas) * 100 if total_metas > 0 else 0
 
+    # Calcular status das metas
+    metas_em_andamento = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Em Andamento').count()
+    metas_atrasadas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Atrasada').count()
+
     total_acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).count()
     acoes_concluidas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Concluída').count()
-    acoes_atrasadas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Atrasada').count()
+    acoes_atrasadas = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas]), AcaoPE.status == 'Atrasada').count()  # Correção aqui
     percentual_acoes_concluidas = (acoes_concluidas / total_acoes) * 100 if total_acoes > 0 else 0
+
+    # Obter indicadores para cada meta
+    indicadores_por_meta = {}
+    for meta in metas:
+        indicadores = IndicadorPlan.query.filter_by(meta_pe_id=meta.id).all()  # Busca os indicadores associados à meta
+        indicadores_por_meta[meta.id] = indicadores  # Adiciona ao dicionário
+
+    # Adicionando print para debug
+    print("Metas e seus Indicadores:", {meta_id: [ind.nome for ind in inds] for meta_id, inds in indicadores_por_meta.items()})
 
     return render_template(
         'resumo_planejamento.html',
@@ -1191,8 +1233,12 @@ def resumo_planejamento():
         percentual_metas_atingidas=percentual_metas_atingidas,
         total_acoes=total_acoes,
         acoes_concluidas=acoes_concluidas,
-        percentual_acoes_concluidas=percentual_acoes_concluidas,  # Garanta que essa variável seja passada
-        acoes_atrasadas=acoes_atrasadas
+        percentual_acoes_concluidas=percentual_acoes_concluidas,
+        acoes_atrasadas=acoes_atrasadas,  # Incluindo a variável corrigida aqui
+        metas_em_andamento=metas_em_andamento,
+        metas_atrasadas=metas_atrasadas,
+        indicadores_por_meta=indicadores_por_meta,
+        metas=metas  # Passar as metas para o template para iterar sobre elas
     )
 
       

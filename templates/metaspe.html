@@ -76,6 +76,8 @@
                 <option value="Concluída">Concluída</option>
                 <option value="Atrasada">Atrasada</option>
                 <option value="Pausada">Pausada</option>
+                <option value="No prazo">No prazo</option>
+                <option value="Futura">Futura</option>
             </select>
           </div>
 
@@ -125,46 +127,60 @@
   </div> <!-- card -->
 
   <!-- Tabela de Metas Cadastradas -->
-  <div class="card mt-5">
-    <div class="card-header" style="background-color: #054b91;">
-      <h3 style="text-align: center; color: #ffffff;">Metas Cadastradas</h3> <!-- Título com fundo azul e texto branco -->
-    </div>
-    <div class="card-body">
+  <!-- Tabela de Metas Cadastradas -->
+<div class="card mt-5">
+  <div class="card-header" style="background-color: #054b91;">
+      <h3 style="text-align: center; color: #ffffff;">Metas Cadastradas</h3>
+  </div>
+  <div class="card-body">
       <table class="table table-striped">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nome</th>
-            <th>Descrição</th>
-            <th>Responsável</th>
-            <th>Data Início</th>
-            <th>Data Término</th>
-            <th>Status Inicial</th>
-            <th>Valor Alvo</th>
-            <th>Editar</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for meta in metas %}
-          <tr>
-            <td>{{ meta.id }}</td>
-            <td>{{ meta.nome }}</td>
-            <td>{{ meta.descricao }}</td>
-            <td>{{ meta.responsavel }}</td>
-            <td>{{ meta.data_inicio }}</td>
-            <td>{{ meta.data_termino }}</td>
-            <td>{{ meta.status_inicial }}</td>
-            <td>{{ meta.valor_alvo }}</td>
-            <td>
-              <a href="{{ url_for('planejamento.alterar_metape', metape_id=meta.id) }}" class="btn btn-success btn-sm">Editar</a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
+          <thead>
+              <tr>
+                  <th>ID</th>
+                  <th>Nome</th>
+                  <th>Descrição</th>
+                  <th>Responsável</th>
+                  <th>Data Início</th>
+                  <th>Data Término</th>
+                  <th>Status Inicial</th>
+                  <th>Valor Alvo</th>
+                  <th>Valores Associados</th> <!-- Coluna para os valores -->
+                  <th>Editar</th>
+              </tr>
+          </thead>
+          <tbody>
+              {% for meta in metas %}
+              <tr>
+                  <td>{{ meta.id }}</td>
+                  <td>{{ meta.nome }}</td>
+                  <td>{{ meta.descricao }}</td>
+                  <td>{{ meta.responsavel }}</td>
+                  <td>{{ meta.data_inicio }}</td>
+                  <td>{{ meta.data_termino }}</td>
+                  <td>{{ meta.status_inicial }}</td>
+                  <td>{{ meta.valor_alvo }}</td>
+                  <td>
+                      <!-- Exibe os valores associados a esta meta -->
+                      <ul>
+                          {% for valor_meta in meta.valores_metas %}
+                              <li>Ano: {{ valor_meta.ano }}, Semestre: {{ valor_meta.semestre }}, Valor: {{ valor_meta.valor }}</li>
+                          {% else %}
+                              <li>Nenhum valor associado.</li>
+                          {% endfor %}
+                      </ul>
+                  </td>
+                  <td>
+                      <a href="{{ url_for('planejamento.alterar_metape', metape_id=meta.id) }}" class="btn btn-success btn-sm">Editar</a>
+                  </td>
+              </tr>
+              {% endfor %}
+          </tbody>
       </table>
-    </div>
-  </div> <!-- card -->
-</div> <!-- container -->
+      <div style="text-align: center; margin-top: 20px;">
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+      </div>
+  </div>
+</div> <!-- card -->
 
 <!-- Scripts para adicionar campos dinamicamente e para o botão cancelar -->
 <script>
@@ -205,6 +221,13 @@
   function cancelar() {
       window.location.href = "{{ url_for('login.get_coordenador') }}";
   }
-</script>
 
+
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
+    }
+
+ 
+</script>
+ 
 {% endblock %}

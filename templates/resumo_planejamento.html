@@ -13,6 +13,7 @@
         <p><strong>Planejamento:</strong> {{ planejamento.nome }}</p>
     </div>
 
+    <!-- Seção de Resumo de Metas e Ações -->
     <div class="row mt-4 text-center">
         <div class="col-md-4">
             <div class="card" style="background-color: #28a745; color: white;">
@@ -42,6 +43,7 @@
         </div>
     </div>
 
+    <!-- Seção de Status Geral das Metas -->
     <div class="row mt-5">
         <div class="col-md-4">
             <div class="card">
@@ -56,6 +58,7 @@
             </div>
         </div>
 
+        <!-- Gráfico de Evolução das Metas -->
         <div class="col-md-8">
             <div class="card">
                 <div class="card-body">
@@ -68,6 +71,42 @@
         </div>
     </div>
 
+    <div class="mt-5">
+        <h5 class="text-center">Detalhamento das Metas e Indicadores</h5>
+        {% for meta in metas %}
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5 class="card-title">Meta: {{ meta.nome }}</h5>
+                    <p><strong>Status:</strong> {{ meta.status }}</p>
+                    <p><strong>Progresso:</strong> {{ meta.status_inicial }}% até {{ meta.valor_alvo }}%</p>
+                    
+                    <!-- Lista de Indicadores da Meta -->
+                    <h6>Indicadores:</h6>
+                    <ul>
+                        {% if indicadores_por_meta[meta.id] %}
+                            {% for indicador in indicadores_por_meta[meta.id] %}
+                                <li>
+                                    <strong>{{ indicador.nome }}</strong>
+                                    <p>Descrição: {{ indicador.descricao }}</p>
+                                    <p>Valor Meta: {{ indicador.valor_meta }}</p>
+                                    <p>Frequência de Coleta: {{ indicador.frequencia_coleta }}</p>
+                                    <p>Peso: {{ indicador.peso }}</p>
+                                    <p>Responsável: {{ indicador.responsavel }}</p>
+                                </li>
+                            {% endfor %}
+                        {% else %}
+                            <p>Nenhum indicador associado a esta meta.</p>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+     
+    
+    
+
+    <!-- Gráfico com Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Gráfico de Evolução das Metas
@@ -92,6 +131,7 @@
         });
     </script>
 
+    <!-- Botão para Fechar -->
     <div style="text-align: center; margin-top: 20px;">
         <button type="button" onclick="fechar()" class="btn btn-danger" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
     </div>
