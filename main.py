@@ -33,6 +33,7 @@ from routes.avaliacaoegresso import avaliacaoegresso_route
 from routes.avaliacaosecretaria import avaliacaosecretaria_route
 from routes.avaliacaocoordenador import avaliacaocoordenador_route
 from routes.discente import discente_route
+from routes.altpdipro import altpdipro_route
 from routes.db import db, init_db
 from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
@@ -151,6 +152,7 @@ app.register_blueprint(avaliacaoegresso_route)
 app.register_blueprint(avaliacaosecretaria_route)
 app.register_blueprint(avaliacaocoordenador_route)
 app.register_blueprint(discente_route)
+app.register_blueprint(altpdipro_route)
 
 
 
@@ -803,6 +805,30 @@ def exibir_altpdi():
     return render_template('altpdi.html', pdi=pdi_data, objetivos=objetivos, metas=metas, indicadores=indicadores)
 
 
+#######################################################################3
+@app.route('/altpdipro', methods=['GET', 'POST'])
+def exibir_altipdipro():
+    if request.method == 'POST':
+        pdi_id = request.form.get('pdi_id')
+        return redirect(url_for('exibir_altpdipro', pdi_id=pdi_id))
+
+    pdi_id = request.args.get('pdi_id')
+    if not pdi_id:
+        pdi_data = PDI.query.all()
+        return render_template('selecionar_programapro.html', pdis=pdi_data)
+    
+    pdi_data = PDI.query.filter_by(id=pdi_id).first()
+    if not pdi_data:
+        flash('PDI não encontrado.')
+        return redirect(url_for('exibir_altipdipro'))
+
+    objetivos = Objetivo.query.filter_by(pdi_id=pdi_id).all()
+    metas = Meta.query.filter(Meta.objetivo_id.in_([objetivo.id for objetivo in objetivos])).all()
+    indicadores = Indicador.query.filter(Indicador.meta_pdi_id.in_([meta.id for meta in metas])).all()
+
+    return render_template('altpdipro.html', pdi=pdi_data, objetivos=objetivos, metas=metas, indicadores=indicadores)
+
+
 ##################################################################################33
 #######################################################
 @app.route('/dbtest')
@@ -1224,12 +1250,19 @@ def avaliar_frequencia_atualizacoes(pdi):
         for meta in objetivo.metas:
             if meta.data_ultima_atualizacao:
                 dias_desde_atualizacao = (datetime.now() - meta.data_ultima_atualizacao).days
-                total_atualizacoes += 1 / dias_desde_atualizacao  # Menor intervalo dá maior peso
-                total_periodos += 1
+                # Evita divisão por zero
+                if dias_desde_atualizacao > 0:
+                    total_atualizacoes += 1 / dias_desde_atualizacao  # Menor intervalo dá maior peso
+                    total_periodos += 1
+                else:
+                    # Caso onde dias_desde_atualizacao é zero (atualizado hoje)
+                    total_atualizacoes += 1  # Considera como uma atualização completa
+                    total_periodos += 1
 
     # Frequência média de atualizações em dias
     frequencia_score = (total_atualizacoes / total_periodos) * 100 if total_periodos > 0 else 0
     return frequencia_score
+
 
 
 def avaliar_cumprimento_metas(pdi):

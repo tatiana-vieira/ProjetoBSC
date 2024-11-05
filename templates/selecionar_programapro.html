@@ -1,0 +1,39 @@
+{% extends 'basepro.html' %}
+
+{% block titulo %}
+  Selecionar Programa
+{% endblock %}
+
+{% block conteudo %}
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 class="text-center text-white">Selecionar Programa</h4>
+    </div>
+    <div class="card-body">
+
+        <form method="POST" action="{{ url_for('altpdipro.selecionar_programapro') }}" style="text-align: center; max-width: 400px; margin: auto;">
+            <div class="form-group">
+                <label for="pdi_id">Programa:</label>
+                <select id="pdi_id" name="pdi_id" class="form-control" required>
+                    <option value="" disabled selected>-- Selecione um programa --</option>
+                    {% for pdi in pdis %}
+                        <option value="{{ pdi.id }}">{{ pdi.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" style="background-color: darkblue; color: white; border: none; border-radius: 4px; padding: 10px 20px;">Visualizar Dados</button>
+        </form>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="mt-4 text-center text-danger">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+    </div>
+</div>
+{% endblock %}
