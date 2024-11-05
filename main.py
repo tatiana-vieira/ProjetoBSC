@@ -43,15 +43,18 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 from io import BytesIO
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import os
 import pandas as pd
 from flask import Flask, render_template
-
+import matplotlib.pyplot as plt
+import io
+from flask import send_file
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.pagesizes import letter, landscape
 
 app = Flask(__name__)
 
@@ -1048,29 +1051,107 @@ def mostrar_resultado_feedback():
 
 
 ################################# Analise cluster discente##############################################3
-@app.route('/executar_analise_upload', methods=['POST'])
-def executar_analise_upload():
-    if 'file' not in request.files:
-        return "Nenhum arquivo foi enviado."
+from flask import send_file
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Image
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from matplotlib import pyplot as plt
+import pandas as pd
+import io
 
-    file = request.files['file']
+@app.route('/exibir_relatorio_pdi')
+@login_required
+def exibir_relatorio_pdi():
+    # Obtenha os dados reais do banco de dados
+    pdi_data = PDI.query.all()
+    objetivos = Objetivo.query.filter(Objetivo.pdi_id.in_([pdi.id for pdi in pdi_data])).all()
+    metas = Meta.query.filter(Meta.objetivo_id.in_([objetivo.id for objetivo in objetivos])).all()
+    indicadores = Indicador.query.filter(Indicador.meta_pdi_id.in_([meta.id for meta in metas])).all()
+    
+    # Organizar dados para exibição
+    data = []
+    for objetivo in objetivos:
+        for meta in metas:
+            if meta.objetivo_id == objetivo.id:
+                for indicador in indicadores:
+                    if indicador.meta_pdi_id == meta.id:
+                        data.append({
+                            'Objetivo': objetivo.nome,
+                            'Meta': meta.nome,
+                            'Porcentagem Execução': meta.porcentagem_execucao,
+                            'Indicador': indicador.nome,
+                            'Valor Atual': indicador.valor_atual,
+                            'Valor Esperado': indicador.valor_esperado
+                        })
 
-    if file.filename == '':
-        return "Nenhum arquivo selecionado."
+    # Renderizar os dados na página
+    return render_template('relatorio_pdi.html', data=data)
 
-    if file:
-        # Ler o arquivo CSV diretamente sem salvar no servidor
-        dados = pd.read_csv(file)
+@app.route('/gerar_relatorio_pdi_pdf')
+@login_required
+def gerar_relatorio_pdi_pdf():
+    # Obtenha os dados reais do banco de dados
+    pdi_data = PDI.query.all()
+    objetivos = Objetivo.query.filter(Objetivo.pdi_id.in_([pdi.id for pdi in pdi_data])).all()
+    metas = Meta.query.filter(Meta.objetivo_id.in_([objetivo.id for objetivo in objetivos])).all()
+    indicadores = Indicador.query.filter(Indicador.meta_pdi_id.in_([meta.id for meta in metas])).all()
+    
+    # Organizar dados para o relatório
+    data = []
+    for objetivo in objetivos:
+        for meta in metas:
+            if meta.objetivo_id == objetivo.id:
+                for indicador in indicadores:
+                    if indicador.meta_pdi_id == meta.id:
+                        data.append([
+                            objetivo.nome,
+                            meta.nome,
+                            f"{meta.porcentagem_execucao}%",
+                            indicador.nome,
+                            indicador.valor_atual,
+                            indicador.valor_esperado
+                        ])
 
-        # Chamar a função de análise e clusterização que você já criou
-        dados_clusterizados = aplicar_clusters(dados)
-        insights = gerar_insights(dados_clusterizados)
+    # Defina o estilo para o texto
+    styles = getSampleStyleSheet()
+    style_normal = styles["Normal"]
 
-        # Exibir os insights ou fazer algo com eles
-        for insight in insights:
-            print(insight)
+    # Transforme os dados para serem exibidos no PDF
+    table_data = [
+        [Paragraph("<b>Objetivo</b>", style_normal), Paragraph("<b>Meta</b>", style_normal),
+         Paragraph("<b>Porcentagem Execução</b>", style_normal), Paragraph("<b>Indicador</b>", style_normal),
+         Paragraph("<b>Valor Atual</b>", style_normal), Paragraph("<b>Valor Esperado</b>", style_normal)]
+    ]
 
-        return "Análise executada com sucesso!"
+    for row in data:
+        table_data.append([Paragraph(cell, style_normal) if isinstance(cell, str) else cell for cell in row])
+
+    # Configuração de tabela
+    table = Table(table_data, colWidths=[100, 120, 80, 100, 60, 60])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.blue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    # Criação do PDF
+    pdf_buffer = io.BytesIO()
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)  # retrato
+
+    elements = []
+    elements.append(Paragraph("Relatório de Progresso do PDI", styles['Title']))
+    elements.append(Spacer(1, 12))
+    elements.append(table)
+
+    doc.build(elements)
+    pdf_buffer.seek(0)
+    return send_file(pdf_buffer, as_attachment=True, download_name='relatorio_pdi.pdf', mimetype='application/pdf')
 #######################################################################################################33333
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))

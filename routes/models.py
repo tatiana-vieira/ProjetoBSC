@@ -297,6 +297,15 @@ class CadeiaValor(db.Model):
     planejamento_estrategico_id = db.Column(db.Integer, db.ForeignKey('planejamento_estrategico.id'))
  
 ################################################## PDI###################################################################################3
+class Indicador(db.Model):
+    __tablename__ = 'indicador'
+    id = db.Column(db.Integer, primary_key=True)
+    meta_pdi_id = db.Column(db.Numeric(4, 2), db.ForeignKey('meta_pdi.id'), nullable=False)
+    nome = db.Column(db.String(2500), nullable=False)
+    valor_atual = db.Column(db.Float, nullable=True)
+    valor_esperado = db.Column(db.Float, nullable=True)
+    meta = db.relationship('Meta', back_populates='indicadores')
+
 class PDI(db.Model):
     __tablename__ = 'pdi'
     id = db.Column(db.Integer, primary_key=True)
@@ -316,13 +325,6 @@ class Meta(db.Model):
     objetivo = db.relationship('Objetivo', back_populates='metas')
     indicadores = db.relationship('Indicador', back_populates='meta')   
     
-class Indicador(db.Model):
-    __tablename__ = 'indicador'
-    id = db.Column(db.Integer, primary_key=True)
-    meta_pdi_id = db.Column(db.Numeric(4, 2), db.ForeignKey('meta_pdi.id'), nullable=False)
-    nome = db.Column(db.String(2500), nullable=False)
-    meta = db.relationship('Meta', back_populates='indicadores')
- 
 #####################################################################################3
 class Objetivo(db.Model):
     __tablename__ = 'objetivo_pdi'

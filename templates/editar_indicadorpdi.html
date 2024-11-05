@@ -8,7 +8,7 @@
 <div class="container" style="max-width: 80%; margin-top: 30px;">
     <div class="card">
       <div class="card-header" style="background-color: #054b91;">
-        <h4 style="text-align: center; color: #ffffff;">Editar Indicador</h4> <!-- Título com fundo azul e texto branco -->
+        <h4 style="text-align: center; color: #ffffff;">Editar Indicador</h4>
       </div>
       
       <div class="card-body">
@@ -17,21 +17,19 @@
         {% endif %}
         <form id="IndicadorForm" method="POST" action="{{ url_for('indicador.editar_indicador', indicador_id=indicador.id) }}">
             
-            <!-- Campo de PDI (desativado) -->
+            <!-- Campos de PDI, Objetivo e Meta (desativados) -->
             <label for="pdi_id">PDI:</label>
             <select id="pdi_id" name="pdi_id" required style="width: 100%; margin-bottom: 10px;" disabled>
                 <option value="{{ indicador.meta.objetivo.pdi.id }}">{{ indicador.meta.objetivo.pdi.nome }}</option>
             </select>
             <input type="hidden" name="pdi_id" value="{{ indicador.meta.objetivo.pdi.id }}">
 
-            <!-- Campo de Objetivo (desativado) -->
             <label for="objetivo_id">Objetivo:</label>
             <select id="objetivo_id" name="objetivo_id" required style="width: 100%; margin-bottom: 10px;" disabled>
                 <option value="{{ indicador.meta.objetivo.id }}">{{ indicador.meta.objetivo.nome }}</option>
             </select>
             <input type="hidden" name="objetivo_id" value="{{ indicador.meta.objetivo.id }}">
 
-            <!-- Campo de Meta (desativado) -->
             <label for="meta_id">Meta:</label>
             <select id="meta_id" name="meta_id" required style="width: 100%; margin-bottom: 10px;" disabled>
                 <option value="{{ indicador.meta.id }}">{{ indicador.meta.nome }}</option>
@@ -41,6 +39,14 @@
             <!-- Nome do Indicador -->
             <label for="nome">Nome do Indicador:</label><br>
             <input type="text" id="nome" name="nome" value="{{ indicador.nome }}" required style="width: 100%; margin-bottom: 10px;"><br>
+
+            <!-- Campo Valor Atual -->
+            <label for="valor_atual">Valor Atual:</label><br>
+            <input type="number" id="valor_atual" name="valor_atual" value="{{ indicador.valor_atual }}" required style="width: 100%; margin-bottom: 10px;"><br>
+
+            <!-- Campo Valor Esperado -->
+            <label for="valor_esperado">Valor Esperado:</label><br>
+            <input type="number" id="valor_esperado" name="valor_esperado" value="{{ indicador.valor_esperado }}" required style="width: 100%; margin-bottom: 10px;"><br>
             
             <!-- Botões de Ação -->
             <div class="text-center">

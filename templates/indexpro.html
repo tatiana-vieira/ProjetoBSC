@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block conteudo %}
-  <h2 style="text-align: center;"> PPGEXPLORER </h2>
+  <h2 style="text-align: center;">PPGEXPLORER</h2>
   <hr>
   <style>
     /* Adiciona estilos para centralizar as imagens */
@@ -19,50 +19,52 @@
 
     .image-button-wrapper img {
       width: 100%;
-      max-width: 150px; /* Defina a largura máxima desejada para as imagens */
+      max-width: 120px; /* Ajusta a largura máxima da imagem */
       height: auto;
+      margin-bottom: 10px; /* Espaçamento entre a imagem e o botão */
     }
 
     .image-button-wrapper button {
       width: 100%;
-      max-width: 150px; /* Defina a largura máxima desejada para os botões */
-      text-align: center; /* Alinha o texto ao centro */
+      max-width: 120px; /* Define a largura máxima dos botões */
+      text-align: center;
+      padding: 10px; /* Aumenta o padding para melhorar o visual */
     }
   </style>
+  
   <div class="container">
-    <div class="row">
+    <div class="row justify-content-center">
       <div class="col-md-4">
         <div class="content-wrapper">
           <div class="image-button-wrapper">
             <img src="{{ url_for('static', filename='comparar.png') }}" alt="Imagem 1">
-            <button type="button" class="btn btn-primary btn-block"onclick="visualizarpdi()">PDI</button>
+            <button type="button" class="btn btn-primary btn-block" onclick="visualizarpdi()">PDI</button>
           </div>
         </div>
       </div>
- 
-      <div class="col-md-4">
-        <div class="content-wrapper">
-          <div class="image-button-wrapper">
-            <img src="{{ url_for('static', filename='PDI.png') }}" alt="Imagem 2">
-            <button type="button" class="btn btn-primary btn-block">Cadastros</button>
-          </div>
-        </div>
-      </div>
-      
+
       <div class="col-md-4">
         <div class="content-wrapper">
           <div class="image-button-wrapper">
             <img src="{{ url_for('static', filename='ideia.png') }}" alt="Imagem 3">
-            <button type="button" class="btn btn-primary btn-block">Relatório</button>
+            <button type="button" class="btn btn-primary btn-block" onclick="visualizarRelatorio()">Relatório</button>
           </div>
         </div>
       </div>
-      <script>
-        function visualizarpdi() {
-          window.location.href = "{{ url_for('exibir_altpdi') }}";
-       }
-      </script>
-
     </div>
   </div>
+
+  <script>
+    function visualizarpdi() {
+      window.location.href = "{{ url_for('exibir_altpdi') }}";
+    }
+
+    function visualizarRelatorio() {
+      window.location.href = "{{ url_for('exibir_relatorio_pdi') }}";
+    }
+
+    function baixarRelatorioPDF() {
+      window.location.href = "{{ url_for('gerar_relatorio_pdi_pdf') }}";
+    }
+  </script>
 {% endblock %}
