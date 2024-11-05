@@ -322,9 +322,10 @@ class Meta(db.Model):
     objetivo_id = db.Column(db.Integer, db.ForeignKey('objetivo_pdi.id'), nullable=False)
     nome = db.Column(db.String(2500), nullable=False)
     porcentagem_execucao = db.Column(db.Numeric(4, 2), nullable=False)
+    data_ultima_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
     objetivo = db.relationship('Objetivo', back_populates='metas')
-    indicadores = db.relationship('Indicador', back_populates='meta')   
-    
+    indicadores = db.relationship('Indicador', back_populates='meta')
 #####################################################################################3
 class Objetivo(db.Model):
     __tablename__ = 'objetivo_pdi'

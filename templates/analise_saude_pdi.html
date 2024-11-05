@@ -1,0 +1,45 @@
+{% extends 'basepro.html' %}
+
+{% block titulo %}
+    Análise de Saúde do PDI
+{% endblock %}
+
+{% block conteudo %}
+<div class="container" style="max-width: 80%; margin-top: 30px;">
+    <div class="card">
+        <div class="card-header" style="background-color: #054b91;">
+            <h4 style="text-align: center; color: #ffffff;">Análise de Saúde do PDI</h4> <!-- Título com fundo azul e texto branco -->
+        </div>
+        <div class="card-body">
+            <table class="table table-striped table-bordered table-hover" style="margin-top: 20px;">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nome do PDI</th>
+                        <th>Consistência (%)</th>
+                        <th>Frequência de Atualizações (%)</th>
+                        <th>Cumprimento de Metas (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pdi in pdi_data %}
+                    <tr>
+                        <td>{{ pdi.nome }}</td>
+                        <td>{{ pdi.consistencia_score }}%</td>
+                        <td>{{ pdi.frequencia_score }}%</td>
+                        <td>{{ pdi.cumprimento_score }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="text-center mt-4">
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
+    </div>
+</div>
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_proreitor') }}";
+    }
+</script>
+{% endblock %}

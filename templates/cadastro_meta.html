@@ -1,80 +1,156 @@
-{% extends 'basepro.html' %}
+{% extends 'base.html' %}
 
 {% block titulo %}
-    <h2 style="color: #003366; text-align: center;">Cadastrar Meta - PRPPG</h2>
+    Cadastro de Meta - PRPPG
 {% endblock %}
 
 {% block conteudo %}
-<div class="container" style="max-width: 80%; margin-top: 30px;">
-    <div class="card">
-        <div class="card-header" style="background-color: #054b91;">
-            <h4 style="text-align: center; color: #ffffff;">Cadastro de Meta</h4> <!-- Título com fundo azul e texto branco -->
-        </div>
-        <div class="card-body">
-            <form id="MetaForm" method="POST">
-                <div class="form-group">
-                    <label for="pdi_id">PDI:</label>
-                    <select id="pdi_id" name="pdi_id" class="form-control" required>
-                        {% for pdi in lista_pdis %}
-                            <option value="{{ pdi.id }}">{{ pdi.nome }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="objetivo_id">Objetivo:</label>
-                    <select id="objetivo_id" name="objetivo_id" class="form-control" required>
-                        {% for objetivo in objetivos %}
-                            <option value="{{ objetivo.id }}">{{ objetivo.nome }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="nome">Nome da Meta:</label>
-                    <input type="text" id="nome" name="nome" class="form-control" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="porcentagem_execucao">Porcentagem de Execução:</label>
-                    <input type="number" id="porcentagem_execucao" name="porcentagem_execucao" class="form-control" required>
-                </div>
-
-                <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-primary" style="background-color: darkblue;">Cadastrar</button>
-                    <button type="button" onclick="alterarMeta()" class="btn btn-success ml-2">Alterar</button>
-                    <button type="button" onclick="fechar()" class="btn btn-danger ml-2">Fechar</button>
-                </div>
-            </form>
-        </div>
+<div class="card" style="max-width: 1000px; margin: 0 auto;">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 style="text-align: center; color: #ffffff;">Cadastro de Meta</h4>
     </div>
+    <div class="card-body">
+        <form id="MetaForm" method="POST" action="{{ url_for('cadastro_meta') }}">
+            <div class="form-group">
+                <label for="pdi_id">PDI:</label>
+                <select id="pdi_id" name="pdi_id" required class="form-control">
+                    {% for pdi in lista_pdis %}
+                        <option value="{{ pdi.id }}">{{ pdi.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-    <script>
-        function alterarMeta() {
-            window.location.href = "{{ url_for('alterar_meta') }}";
-        }
-        
-        function fechar() {
-            window.location.href = "{{ url_for('login.get_proreitor') }}";
-        }
+            <div class="form-group">
+                <label for="objetivo_id">Objetivo:</label>
+                <select id="objetivo_id" name="objetivo_id" required class="form-control">
+                    <!-- Opções de objetivo carregadas dinamicamente -->
+                </select>
+            </div>
 
-        document.getElementById('pdi_id').addEventListener('change', function() {
-            var pdiId = this.value;
-            fetch('/objetivos_relacionados_pdi/' + pdiId)
+            <div class="form-group">
+                <label for="nome">Nome da Meta:</label>
+                <input type="text" id="nome" name="nome" required class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="porcentagem_execucao">Porcentagem de Execução:</label>
+                <input type="number" id="porcentagem_execucao" name="porcentagem_execucao" required class="form-control">
+            </div>
+
+            <div style="text-align: center;">
+                <button type="submit" class="btn btn-primary">Salvar Meta</button>
+                <button type="button" onclick="cancelar()" class="btn btn-danger">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabela para listar as metas cadastradas -->
+<div class="card mt-4" style="max-width: 1000px; margin: 0 auto;">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 style="text-align: center; color: #ffffff;">Metas Cadastradas</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th style="width: 30%;">Nome da Meta</th>
+                    <th style="width: 25%;">Objetivo</th>
+                    <th style="width: 15%;">Porcentagem de Execução</th>
+                    <th style="width: 20%;">Última Atualização</th>
+                    <th style="width: 10%;">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="meta-list">
+                {% for meta in metas %}
+                    <tr>
+                        <td>{{ meta.nome }}</td>
+                        <td>{{ meta.objetivo.nome }}</td>
+                        <td>{{ meta.porcentagem_execucao }}%</td>
+                        <td>{{ meta.data_ultima_atualizacao.strftime('%d/%m/%Y') if meta.data_ultima_atualizacao else 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('editar_meta', meta_id='{:.2f}'.format(meta.id)) }}" class="btn btn-success btn-sm">Alterar</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function cancelar() {
+        window.location.href = "{{ url_for('cadastro_meta') }}";
+    }
+
+    document.getElementById('pdi_id').addEventListener('change', function() {
+        const pdiId = this.value;
+        fetch(`/objetivos_relacionados_pdi/${pdiId}`)
+            .then(response => response.json())
+            .then(data => {
+                const objetivoSelect = document.getElementById('objetivo_id');
+                objetivoSelect.innerHTML = '';
+
+                data.forEach(objetivo => {
+                    const option = document.createElement('option');
+                    option.value = objetivo.id;
+                    option.text = objetivo.nome;
+                    objetivoSelect.appendChild(option);
+                });
+
+                // Atualiza a lista de metas para o PDI selecionado
+                atualizarMetas(pdiId);
+            });
+    });
+
+    function atualizarMetas(pdiId) {
+        fetch(`/metas_relacionadas_pdi/${pdiId}`)
+            .then(response => response.json())
+            .then(data => {
+                const metaList = document.getElementById('meta-list');
+                metaList.innerHTML = ''; // Limpa as metas atuais na tabela
+
+                data.forEach(meta => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${meta.nome}</td>
+                        <td>${meta.objetivo_nome}</td>
+                        <td>${meta.porcentagem_execucao}%</td>
+                        <td>${meta.data_ultima_atualizacao ? meta.data_ultima_atualizacao : 'N/A'}</td>
+                        <td><a href="/editar_meta/${meta.id}" class="btn btn-warning btn-sm">Alterar</a></td>
+                    `;
+                    metaList.appendChild(row);
+                });
+            });
+    }
+
+    window.onload = function() {
+        const pdiId = document.getElementById('pdi_id').value;
+        if (pdiId) {
+            fetch(`/objetivos_relacionados_pdi/${pdiId}`)
                 .then(response => response.json())
                 .then(data => {
-                    var selectObjetivos = document.getElementById('objetivo_id');
-                    selectObjetivos.innerHTML = '';
+                    const objetivoSelect = document.getElementById('objetivo_id');
+                    objetivoSelect.innerHTML = '';
 
                     data.forEach(objetivo => {
-                        var option = document.createElement('option');
+                        const option = document.createElement('option');
                         option.value = objetivo.id;
                         option.text = objetivo.nome;
-                        selectObjetivos.appendChild(option);
+                        objetivoSelect.appendChild(option);
                     });
-                })
-                .catch(error => console.error('Erro ao buscar objetivos:', error));
-        });
-    </script>
-</div>
+
+                    // Carrega as metas do PDI selecionado ao carregar a página
+                    atualizarMetas(pdiId);
+                });
+        }
+    }
+    row.innerHTML = `
+    <td>${meta.nome}</td>
+    <td>${meta.objetivo_nome}</td>
+    <td>${meta.porcentagem_execucao}%</td>
+    <td>${meta.data_ultima_atualizacao ? meta.data_ultima_atualizacao : 'N/A'}</td>
+    <td><a href="/editar_meta/${meta.id}" class="btn btn-success btn-sm">Alterar</a></td>
+`;
+</script>
 {% endblock %}

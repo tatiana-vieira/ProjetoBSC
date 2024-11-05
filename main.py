@@ -41,7 +41,7 @@ from wtforms.validators import DataRequired
 from flask_login import login_required, current_user, UserMixin, LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import joinedload
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import os
@@ -479,20 +479,17 @@ def cadastro_meta():
     if request.method == 'POST':
         return processar_formulario_meta()
 
-    # Se for método GET, obtém a lista de PDI do banco de dados
     lista_pdis = PDI.query.all()
-    pdi_id = request.args.get('pdi_id')  # Obtém o ID do PDI selecionado
+    pdi_id = request.args.get('pdi_id')
     if pdi_id:
         objetivos = buscar_objetivos_relacionados_pdi(int(pdi_id))
     else:
-        # Se nenhum PDI foi selecionado, exibe uma lista vazia de objetivos
         objetivos = []
 
-    # Renderiza a página com a lista de PDI e os objetivos relacionados
-    return render_template('cadastro_meta.html', lista_pdis=lista_pdis, objetivos=objetivos)
+    # Passe `datetime` para o contexto
+    return render_template('cadastro_meta.html', lista_pdis=lista_pdis, objetivos=objetivos, datetime=datetime)
 #########################################################################################333
 def processar_formulario_meta():
-    # Verifica se o usuário está logado e é um Pró-reitor
     if 'email' not in session:
         return 'Acesso não autorizado'
 
@@ -504,17 +501,84 @@ def processar_formulario_meta():
     nome = request.form['nome']
     porcentagem_execucao = request.form['porcentagem_execucao']
 
-    # Insere os dados no banco de dados
-    novo_meta = Meta(objetivo_id=objetivo_id, nome=nome, porcentagem_execucao=porcentagem_execucao)
+    # Insere os dados no banco de dados, `data_ultima_atualizacao` será automaticamente preenchido
+    novo_meta = Meta(
+        objetivo_id=objetivo_id,
+        nome=nome,
+        porcentagem_execucao=porcentagem_execucao
+    )
     db.session.add(novo_meta)
     db.session.commit()
 
     return redirect(url_for('sucesso_cadastro'))
 
+
+
 def buscar_objetivos_relacionados_pdi(pdi_id):
     # Busca os objetivos relacionados ao PDI
     objetivos = Objetivo.query.filter_by(pdi_id=pdi_id).all()
     return objetivos
+
+
+@app.route('/metas_relacionadas_pdi/<int:pdi_id>')
+def metas_relacionadas_pdi(pdi_id):
+    objetivos = buscar_objetivos_relacionados_pdi(pdi_id)
+    metas = Meta.query.filter(Meta.objetivo_id.in_([objetivo.id for objetivo in objetivos])).all()
+    data = [
+        {
+            'id': meta.id,
+            'nome': meta.nome,
+            'objetivo_nome': meta.objetivo.nome,
+            'porcentagem_execucao': meta.porcentagem_execucao,
+            'data_ultima_atualizacao': meta.data_ultima_atualizacao.strftime('%d/%m/%Y') if meta.data_ultima_atualizacao else None
+        }
+        for meta in metas
+    ]
+    return jsonify(data)
+
+#####################################################################3
+@app.route('/selecionar_pdi_para_alteracao', methods=['GET'])
+def selecionar_pdi_para_alteracao():
+    # Obter a lista de PDIs do banco de dados
+    lista_pdis = PDI.query.all()
+    return render_template('selecionar_pdi_meta.html', lista_pdis=lista_pdis)
+
+
+@app.route('/escolher_objetivo_para_alteracao', methods=['GET'])
+def escolher_objetivo_para_alteracao():
+    pdi_id = request.args.get('pdi_id')
+    if not pdi_id:
+        return redirect(url_for('selecionar_pdi_para_alteracao'))
+
+    # Buscar objetivos relacionados ao PDI selecionado
+    objetivos = buscar_objetivos_relacionados_pdi(int(pdi_id))
+    return render_template('escolher_objetivo_meta.html', pdi_id=pdi_id, objetivos=objetivos)
+
+
+##########################################################3
+@app.route('/editar_meta/<float:meta_id>', methods=['GET', 'POST'])
+def editar_meta(meta_id):
+    meta = Meta.query.get_or_404(meta_id)
+    if request.method == 'POST':
+        meta.nome = request.form['nome']
+        meta.porcentagem_execucao = request.form['porcentagem_execucao']
+        db.session.commit()
+        flash('Meta alterada com sucesso!', 'success')
+        return redirect(url_for('cadastro_meta'))
+    return render_template('alterarmetapdi.html', meta=meta)
+
+
+@app.route('/alterar_meta', methods=['POST'])
+def alterar_meta():
+    meta_id = request.form['meta_id']
+    meta = Meta.query.get_or_404(meta_id)
+    
+    meta.nome = request.form['nome']
+    meta.porcentagem_execucao = request.form['porcentagem_execucao']
+    db.session.commit()
+    
+    flash('Meta alterada com sucesso!', 'success')
+    return redirect(url_for('cadastro_meta'))
 
 @app.route('/objetivos_relacionados_pdi/<int:pdi_id>')
 def objetivos_relacionados_pdi(pdi_id):
@@ -531,66 +595,30 @@ def objetivos_relacionados_pdi(pdi_id):
     # Retorna os objetivos relacionados como dados JSON
     objetivos_data = [{'id': objetivo.id, 'nome': objetivo.nome} for objetivo in objetivos]
     return jsonify(objetivos_data)
-#####################################################################3
-@app.route('/selecionar_pdi_para_alteracao', methods=['GET'])
-def selecionar_pdi_para_alteracao():
-    # Obter a lista de PDIs do banco de dados
-    lista_pdis = PDI.query.all()
-    return render_template('selecionar_pdi_meta.html', lista_pdis=lista_pdis)
 
-@app.route('/alterar_meta', methods=['GET', 'POST'])
-def alterar_meta():
-    objetivo_id = request.args.get('objetivo_id')
-    if not objetivo_id:
-        return redirect(url_for('selecionar_pdi_para_alteracao'))
+# Rota para obter metas relacionadas a um objetivo
+@app.route('/metas_relacionadas_objetivo/<int:objetivo_id>')
+def metas_relacionadas_objetivo(objetivo_id):
+    metas = Meta.query.filter_by(objetivo_id=objetivo_id).all()
+    return jsonify([{'id': meta.id, 'nome': meta.nome} for meta in metas])
 
-    if request.method == 'POST':
-        return processar_formulario_alterar_meta(objetivo_id)
-
-    # Buscar a meta a ser alterada no banco de dados
-    meta = Meta.query.filter_by(objetivo_id=objetivo_id).first()
-    if not meta:
-        return 'Meta não encontrada', 404
-
-    # Obter a lista de PDIs e objetivos relacionados
-    lista_pdis = PDI.query.all()
-    objetivos = buscar_objetivos_relacionados_pdi(meta.objetivo.pdi_id)
-
-    return render_template('alterarmetapdi.html', meta=meta, lista_pdis=lista_pdis, objetivos=objetivos)
-
-@app.route('/escolher_objetivo_para_alteracao', methods=['GET'])
-def escolher_objetivo_para_alteracao():
-    pdi_id = request.args.get('pdi_id')
-    if not pdi_id:
-        return redirect(url_for('selecionar_pdi_para_alteracao'))
-
-    # Buscar objetivos relacionados ao PDI selecionado
-    objetivos = buscar_objetivos_relacionados_pdi(int(pdi_id))
-    return render_template('escolher_objetivo_meta.html', pdi_id=pdi_id, objetivos=objetivos)
-
-def processar_formulario_alterar_meta(meta_id):
-    # Verificar se o usuário está logado e autorizado
-    if 'email' not in session:
-        flash("Acesso não autorizado", "error")
-        return redirect(url_for('login'))
-
-    user = Users.query.filter_by(email=session['email']).first()
-    if user.role != 'Pro-reitor':
-        flash("Acesso não autorizado", "error")
-        return redirect(url_for('login'))
-
-    # Buscar e atualizar a meta
+# Rota para obter detalhes de uma meta específica
+@app.route('/detalhes_meta/<int:meta_id>')
+def detalhes_meta(meta_id):
     meta = Meta.query.get(meta_id)
-    if not meta:
-        return "Meta não encontrada"
+    if meta:
+        return jsonify({
+            'nome': meta.nome,
+            'porcentagem_execucao': meta.porcentagem_execucao
+        })
+    return jsonify({'error': 'Meta não encontrada'}), 404
 
-    meta.objetivo_id = request.form['objetivo_id']
-    meta.nome = request.form['nome']
-    meta.porcentagem_execucao = request.form['porcentagem_execucao']
-    db.session.commit()
 
-    flash("Meta alterada com sucesso", "success")
-    return redirect(url_for('selecionar_pdi_para_alteracao'))
+
+###################################################3
+@app.route('/sucesso_alteracao')
+def sucesso_alteracao():
+    return render_template('sucesso_alteracao.html')  # Crie um template para essa página
 
 # Função auxiliar para buscar objetivos relacionados ao PDI
 def buscar_objetivos_relacionados_pdi(pdi_id):
@@ -1153,6 +1181,100 @@ def gerar_relatorio_pdi_pdf():
     pdf_buffer.seek(0)
     return send_file(pdf_buffer, as_attachment=True, download_name='relatorio_pdi.pdf', mimetype='application/pdf')
 #######################################################################################################33333
+@app.route('/analise_saude_pdi')
+@login_required
+def analise_saude_pdi():
+    pdIs = PDI.query.all()  # Supondo que você tenha uma lista de PDIs
+
+    # Calcule os scores para cada PDI
+    pdi_data = []
+    for pdi in pdIs:
+        consistencia_score = avaliar_consistencia(pdi)
+        frequencia_score = avaliar_frequencia_atualizacoes(pdi)
+        cumprimento_score = avaliar_cumprimento_metas(pdi)
+
+        pdi_data.append({
+            'nome': pdi.nome,
+            'consistencia_score': consistencia_score,
+            'frequencia_score': frequencia_score,
+            'cumprimento_score': cumprimento_score
+        })
+
+    return render_template('analise_saude_pdi.html', pdi_data=pdi_data)
+
+
+def calcular_benchmark(pdi_id):
+    pdi = PDI.query.get(pdi_id)
+    # Obtenha os valores médios de outros PDIs
+    benchmark_media = db.session.query(db.func.avg(PDI.saude)).filter(PDI.id != pdi_id).scalar()
+    
+    # Comparação e análise de posição
+    diferenca = pdi.saude - benchmark_media
+    return {
+        'saude_pdi': pdi.saude,
+        'benchmark_media': benchmark_media,
+        'diferenca': diferenca
+    }
+
+def avaliar_frequencia_atualizacoes(pdi):
+    total_atualizacoes = 0
+    total_periodos = 0
+    
+    for objetivo in pdi.objetivos:
+        for meta in objetivo.metas:
+            if meta.data_ultima_atualizacao:
+                dias_desde_atualizacao = (datetime.now() - meta.data_ultima_atualizacao).days
+                total_atualizacoes += 1 / dias_desde_atualizacao  # Menor intervalo dá maior peso
+                total_periodos += 1
+
+    # Frequência média de atualizações em dias
+    frequencia_score = (total_atualizacoes / total_periodos) * 100 if total_periodos > 0 else 0
+    return frequencia_score
+
+
+def avaliar_cumprimento_metas(pdi):
+    total_metas = 0
+    metas_cumpridas = 0
+
+    for objetivo in pdi.objetivos:
+        for meta in objetivo.metas:
+            for indicador in meta.indicadores:
+                # Verifica se `valor_atual` e `valor_esperado` não são `None`
+                if indicador.valor_atual is not None and indicador.valor_esperado is not None:
+                    if indicador.valor_atual >= indicador.valor_esperado:
+                        metas_cumpridas += 1
+                total_metas += 1
+
+    # Calcula a porcentagem de metas cumpridas
+    cumprimento_score = (metas_cumpridas / total_metas) * 100 if total_metas > 0 else 0
+    return cumprimento_score
+
+
+def calcular_saude_pdi(pdi):
+    consistencia_score = avaliar_consistencia(pdi)
+    frequencia_score = avaliar_frequencia_atualizacoes(pdi)
+    cumprimento_score = avaliar_cumprimento_metas(pdi)
+
+    # Combinação das pontuações com pesos específicos
+    saude_total = (consistencia_score * 0.4) + (frequencia_score * 0.3) + (cumprimento_score * 0.3)
+    return saude_total
+
+def avaliar_consistencia(pdi):
+    total_objetivos = len(pdi.objetivos)
+    objetivos_consistentes = 0
+
+    for objetivo in pdi.objetivos:
+        metas = objetivo.metas
+        # Verifica se o objetivo tem pelo menos uma meta e se cada meta tem pelo menos um indicador
+        if metas and all(meta.indicadores for meta in metas):
+            objetivos_consistentes += 1
+
+    # Calcula a pontuação de consistência como a porcentagem de objetivos consistentes
+    consistencia_score = (objetivos_consistentes / total_objetivos) * 100 if total_objetivos > 0 else 0
+    return consistencia_score
+
+
+##########################################################################################################
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     app.run(host="0.0.0.0", port=port)

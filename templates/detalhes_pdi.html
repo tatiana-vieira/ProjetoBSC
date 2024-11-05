@@ -1,0 +1,39 @@
+{% extends 'basepro.html' %}
+
+{% block titulo %}
+  Detalhes do PDI
+{% endblock %}
+
+{% block conteudo %}
+<div class="container">
+    <h2>{{ pdi.nome }}</h2>
+    <hr>
+    <!-- Outros detalhes do PDI -->
+
+    <h3>Análise de Saúde do PDI</h3>
+    <table class="table table-bordered">
+        <tr>
+            <th>Consistência</th>
+            <td>{{ consistencia_score }}%</td>
+        </tr>
+        <tr>
+            <th>Frequência de Atualizações</th>
+            <td>{{ frequencia_score }}%</td>
+        </tr>
+        <tr>
+            <th>Cumprimento de Metas</th>
+            <td>{{ cumprimento_score }}%</td>
+        </tr>
+    </table>
+    <div class="text-center mt-4">
+       
+        <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>            
+        </div>
+    </div>
+    <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_proreitor') }}";
+        }
+    </script>
+</div>
+{% endblock %}
