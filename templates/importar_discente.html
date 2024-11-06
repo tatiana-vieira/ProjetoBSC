@@ -29,7 +29,7 @@
                 <input type="file" class="form-control-file" id="file" name="file" style="display: none;" onchange="displayFileName()">
                 <label for="file" class="btn btn-primary" style="background-color: #003366; border-color: #003366; margin-bottom: 20px;">Escolher arquivo</label>
                 <small id="fileHelp" class="form-text text-muted" style="display: block; margin-top: 10px;">
-                    Exemplo: <a href="{{ url_for('static', filename='uploads/discente.xlsx') }}" download>Baixar Exemplo</a>
+                    <a href="{{ url_for('static', filename='uploads/discente.csv') }}" download="discente_exemplo.csv">Baixar Exemplo</a>
                 </small>
             </div>
             <div id="fileName" class="form-text text-muted" style="margin-top: 10px;">Nenhum arquivo selecionado</div>

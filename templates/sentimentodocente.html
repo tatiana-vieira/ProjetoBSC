@@ -39,8 +39,8 @@
 </div>
 
 <!-- Botões centralizados -->
-<div style="text-align: center; margin-top: 20px;">
-    <a href="{{ url_for('avaliacaodocente.importar_planilhadocente') }}" class="btn btn-primary" style="margin-right: 10px;">Voltar</a>
-    <button onclick="window.close()" class="btn btn-danger">Fechar</button>
+<div style="text-align: center; margin-top: 40px;">
+    <button onclick="window.history.back()" class="btn btn-success" style="padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px;">Voltar</button>
+    <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px;">Fechar</button>
 </div>
 {% endblock %}

@@ -26,12 +26,13 @@
             <!-- Botões de Fechar, Análise de Sentimento e Recomendações -->
             <div style="text-align: center; margin-top: 40px;">
                 <!-- Botão para fechar -->
-                <button type="button" onclick="fechar()" class="btn btn-danger" style="width: 150px;">Fechar</button>
+                <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
 
                 <!-- Botões para Análise de Sentimento e Recomendações -->
-                <a href="{{ url_for('avaliacaocoordenador.analisar_sentimentos_coordenador') }}" class="btn btn-primary" style="width: 150px; margin-left: 10px;">Análise de Sentimento</a>
-                <a href="{{ url_for('avaliacaocoordenador.exibir_recomendacoes_programacoordenador') }}" class="btn btn-danger" style="width: 200px; margin-left: 10px;">Recomendações por Programa</a>
+                <a href="{{ url_for('avaliacaocoordenador.analisar_sentimentos_coordenador') }}" class="btn btn-primary" style="padding: 10px 20px; border-radius: 4px; margin-left: 20px;"">Anlisar Sentimento</a>
+                <a href="{{ url_for('avaliacaocoordenador.exibir_recomendacoes_programacoordenador') }}" class="btn btn-primary" style="padding: 10px 20px; border-radius: 4px; margin-left: 20px;">Recomendações por Programa</a>
             </div>
+          
         </div>
     </div>
 </div>

@@ -49,9 +49,14 @@
     </table>
 
     <!-- Botões de Navegação -->
-    <div style="margin-top: 40px;">
-        <a href="{{ url_for('discente.gerar_graficos') }}" class="btn btn-primary" style="margin-right: 10px; padding: 10px 20px;">Voltar para Gráficos</a>
-        <button type="button" onclick="window.close();" class="btn btn-danger" style="padding: 10px 20px;">Fechar</button>
+    <div style="text-align: center; margin-top: 40px;">
+        <button onclick="window.history.back()" class="btn btn-success" style="padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px;">Voltar</button>
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px;">Fechar</button>
     </div>
+    <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_proreitor') }}";
+        }
+       </script>
 </div>
 {% endblock %}

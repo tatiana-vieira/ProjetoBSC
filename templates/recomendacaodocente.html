@@ -31,15 +31,15 @@
     </tbody>
 </table>
 
-<div style="text-align: center; margin-top: 40px;">
-    <button onclick="window.history.back()" style="padding: 10px 20px; font-size: 16px;">Voltar</button>
-    <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+    <!-- Botões de Navegação -->
+    <div style="text-align: center; margin-top: 40px;">
+        <button onclick="window.history.back()" class="btn btn-success" style="padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px;">Voltar</button>
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px;">Fechar</button>
+    </div>
+    <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_proreitor') }}";
+        }
+       </script>
 </div>
-
-<!-- Script para fechar a página -->
-<script>
-   function fechar() {
-      window.location.href = "{{ url_for('login.get_proreitor') }}";
-   }
-</script>
 {% endblock %}

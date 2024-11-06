@@ -39,13 +39,10 @@
 </div>
 
 <!-- Botões centralizados -->
-<div style="text-align: center; margin-top: 20px;">
-    <a href="{{url_for('discente.importar_discente')}}" class="btn btn-primary" style="margin-right: 10px;">Voltar</a>
-</div>
 <div style="text-align: center; margin-top: 40px;">
-    <!-- Botão para fechar -->
-    <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
-</div>   
+    <button onclick="window.history.back()" class="btn btn-success" style="padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px;">Voltar</button>
+    <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px;">Fechar</button>
+</div>
    <!-- Script para fechar a página -->
    <script>
     function fechar() {

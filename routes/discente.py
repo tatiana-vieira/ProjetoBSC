@@ -387,27 +387,48 @@ def visualizar_resultados():
 
 # Função para aplicar clustering
 def aplicar_clustering(df, num_clusters=3):
-    df[['Qualidade_aulas', 'Infraestrutura_geral']] = df[['Qualidade_aulas', 'Infraestrutura_geral']].apply(pd.to_numeric, errors='coerce')
-    df.dropna(subset=['Qualidade_aulas', 'Infraestrutura_geral'], inplace=True)
+    try:
+        # Verifique se as colunas necessárias estão no DataFrame
+        required_columns = ['Qualidade_aulas', 'Infraestrutura_geral']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            flash(f"Colunas ausentes: {missing_columns}", 'danger')
+            return redirect(url_for('discente.importar_discente'))
+        
+        # Converter colunas para numérico e remover valores ausentes
+        df[required_columns] = df[required_columns].apply(pd.to_numeric, errors='coerce')
+        df.dropna(subset=required_columns, inplace=True)
+        
+        # Aplicar clustering
+        kmeans = KMeans(n_clusters=num_clusters, random_state=42)
+        df['Cluster'] = kmeans.fit_predict(df[required_columns])
 
-    kmeans = KMeans(n_clusters=num_clusters, random_state=42)
-    df['Cluster'] = kmeans.fit_predict(df[['Qualidade_aulas', 'Infraestrutura_geral']])
+        # Gerar gráfico de dispersão com clusters
+        fig, ax = plt.subplots()
+        sns.scatterplot(x='Qualidade_aulas', y='Infraestrutura_geral', hue='Cluster', data=df, palette='viridis', ax=ax)
+        ax.set_title('Clusters de Alunos com Base nas Avaliações')
+        img = io.BytesIO()
+        plt.savefig(img, format='png')
+        img.seek(0)
+        plt.close(fig)
+        
+        return base64.b64encode(img.getvalue()).decode('utf-8')
 
-    fig, ax = plt.subplots()
-    sns.scatterplot(x='Qualidade_aulas', y='Infraestrutura_geral', hue='Cluster', data=df, palette='viridis', ax=ax)
-    ax.set_title('Clusters de Alunos com Base nas Avaliações')
-    img = io.BytesIO()
-    plt.savefig(img, format='png')
-    img.seek(0)
-    plt.close(fig)
-    return base64.b64encode(img.getvalue()).decode('utf-8')
+    except KeyError as e:
+        flash(f"Erro de coluna: {e}", 'danger')
+        return redirect(url_for('discente.importar_discente'))
+    except Exception as e:
+        flash(f"Erro ao aplicar o clustering: {e}", 'danger')
+        return redirect(url_for('discente.importar_discente'))
 
 # Função para aplicar regressão
 def aplicar_regressao(df):
+    # Converter as colunas para numérico e remover valores ausentes
     df[['Infraestrutura_geral', 'Relacionamento_coordenador', 'Qualidade_aulas', 'Material_didatico']] = \
         df[['Infraestrutura_geral', 'Relacionamento_coordenador', 'Qualidade_aulas', 'Material_didatico']].apply(pd.to_numeric, errors='coerce')
     df.dropna(subset=['Infraestrutura_geral', 'Relacionamento_coordenador', 'Qualidade_aulas', 'Material_didatico'], inplace=True)
 
+    # Separação de dados e execução da regressão
     X = df[['Infraestrutura_geral', 'Relacionamento_coordenador', 'Material_didatico']]
     y = df['Qualidade_aulas']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -416,6 +437,7 @@ def aplicar_regressao(df):
     model.fit(X_train, y_train)
     mse = mean_squared_error(y_test, model.predict(X_test))
     return f"MSE da regressão: {mse:.2f}"
+
 
 # Rota para executar análise
 @discente_route.route('/executar_analise')
