@@ -1,7 +1,7 @@
 {% extends 'basecorden.html' %}
 
 {% block titulo %}
-    Gráfico de Ações
+    Gráficos de Ações
 {% endblock %}
 
 {% block conteudo %}
@@ -25,9 +25,35 @@
             <h5 class="mt-3" style="color: #00070d;">Planejamento Selecionado: {{ planejamento_selecionado.nome }}</h5>
         {% endif %}
 
-        {% if plot_url %}
+        <!-- Gráfico de Gantt -->
+        {% if plot_urls['gantt'] %}
             <div class="text-center mt-4">
-                <img src="data:image/png;base64,{{ plot_url }}" class="img-fluid" alt="Gráfico de Gantt" style="max-width: 80%; height: auto;">
+                <h5>Gráfico de Gantt</h5>
+                <img src="data:image/png;base64,{{ plot_urls['gantt'] }}" class="img-fluid" alt="Gráfico de Gantt" style="max-width: 80%; height: auto;">
+            </div>
+        {% endif %}
+
+        <!-- Gráfico de Progresso por Ação -->
+        {% if plot_urls['progress'] %}
+            <div class="text-center mt-4">
+                <h5>Progresso de Execução por Ação</h5>
+                <img src="data:image/png;base64,{{ plot_urls['progress'] }}" class="img-fluid" alt="Progresso por Ação" style="max-width: 80%; height: auto;">
+            </div>
+        {% endif %}
+
+        <!-- Gráfico de Distribuição do Status das Ações -->
+        {% if plot_urls['status'] %}
+            <div class="text-center mt-4">
+                <h5>Distribuição do Status das Ações</h5>
+                <img src="data:image/png;base64,{{ plot_urls['status'] }}" class="img-fluid" alt="Distribuição do Status" style="max-width: 80%; height: auto;">
+            </div>
+        {% endif %}
+
+        <!-- Gráfico de Duração Média por Ação -->
+        {% if plot_urls['duration'] %}
+            <div class="text-center mt-4">
+                <h5>Duração Média de Execução por Ação</h5>
+                <img src="data:image/png;base64,{{ plot_urls['duration'] }}" class="img-fluid" alt="Duração Média por Ação" style="max-width: 80%; height: auto;">
             </div>
         {% endif %}
     </div>

@@ -58,6 +58,14 @@
                 {% endfor %}
             </tbody>
         </table>
+        
+        <!-- Gráfico de Calor da Matriz de Riscos -->
+        {% if heatmap_base64 %}
+            <div class="text-center my-4">
+                <h5>Mapa de Calor - Quantidade de Riscos por Categoria</h5>
+                <img src="data:image/png;base64,{{ heatmap_base64 }}" alt="Mapa de Calor da Matriz de Riscos" style="max-width: 90%; height: auto; border: 1px solid #ddd; padding: 10px;">
+            </div>
+        {% endif %}
         {% endif %}
 
         <div class="text-center mt-4">
@@ -72,4 +80,3 @@
     }
 </script>
 {% endblock %}
-

@@ -1,29 +1,82 @@
-from flask import Flask, render_template, send_file, current_app
-from .models import PDI, Objetivo, Meta, Indicador
+from flask import Flask, render_template,jsonify,request,url_for,redirect,flash,send_file
+from .models import PDI, Objetivo, Meta, Indicador,db
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
-import io
 from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-import pandas as pd
-from flask_login import login_required
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib import colors
+from flask_login import login_required
+import pandas as pd
+import io
 
 
 pdiprppg_route = Blueprint('pdiprppg', __name__)
 
-@pdiprppg_route.route('/relpdi')
-@login_required
-def exibir_pdi():
-    pdi_data = PDI.query.all()
-    objetivos = Objetivo.query.filter(Objetivo.pdi_id.in_([pdi.id for pdi in pdi_data])).all()
+
+@pdiprppg_route.route('/selecionar_programa', methods=['GET', 'POST'])
+def selecionar_programa():
+    if request.method == 'POST':
+        pdi_id = request.form['pdi_id']
+        return redirect(url_for('pdiprppg.exibir_altpdi', pdi_id=pdi_id))
+
+    pdis = PDI.query.all()
+    return render_template('selecionar_planpdi.html', pdis=pdis)
+
+@pdiprppg_route.route('/exibir_altpdi')
+def exibir_altpdi():
+    pdi_id = request.args.get('pdi_id')
+    if not pdi_id:
+        return redirect(url_for('pdiprppg.selecionar_programa'))
+
+    pdi_data = PDI.query.filter_by(id=pdi_id).first()
+    if not pdi_data:
+        flash('Programa não encontrado.')
+        return redirect(url_for('pdiprppg.selecionar_programa'))
+
+    objetivos = Objetivo.query.filter_by(pdi_id=pdi_id).all()
     metas = Meta.query.filter(Meta.objetivo_id.in_([objetivo.id for objetivo in objetivos])).all()
     indicadores = Indicador.query.filter(Indicador.meta_pdi_id.in_([meta.id for meta in metas])).all()
-    
-    return render_template('pdi.html', objetivos=objetivos, metas=metas, indicadores=indicadores)
 
+    if not objetivos or not metas or not indicadores:
+        flash('Ainda não há planejamento para este programa.')
+        return redirect(url_for('pdiprppg.selecionar_programa'))
+
+    return render_template('pdi.html', pdi=pdi_data, objetivos=objetivos, metas=metas, indicadores=indicadores)
+
+
+@pdiprppg_route.route('/selecionar_planejamento', methods=['GET', 'POST'])
+def selecionar_planejamento():
+    if request.method == 'POST':
+        pdi_id = request.form['pdi_id']
+        return redirect(url_for('pdiprppg.exibir_planejamento', pdi_id=pdi_id))
+
+    pdis = PDI.query.all()
+    return render_template('selecionar_planpdi.html', pdis=pdis)
+
+@pdiprppg_route.route('/exibir_planejamento')
+def exibir_planejamento():
+    pdi_id = request.args.get('pdi_id')
+    if not pdi_id:
+        return redirect(url_for('pdiprppg.selecionar_planejamento'))
+
+    pdi_data = PDI.query.filter_by(id=pdi_id).first()
+    if not pdi_data:
+        flash('Planejamento não encontrado.')
+        return redirect(url_for('pdiprppg.selecionar_planejamento'))
+
+    objetivos = Objetivo.query.filter_by(pdi_id=pdi_id).all()
+    metas = Meta.query.filter(Meta.objetivo_id.in_([objetivo.id for objetivo in objetivos])).all()
+    indicadores = Indicador.query.filter(Indicador.meta_pdi_id.in_([meta.id for meta in metas])).all()
+
+    if not objetivos and not metas and not indicadores:
+        flash('Ainda não há planejamento para este PDI.')
+        return redirect(url_for('pdiprppg.selecionar_planejamento'))
+
+    print(f"PDI Data: {pdi_data}")  # Adicionado para depuração
+    return render_template('exibir_planejpdicord.html', pdi=pdi_data, objetivos=objetivos, metas=metas, indicadores=indicadores)
+
+###################################################################################################################################3
 @pdiprppg_route.route('/export_pdi/excel')
 @login_required
 def export_pdi_excel():

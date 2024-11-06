@@ -1,0 +1,100 @@
+{% extends 'basecorden.html' %}
+
+{% block titulo %}
+  Planejamento - {{ pdi.nome }}
+{% endblock %}
+
+{% block conteudo %}
+<body>
+    <h4 style="text-align: center; color: #003366;">Planejamento- {{ pdi.nome }}</h4>
+
+    <style>
+        table {
+            width: 95%;
+            border-collapse: collapse;
+            margin: auto;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #dddddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            color: #003366;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+    </style>
+    <table>
+        <thead>
+            <tr>
+                <th>Objetivo</th>
+                <th>Meta</th>
+                <th>Porcentagem de Execução</th>
+                <th>Indicador</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for objetivo in objetivos %}
+                {% set first_objetivo = True %}
+                {% for meta in metas if meta.objetivo_id == objetivo.id %}
+                    {% set first_meta = True %}
+                    {% set indicadores_meta = indicadores | selectattr('meta_pdi_id', 'equalto', meta.id) | list %}
+                    {% if indicadores_meta %}
+                        {% for indicador in indicadores_meta %}
+                            <tr>
+                                {% if first_objetivo %}
+                                    <td rowspan="{{ metas | selectattr('objetivo_id', 'equalto', objetivo.id) | list | length }}">{{ objetivo.nome }}</td>
+                                    {% set first_objetivo = False %}
+                                {% endif %}
+                                {% if first_meta %}
+                                    <td rowspan="{{ indicadores_meta | length }}">{{ meta.nome }}</td>
+                                    <td rowspan="{{ indicadores_meta | length }}">{{ meta.porcentagem_execucao }}</td>
+                                    {% set first_meta = False %}
+                                {% endif %}
+                                <td>{{ indicador.nome }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            {% if first_objetivo %}
+                                <td rowspan="{{ metas | selectattr('objetivo_id', 'equalto', objetivo.id) | list | length }}">{{ objetivo.nome }}</td>
+                                {% set first_objetivo = False %}
+                            {% endif %}
+                            {% if first_meta %}
+                                <td>{{ meta.nome }}</td>
+                                <td>{{ meta.porcentagem_execucao }}</td>
+                                {% set first_meta = False %}
+                            {% endif %}
+                            <td>-</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+                {% if not metas | selectattr('objetivo_id', 'equalto', objetivo.id) | list %}
+                    <tr>
+                        <td>{{ objetivo.nome }}</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+    </div>
+
+    <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
+        }
+    </script>
+</body>
+{% endblock %}

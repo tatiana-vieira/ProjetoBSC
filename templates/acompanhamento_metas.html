@@ -10,9 +10,9 @@
         <h4 class="text-center text-white">Acompanhamento de Metas</h4>
     </div>
     <div class="card-body text-center">
-        <form method="POST" action="{{ url_for('relatorioplanejamento.exibir_detalhes_planejamentocadeia') }}">
+        <form method="POST" action="{{ url_for('planejamento.acompanhamento_metas') }}">
             <label for="planejamento" class="form-label" style="margin-right: 10px;">Selecione o Planejamento:</label>
-            <select name="planejamento_id" id="planejamento" class="form-select d-inline-block" style="width: 300px; margin-right: 10px;">
+            <select name="planejamento_id" id="planejamento" class="form-select d-inline-block" style="width: 800px; margin-right: 10px;">
                 <option value="" disabled selected>Selecione</option>
                 {% for planejamento in planejamentos %}
                     <option value="{{ planejamento.id }}" {% if request.form.planejamento_id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
@@ -25,10 +25,10 @@
 
 {% if metas %}
 <!-- Tabela de acompanhamento de metas -->
-<table class="table table-striped mt-4" style="width: 80%; margin: auto; text-align: center;">
+<table class="table table-striped mt-4" style="width: 80%; margin: auto;">
     <thead>
         <tr>
-            <th>Nome da Meta</th>
+            <th style="text-align: left;">Nome da Meta</th>
             <th>Data de Início</th>
             <th>Data de Término</th>
             <th>Status Atual</th>
@@ -38,9 +38,9 @@
     <tbody>
         {% for meta in metas %}
             <tr>
-                <td>{{ meta.nome }}</td>
-                <td>{{ meta.data_inicio }}</td>
-                <td>{{ meta.data_termino }}</td>
+                <td style="text-align: left;">{{ meta.nome }}</td>
+                <td>{{ meta.data_inicio.strftime('%d/%m/%Y') }}</td>
+                <td>{{ meta.data_termino.strftime('%d/%m/%Y') }}</td>
                 <td>{{ meta.status or 'Não definido' }}</td>
                 <td>
                     <a href="{{ url_for('planejamento.alterar_metape', metape_id=meta.id) }}" class="btn btn-success">Atualizar</a>
@@ -65,22 +65,22 @@
 <!-- Tabela de Sugestões -->
 <div style="margin-top: 40px;">
     <h3 class="text-center">Sugestões de Ajustes</h3>
-    <table class="table table-bordered table-striped" style="width: 80%; margin: auto; text-align: center;">
+    <table class="table table-bordered table-striped" style="width: 80%; margin: auto;">
         <thead>
             <tr>
-                <th>Meta</th>
+                <th style="text-align: left;">Meta</th>
                 <th>Progresso</th>
                 <th>Restante</th>
-                <th>Sugestões</th>
+                <th style="text-align: left;">Sugestões</th>
             </tr>
         </thead>
         <tbody>
             {% for dado in dados_graficos %}
                 <tr>
-                    <td>{{ dado.meta }}</td>
+                    <td style="text-align: left;">{{ dado.meta }}</td>
                     <td>{{ dado.progresso }}</td>
                     <td>{{ dado.restante }}</td>
-                    <td>
+                    <td style="text-align: left;">
                         {% if dado.sugestoes %}
                             <ul style="list-style-type: none; padding: 0; margin: 0;">
                                 {% for sugestao in dado.sugestoes %}
@@ -101,11 +101,11 @@
 {% if metas %}
 <!-- Botões de ação -->
 <div class="text-center mt-4">
-    <a href="{{ url_for('planejamento.gerar_pdf_metas', planejamento_id=request.form.planejamento_id) }}" class="btn btn-warning" style="padding: 10px 20px;">
-        Gerar PDF
+    <a href="{{ url_for('planejamento.gerar_pdf_metas', planejamento_id=request.form.planejamento_id) }}" class="btn btn-success" style="padding: 10px 20px;">
+        Exportar PDF
     </a>
-    <a href="{{ url_for('relatoriometas.export_csv_metas', planejamento_selecionado=request.form.planejamento_id) }}" class="btn btn-warning ms-2" style="padding: 10px 20px;">
-        Exportar para CSV
+    <a href="{{ url_for('relatoriometas.export_csv_metas', planejamento_selecionado=request.form.planejamento_id) }}" class="btn btn-success ms-2" style="padding: 10px 20px;">
+        Exportar Planilha
     </a>
     <button type="button" onclick="fechar()" class="btn btn-danger ms-2" style="padding: 10px 20px;">
         Fechar

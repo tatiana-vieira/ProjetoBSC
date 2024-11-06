@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'basecorden.html' %}
 
 {% block titulo %}
 Selecionar Planejamento
@@ -10,7 +10,7 @@ Selecionar Planejamento
         <h4 class="text-center text-white">Selecionar Planejamento</h4>
     </div>
     <div class="card-body">
-        <form method="POST" action="{{ url_for('altpdi.selecionar_planejamento') }}" style="max-width: 500px; margin: auto; text-align: center;">
+        <form method="POST" action="{{ url_for('pdiprppg.selecionar_planejamento') }}" style="max-width: 500px; margin: auto; text-align: center;">
             <div class="form-group">
                 <label for="pdi_id">Planejamento:</label>
                 <select id="pdi_id" name="pdi_id" required class="form-control mb-3">

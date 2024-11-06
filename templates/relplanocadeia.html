@@ -13,7 +13,7 @@
         <form method="POST" action="{{ url_for('relatorioplanejamento.exibir_detalhes_planejamentocadeia') }}">
             <div class="form-group mb-3">
                 <label for="planejamento_estrategico" class="form-label">Selecione um planejamento:</label>
-                <select id="planejamento_estrategico" name="planejamento_selecionado" required class="form-select" style="width: 300px; margin: auto;">
+                <select id="planejamento_estrategico" name="planejamento_selecionado" required class="form-select" style="width: 800px; margin: auto;">
                     <option value="" disabled selected>-- Selecione --</option>
                     {% for planejamento in planejamentos %}
                         <option value="{{ planejamento.id }}">{{ planejamento.nome }}</option>
@@ -71,8 +71,9 @@
 </div>
 
 <div class="text-center mt-4">
-    <a id="gerar-pdf" href="{{ url_for('relatorioplanejamento.gerarrel_pdf', planejamento_id=planejamento_selecionado.id) }}" class="btn btn-warning">Download PDF</a>
-    <a id="gerar-excel" href="{{ url_for('relatorioplanejamento.gerarrel_excel', planejamento_id=planejamento_selecionado.id) }}" class="btn btn-warning ms-2">Download Excel</a>
+<a id="gerar-pdf" href="{{ url_for('relatorioplanejamento.gerarrel_pdf', planejamento_id=planejamento_selecionado.id) }}" class="btn btn-success">Download PDF</a>
+<a id="gerar-excel" href="{{ url_for('relatorioplanejamento.gerarrel_excel', planejamento_id=planejamento_selecionado.id) }}" class="btn btn-success ms-2">Download Excel</a>
+
 </div>
 {% endif %}
 

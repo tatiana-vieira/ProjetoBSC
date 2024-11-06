@@ -662,27 +662,34 @@ def listar_matriz_riscos():
                             .join(PlanejamentoEstrategico, ObjetivoPE.planejamento_estrategico_id == PlanejamentoEstrategico.id)\
                             .filter(PlanejamentoEstrategico.id == planejamento_id).all()
 
-        # Gerar a matriz de riscos
-        matriz_riscos = gerar_matriz_riscos(riscos)
+        # Gerar a matriz de riscos e o gráfico de calor
+        matriz_riscos, heatmap_base64 = gerar_matriz_riscos(riscos)
         
         return render_template(
             'listar_matriz.html',
             planejamentos=planejamentos,
             selected_planejamento=planejamento_id,
             matriz_riscos=matriz_riscos,
+            heatmap_base64=heatmap_base64,
             enumerate=enumerate
         )
 
     # Exibir a página sem dados de riscos até que um planejamento seja selecionado
-    return render_template('listar_matriz.html', planejamentos=planejamentos, matriz_riscos=None, enumerate=enumerate)
+    return render_template('listar_matriz.html', planejamentos=planejamentos, matriz_riscos=None, heatmap_base64=None, enumerate=enumerate)
 
 def gerar_matriz_riscos(riscos):
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import io
+    import base64
+
     # Definindo os labels dos eixos
     row_labels = ['Baixa', 'Média', 'Alta']
     col_labels = ['Insignificante', 'Moderado', 'Catastrófico']
 
-    # Inicializando a matriz 3x3 vazia
+    # Inicializando a matriz 3x3 vazia e a contagem
     matriz = [[[] for _ in range(len(col_labels))] for _ in range(len(row_labels))]
+    contagem_matriz = [[0 for _ in range(len(col_labels))] for _ in range(len(row_labels))]
 
     # Preenchendo a matriz de riscos
     for risco in riscos:
@@ -690,13 +697,27 @@ def gerar_matriz_riscos(riscos):
             # Determinar o índice da probabilidade e do impacto na matriz
             row_idx = row_labels.index(risco.probabilidade)
             col_idx = col_labels.index(risco.impacto)
-            # Adicionar a descrição do risco na célula correspondente
+            # Adicionar a descrição do risco na célula correspondente e incrementar contagem
             matriz[row_idx][col_idx].append(risco.descricao)
+            contagem_matriz[row_idx][col_idx] += 1
         except ValueError as e:
             print(f"Erro ao processar risco '{risco.descricao}': {e}. Probabilidade: {risco.probabilidade}, Impacto: {risco.impacto}")
             continue
 
-    return matriz
+    print("Contagem da Matriz de Riscos:", contagem_matriz)  # Para depuração
 
+    # Gerar gráfico de calor (heatmap)
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(contagem_matriz, annot=True, fmt="d", cmap="YlOrRd", xticklabels=col_labels, yticklabels=row_labels, cbar=True, ax=ax)
+    ax.set_xlabel("Impacto")
+    ax.set_ylabel("Probabilidade")
+    ax.set_title("Matriz de Riscos - Quantidade de Riscos por Categoria")
 
+    # Salvar gráfico de calor como imagem base64
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    heatmap_base64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+    plt.close(fig)
 
+    return matriz, heatmap_base64
