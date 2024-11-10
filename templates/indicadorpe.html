@@ -86,21 +86,23 @@
           </div>
         </div>
 
-        <!-- Agrupar Ano e Valor em uma linha -->
+          <!-- Agrupar Semestre, Ano e Valor em uma linha -->
+     <!-- Agrupar Semestre, Ano e Valor em uma linha -->
         <div class="row">
-          <div class="col-md-6">
-            <div class="form-group">
-              <label for="ano">Ano:</label>
-              <input type="text" id="ano" name="ano[]" required class="form-control">
-            </div>
+          <div class="col-md-4">
+            <label for="semestre">Semestre:</label>
+            <input type="text" name="semestre" id="semestre" class="form-control">
           </div>
-          <div class="col-md-6">
-            <div class="form-group">
-              <label for="valor">Valor:</label>
-              <input type="number" id="valor" name="valor[]" required class="form-control" step="0.01">
-            </div>
+          <div class="col-md-4">
+            <label for="ano">Ano:</label>
+            <input type="text" name="ano" id="ano" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label for="valor">Valor:</label>
+            <input type="text" name="valor" id="valor" class="form-control">
           </div>
         </div>
+
 
         <!-- Botões de Ação -->
         <div class="form-group text-center" style="margin-top: 20px;">
@@ -129,6 +131,8 @@
             <th>Data Início</th>
             <th>Data Fim</th>
             <th>Ações</th>
+            <th>Histórico</th>
+
           </tr>
         </thead>
         <tbody>
@@ -143,6 +147,9 @@
             <td>{{ indicador.data_inicio }}</td>
             <td>{{ indicador.data_fim }}</td>
             <td>
+              <a href="{{ url_for('planejamento.visualizar_historico', indicador_id=indicador.id) }}" class="btn btn-info btn-sm">Ver Histórico</a>
+            </td>
+            <td>
               <a href="{{ url_for('planejamento.alterar_indicadorpe', indicador_id=indicador.id) }}" class="btn btn-success btn-sm" style="background-color: #28a745;">Editar</a>
             </td>
           </tr>
@@ -155,7 +162,28 @@
     </div>
   </div>
 </div>
-
+<script>
+  function adicionarProgresso() {
+    const progressoFields = document.getElementById('progresso-fields');
+    const novoCampo = document.createElement('div');
+    novoCampo.className = 'row';
+    novoCampo.innerHTML = `
+      <div class="col-md-6">
+        <div class="form-group">
+          <label for="ano">Ano:</label>
+          <input type="text" name="ano[]" required class="form-control">
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="form-group">
+          <label for="valor">Valor:</label>
+          <input type="number" name="valor[]" required class="form-control" step="0.01">
+        </div>
+      </div>
+    `;
+    progressoFields.appendChild(novoCampo);
+  }
+</script>
 <script>
   function cancelar() {
       window.location.href = "{{ url_for('login.get_coordenador') }}";

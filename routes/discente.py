@@ -65,6 +65,7 @@ def limpar_dados(df):
         "Sem condições de avaliar": np.nan,
         "Sem condiÃ§Ãµes de avaliar": np.nan,
         "Sem condicoes de avaliar": np.nan,
+        "sem condicoes de avaliar": np.nan,
         "Não se aplica": np.nan
     }, inplace=True)
     return df
@@ -78,6 +79,7 @@ def substituir_sim_nao(valor):
         elif "não" in valor or "nao" or "Nao" in valor:
             return 0
     return np.nan
+
 
 # Lista de colunas para converter 'Sim'/'Não'
 colunas_sim_nao_corrigido = [
@@ -150,6 +152,11 @@ def renomear_colunas(discentecurso):
             'Gostaria de adicionar algum comentario referente seu Programa de Pos-Graduacao?':'comentario_programa',
             'Gostaria de adicionar algum comentario referente a Pro-Reitoria de Pesquisa e Pos-Graduacao?':'comentario_PRPPG'
         }, axis=1, inplace=True)
+        colunas_requeridas = ['Infraestrutura_geral', 'acompanhamento_discentes', 'tempo_programa']
+        colunas_faltantes = [col for col in colunas_requeridas if col not in discentecurso.columns]
+        if colunas_faltantes:
+                print(f"Colunas faltantes após renomeação: {colunas_faltantes}")
+
         return discentecurso # Ensure the modified DataFrame is returned
 
 # Função para substituir valores de 'Sim' e 'Não' por 1 e 0
@@ -187,6 +194,7 @@ def importar_discente():
 
 
 # Rota para gerar gráficos
+
 @discente_route.route('/gerar_graficos')
 def gerar_graficos():
     graficos = []
@@ -202,36 +210,28 @@ def gerar_graficos():
         return redirect(url_for('discente.importar_discente'))
 
     try:
-        # Carregar e renomear colunas
+        # Carregar o CSV e renomear colunas
         discentecurso = pd.read_csv(file_path, delimiter=';')
         discentecurso = renomear_colunas(discentecurso)
-
-        # Limpeza e conversão de valores problemáticos
         discentecurso = limpar_dados(discentecurso)
 
-        # Converter as colunas necessárias para numérico
+
+        # Calcular o MSE da Regressão automaticamente
+        resultado_regressao = aplicar_regressao_discente(discentecurso)
+
+        # Converter colunas necessárias para numérico
         required_columns = ['Qualidade_aulas', 'Material_didatico', 'Infraestrutura_geral']
         discentecurso[required_columns] = discentecurso[required_columns].apply(pd.to_numeric, errors='coerce')
 
-        # Verificar se as colunas necessárias para calcular a média estão presentes
-        if all(col in discentecurso.columns for col in required_columns):
-            discentecurso['Media_Qualidade_Aulas'] = discentecurso[required_columns].mean(axis=1)
-        else:
-            missing_cols = [col for col in required_columns if col not in discentecurso.columns]
-            flash(f"As colunas necessárias para o cálculo da média estão ausentes: {missing_cols}", "danger")
-            return redirect(url_for('discente.importar_discente'))
-        
-        # Estatísticas descritivas
-           # Estatísticas descritivas
+        # Estatísticas Descritivas
         estatisticas_html = gerar_estatisticas_descritivas(discentecurso)
-
-        # Gerar gráfico - Exemplo: Distribuição de Nível de Proficiência em Inglês
- # Definir configurações de tamanho e estilo
-        figsize = (8, 6)
-        title_fontsize = 16
+        
+        # Configurações de gráfico
+        figsize = (10, 6)
+        title_fontsize = 18
         label_fontsize = 14
 
-        # Gerar gráfico - Distribuição de Nível de Proficiência em Inglês
+        # Gráfico 1: Distribuição de Nível de Proficiência em Inglês
         fig, ax = plt.subplots(figsize=figsize)
         ax.hist(discentecurso['proficiencia_ingles'].dropna(), bins=10, color='skyblue')
         ax.set_title('Distribuição de Nível de Proficiência em Inglês', fontsize=title_fontsize)
@@ -244,13 +244,11 @@ def gerar_graficos():
         graficos.append(base64.b64encode(img.getvalue()).decode('utf-8'))
         plt.close(fig)
 
-        # Gráfico de violino para a Média de Qualidade das Aulas
+        # Gráfico 2: Violino da Média de Qualidade das Aulas
         fig, ax = plt.subplots(figsize=figsize)
-        sns.violinplot(y=discentecurso['Media_Qualidade_Aulas'], ax=ax, color='lightgreen')
+        sns.violinplot(y=discentecurso['Qualidade_aulas'], ax=ax, color='lightgreen')
         ax.set_title('Distribuição da Média de Qualidade das Aulas', fontsize=title_fontsize)
         ax.set_ylabel('Média de Avaliação', fontsize=label_fontsize)
-        media_valor = discentecurso['Media_Qualidade_Aulas'].mean()
-        ax.text(0.1, media_valor + 0.2, f'Média: {media_valor:.2f}', color='black', fontsize=12)
         plt.tight_layout()
         img = io.BytesIO()
         plt.savefig(img, format='png')
@@ -258,11 +256,11 @@ def gerar_graficos():
         graficos.append(base64.b64encode(img.getvalue()).decode('utf-8'))
         plt.close(fig)
 
-        # Boxplot de Formação vs Qualidade das Aulas
+        # Gráfico 3: Boxplot de Formação vs Qualidade das Aulas
         fig, ax = plt.subplots(figsize=figsize)
         sns.boxplot(x='formacao', y='Qualidade_aulas', data=discentecurso, ax=ax)
         ax.set_title('Nível de Formação vs Qualidade das Aulas', fontsize=title_fontsize)
-        ax.set_xlabel('Nível de Formação', fontsize=label_fontsize)
+        ax.set_xlabel('Formação', fontsize=label_fontsize)
         ax.set_ylabel('Qualidade das Aulas', fontsize=label_fontsize)
         plt.xticks(rotation=45)
         plt.tight_layout()
@@ -272,7 +270,7 @@ def gerar_graficos():
         graficos.append(base64.b64encode(img.getvalue()).decode('utf-8'))
         plt.close(fig)
 
-        # Gráfico de linha - Tendência da Qualidade das Aulas ao longo dos anos
+        # Gráfico 4: Tendência da Qualidade das Aulas ao Longo dos Anos
         fig, ax = plt.subplots(figsize=figsize)
         sns.lineplot(x='ingresso', y='Qualidade_aulas', data=discentecurso, ax=ax)
         ax.set_title('Tendência da Qualidade das Aulas ao Longo dos Anos', fontsize=title_fontsize)
@@ -285,9 +283,9 @@ def gerar_graficos():
         graficos.append(base64.b64encode(img.getvalue()).decode('utf-8'))
         plt.close(fig)
 
-        # Mapa de calor - Correlação entre variáveis
+        # Gráfico 5: Mapa de Calor das Correlações
         fig, ax = plt.subplots(figsize=figsize)
-        sns.heatmap(discentecurso[['Qualidade_aulas', 'proficiencia_ingles']].corr(), annot=True, cmap='coolwarm', linewidths=0.4, ax=ax)
+        sns.heatmap(discentecurso[['Qualidade_aulas', 'proficiencia_ingles']].corr(), annot=True, cmap='coolwarm')
         ax.set_title('Mapa de Calor das Correlações', fontsize=title_fontsize)
         plt.tight_layout()
         img = io.BytesIO()
@@ -296,172 +294,227 @@ def gerar_graficos():
         graficos.append(base64.b64encode(img.getvalue()).decode('utf-8'))
         plt.close(fig)
 
-   
-       
-    except Exception as e:
-        flash(f"Erro ao gerar recomendações: {str(e)}", 'danger')
-        return redirect(url_for('discente.importar_discente'))
+        # Gráfico de Satisfação com Relacionamentos
+        fig, ax = plt.subplots(figsize=(10, 6))
+        try:
+            # Converter colunas para numérico, ignorando erros
+            rel_cols = ['Relacionamento_colegas', 'Relacionamento_orientador', 
+                        'Relacionamento_coordenador', 'Relacionamento_secretaria']
+            discentecurso[rel_cols] = discentecurso[rel_cols].apply(pd.to_numeric, errors='coerce')
 
-    return render_template('dashboard_discenteia.html', graficos=graficos, estatisticas=estatisticas_html)
+            # Verificar se há dados suficientes após a conversão
+            if discentecurso[rel_cols].dropna().empty:
+                raise ValueError("Sem dados suficientes para gerar o gráfico de Satisfação com Relacionamentos.")
 
-# Função para processar o sentimento
-def analisar_sentimento(texto):
-    return sid.polarity_scores(texto)
+            # Calcular a média para cada tipo de relacionamento
+            media_relacionamentos = discentecurso[rel_cols].mean()
+
+            # Plotar o gráfico
+            media_relacionamentos.plot(kind='bar', ax=ax, color='skyblue')
+            ax.set_title('Satisfação com Relacionamentos', fontsize=18)
+            ax.set_xlabel('Tipo de Relacionamento', fontsize=14)
+            ax.set_ylabel('Avaliação Média', fontsize=14)
+            ax.set_xticklabels(media_relacionamentos.index, rotation=45, ha='right')
+
+            # Exibir os valores no topo de cada barra
+            for i, valor in enumerate(media_relacionamentos):
+                ax.text(i, valor + 0.05, f'{valor:.2f}', ha='center', va='bottom')
+
+            plt.tight_layout()
+            img = io.BytesIO()
+            plt.savefig(img, format='png')
+            img.seek(0)
+            graficos.append(base64.b64encode(img.getvalue()).decode('utf-8'))
+            plt.close(fig)
+        except Exception as e:
+            print(f"Erro ao gerar gráfico de Satisfação com Relacionamentos: {e}")
+            flash(f"Erro ao gerar gráfico de Satisfação com Relacionamentos: {e}", 'danger')
 
 
-# Inicializar o analisador de sentimento
-nltk.download('vader_lexicon')
-sid = SentimentIntensityAnalyzer()
-
-# Função de normalização de nomes de colunas
-def normalize_column_names(df):
-    df.columns = [
-        unicodedata.normalize('NFKD', col)
-        .encode('ascii', 'ignore')
-        .decode('utf-8')
-        .strip()
-        .lower()
-        .replace('  ', ' ')
-        .replace(' ', '_')
-        .replace('[', '')
-        .replace(']', '')
-        .replace('<', '')
-        .replace('>', '')
-        for col in df.columns
-    ]
-    return df
-
-@discente_route.route('/visualizar_resultados', methods=['GET'])
-def visualizar_resultados():
-    try:
-        # Simulação de leitura do arquivo já carregado
-        file_path = 'uploads/discente.csv'
-        if not os.path.exists(file_path):
-            flash('Arquivo não encontrado.', 'danger')
-            return redirect(url_for('discente.importar_discente'))
-
-        discentecurso = pd.read_csv(file_path, delimiter=';')
-
-        # Verificar se os dados têm distribuição suficiente para treinamento
-        print(discentecurso.describe())  # Verificar estatísticas gerais para cada coluna
-
-        # Avaliar os sentimentos do Programa de Pós-Graduação
-        media_sentimentos_programa = df_comentarios['Programa_compound'].mean()
-
-        # Gráfico de barras de sentimentos por ano de ingresso
-        # Ajustar o gráfico com rotação dos rótulos no eixo X
-        # Aumentar o tamanho da imagem com figsize
-      # Aumentar o tamanho da imagem com figsize
-        fig, ax = plt.subplots(figsize=(14, 8))  # Ajuste os valores para o tamanho desejado
-        discentecurso['Media_Qualidade_Aulas'].plot(kind='bar', ax=ax)
-        plt.title('Média de Qualidade das Aulas')
-
-        # Rotacionar os rótulos no eixo X, se necessário
-        plt.xticks(rotation=90)
+        # Gráfico 7: Relevância da Pesquisa
+        pesquisa_cols = ['pesquisa_relevancia_social', 'pesquisa relevancia economica', 'pesquisa relevancia ambiental']
+        fig, ax = plt.subplots(figsize=figsize)
+        media_pesquisa = discentecurso[pesquisa_cols].mean()
+        media_pesquisa.plot(kind='bar', ax=ax, color=['#1f77b4', '#ff7f0e', '#2ca02c'])
+        ax.set_title('Relevância da Pesquisa', fontsize=title_fontsize)
+        ax.set_xlabel('Tipo de Relevância', fontsize=label_fontsize)
+        ax.set_ylabel('Avaliação Média', fontsize=label_fontsize)
+        plt.xticks(rotation=45)
         plt.tight_layout()
-
-        # Salvar gráfico em memória para exibir
         img = io.BytesIO()
         plt.savefig(img, format='png')
         img.seek(0)
-        plt.close()
+        graficos.append(base64.b64encode(img.getvalue()).decode('utf-8'))
+        plt.close(fig)
 
-        grafico_base64 = base64.b64encode(img.getvalue()).decode('utf-8')
-        graficos.append(grafico_base64)
-
-
-        # Resultados da RandomForest otimizada
-        mse_otimizado = mean_squared_error(y_test, y_pred_best)
-        grafico_sentimentos = base64.b64encode(img.getvalue()).decode('utf-8')
-
-        # Exibir gráficos e resultados na página
-        return render_template('resultadodiscente.html', 
-                               grafico_sentimentos_ingresso=grafico_sentimentos_ingresso,
-                               mse_otimizado=mse_otimizado,
-                               media_programa=media_sentimentos_programa)
-
+        # Renderizar o template com todos os gráficos
+        return render_template(
+                    'dashboard_discenteia.html',
+                    graficos=graficos,
+                    estatisticas=estatisticas_html,
+                    resultado_regressao=resultado_regressao
+                )
     except Exception as e:
-        flash(f"Erro ao gerar recomendações: {str(e)}", 'danger')
+        flash(f"Erro ao gerar gráficos: {str(e)}", 'danger')
         return redirect(url_for('discente.importar_discente'))
 
+def gerar_graficos_satisfacao(discentecurso):
+    graficos = []
 
-# Função para aplicar clustering
-def aplicar_clustering(df, num_clusters=3):
+    # Configuração global para o tamanho dos gráficos
+    figsize = (10, 6)
+    title_fontsize = 18
+    label_fontsize = 14
+
+    # Gráfico 1: Satisfação com Relacionamentos
     try:
-        # Verifique se as colunas necessárias estão no DataFrame
-        required_columns = ['Qualidade_aulas', 'Infraestrutura_geral']
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        if missing_columns:
-            flash(f"Colunas ausentes: {missing_columns}", 'danger')
+        rel_cols = ['Relacionamento_orientador', 'Relacionamento_coordenador', 
+                    'Relacionamento_secretaria', 'Relacionamento_colegas']
+        discentecurso[rel_cols] = discentecurso[rel_cols].apply(pd.to_numeric, errors='coerce')
+        
+        if not discentecurso[rel_cols].empty:
+            media_relacionamentos = discentecurso[rel_cols].mean()
+            fig, ax = plt.subplots(figsize=figsize)
+            media_relacionamentos.plot(kind='bar', ax=ax, color='skyblue')
+            ax.set_title('Satisfação com Relacionamentos', fontsize=title_fontsize)
+            ax.set_xlabel('Tipo de Relacionamento', fontsize=label_fontsize)
+            ax.set_ylabel('Avaliação Média', fontsize=label_fontsize)
+            ax.set_xticklabels(media_relacionamentos.index, rotation=45, ha='right')
+            plt.tight_layout()
+
+            # Salvar gráfico em memória
+            img = io.BytesIO()
+            plt.savefig(img, format='png')
+            img.seek(0)
+            graficos.append(base64.b64encode(img.getvalue()).decode('utf-8'))
+            plt.close(fig)
+    except Exception as e:
+        print(f"Erro ao gerar gráfico de Satisfação com Relacionamentos: {e}")
+
+    # Gráfico 2: Relevância da Pesquisa
+    try:
+        pesquisa_cols = ['pesquisa_relevancia_social', 'pesquisa relevancia economica', 
+                         'pesquisa relevancia ambiental']
+        discentecurso[pesquisa_cols] = discentecurso[pesquisa_cols].apply(pd.to_numeric, errors='coerce')
+
+        if not discentecurso[pesquisa_cols].empty:
+            media_pesquisa = discentecurso[pesquisa_cols].mean()
+            fig, ax = plt.subplots(figsize=figsize)
+            media_pesquisa.plot(kind='bar', ax=ax, color=['#1f77b4', '#ff7f0e', '#2ca02c'])
+            ax.set_title('Relevância da Pesquisa', fontsize=title_fontsize)
+            ax.set_xlabel('Tipo de Relevância', fontsize=label_fontsize)
+            ax.set_ylabel('Avaliação Média', fontsize=label_fontsize)
+            ax.set_xticklabels(media_pesquisa.index, rotation=45, ha='right')
+            plt.tight_layout()
+
+            # Salvar gráfico em memória
+            img = io.BytesIO()
+            plt.savefig(img, format='png')
+            img.seek(0)
+            graficos.append(base64.b64encode(img.getvalue()).decode('utf-8'))
+            plt.close(fig)
+    except Exception as e:
+        print(f"Erro ao gerar gráfico de Relevância da Pesquisa: {e}")
+
+    return graficos
+
+
+##############################3
+import pandas as pd
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+import seaborn as sns
+import io
+import base64
+
+@discente_route.route('/analise_clusterizacao')
+def analise_clusterizacao_discente():
+    try:
+        # Definir o caminho do arquivo CSV
+        file_path = os.path.join(UPLOAD_FOLDER, 'discente.csv')
+        if not os.path.exists(file_path):
+            flash('Arquivo "discente.csv" não encontrado.', 'danger')
             return redirect(url_for('discente.importar_discente'))
         
-        # Converter colunas para numérico e remover valores ausentes
+        # Carregar o CSV
+        discentecurso = pd.read_csv(file_path, delimiter=';')
+        discentecurso = renomear_colunas(discentecurso)
+        discentecurso = limpar_dados(discentecurso)
+
+        # Verificar colunas necessárias
+        features = ['Qualidade_aulas', 'Infraestrutura_geral', 'Relacionamento_coordenador']
+        colunas_faltantes = [col for col in features if col not in discentecurso.columns]
+        if colunas_faltantes:
+            flash(f"Colunas ausentes: {colunas_faltantes}", 'danger')
+            return redirect(url_for('discente.importar_discente'))
+
+        # Convertendo colunas para numérico
+        discentecurso[features] = discentecurso[features].apply(pd.to_numeric, errors='coerce')
+        discentecurso.dropna(subset=features, inplace=True)
+
+        if discentecurso.empty:
+            flash("Dados insuficientes para realizar clustering.", 'danger')
+            return redirect(url_for('discente.importar_discente'))
+
+        # Aplicar KMeans Clustering
+        kmeans = KMeans(n_clusters=3, random_state=42)
+        discentecurso['Cluster'] = kmeans.fit_predict(discentecurso[features])
+
+        # Gerar gráfico
+        fig, ax = plt.subplots()
+        scatter = ax.scatter(
+            discentecurso[features[0]], 
+            discentecurso[features[1]], 
+            c=discentecurso['Cluster'], cmap='viridis'
+        )
+        ax.set_title('Resultado de Clustering')
+        ax.set_xlabel(features[0])
+        ax.set_ylabel(features[1])
+        plt.colorbar(scatter)
+
+        # Salvar gráfico em buffer
+        img = io.BytesIO()
+        plt.savefig(img, format='png')
+        img.seek(0)
+        grafico = base64.b64encode(img.getvalue()).decode('utf-8')
+        plt.close(fig)
+
+        return render_template(
+            'clusteringdiscente.html', 
+            grafico=grafico,
+            features=features
+    )
+    except Exception as e:
+        flash(f"Erro ao realizar análise de clustering: {e}", 'danger')
+        return redirect(url_for('discente.importar_discente'))
+
+def aplicar_regressao_discente(df):
+    try:
+        required_columns = ['Infraestrutura_geral', 'Qualidade_aulas']
+        if not all(col in df.columns for col in required_columns):
+            return None
+
         df[required_columns] = df[required_columns].apply(pd.to_numeric, errors='coerce')
         df.dropna(subset=required_columns, inplace=True)
-        
-        # Aplicar clustering
-        kmeans = KMeans(n_clusters=num_clusters, random_state=42)
-        df['Cluster'] = kmeans.fit_predict(df[required_columns])
 
-        # Gerar gráfico de dispersão com clusters
-        fig, ax = plt.subplots()
-        sns.scatterplot(x='Qualidade_aulas', y='Infraestrutura_geral', hue='Cluster', data=df, palette='viridis', ax=ax)
-        ax.set_title('Clusters de Alunos com Base nas Avaliações')
-        img = io.BytesIO()
-        plt.savefig(img, format='png')
-        img.seek(0)
-        plt.close(fig)
-        
-        return base64.b64encode(img.getvalue()).decode('utf-8')
+        X = df[['Infraestrutura_geral']]
+        y = df['Qualidade_aulas']
 
-    except KeyError as e:
-        flash(f"Erro de coluna: {e}", 'danger')
-        return redirect(url_for('discente.importar_discente'))
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        model = RandomForestRegressor(n_estimators=100, random_state=42)
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+
+        mse = mean_squared_error(y_test, y_pred)
+        return f"MSE da Regressão: {mse:.2f}"
+
     except Exception as e:
-        flash(f"Erro ao aplicar o clustering: {e}", 'danger')
-        return redirect(url_for('discente.importar_discente'))
+        print(f"Erro ao aplicar regressão: {e}")
+        return None
 
-# Função para aplicar regressão
-def aplicar_regressao(df):
-    # Converter as colunas para numérico e remover valores ausentes
-    df[['Infraestrutura_geral', 'Relacionamento_coordenador', 'Qualidade_aulas', 'Material_didatico']] = \
-        df[['Infraestrutura_geral', 'Relacionamento_coordenador', 'Qualidade_aulas', 'Material_didatico']].apply(pd.to_numeric, errors='coerce')
-    df.dropna(subset=['Infraestrutura_geral', 'Relacionamento_coordenador', 'Qualidade_aulas', 'Material_didatico'], inplace=True)
-
-    # Separação de dados e execução da regressão
-    X = df[['Infraestrutura_geral', 'Relacionamento_coordenador', 'Material_didatico']]
-    y = df['Qualidade_aulas']
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    model = RandomForestRegressor(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
-    mse = mean_squared_error(y_test, model.predict(X_test))
-    return f"MSE da regressão: {mse:.2f}"
 
 
 # Rota para executar análise
-@discente_route.route('/executar_analise')
-def executar_analise():
-    tipo = request.args.get('tipo')
-    file_path = os.path.join(UPLOAD_FOLDER, 'discente.csv')
-    
-    if not os.path.exists(file_path):
-        flash('Arquivo "discente.csv" não encontrado na pasta uploads.', 'danger')
-        return redirect(url_for('discente.importar_discente'))
-    
-    discentecurso = pd.read_csv(file_path, delimiter=';')
-    discentecurso = renomear_colunas(discentecurso)
-    discentecurso = limpar_dados(discentecurso)
-
-    if tipo == 'clustering':
-        grafico = aplicar_clustering(discentecurso)
-    elif tipo == 'regressao':
-        grafico = aplicar_regressao(discentecurso)
-    else:
-        flash("Tipo de análise inválido.", 'danger')
-        return redirect(url_for('discente.importar_discente'))
-
-    return render_template('resultadodiscente.html', grafico=grafico)
 
 def gerar_estatisticas_descritivas(df):
     # Calcula as estatísticas descritivas e converte para HTML
@@ -715,7 +768,13 @@ def gerar_recomendacoes_programa(df_agrupado):
 
     return recomendacoes_por_programa
 
+# Função para análise de sentimentos usando VADER
+def analisar_sentimento(texto):
+    analyser = SentimentIntensityAnalyzer()
+    return analyser.polarity_scores(texto)
 
+
+################### Analise sentimentos ##############################################
 @discente_route.route('/analisar_sentimentosdiscente', methods=['GET'])
 def analisar_sentimentosdiscente():
     try:
@@ -725,47 +784,51 @@ def analisar_sentimentosdiscente():
             flash('Arquivo não encontrado.', 'danger')
             return redirect(url_for('discente.importar_discente'))
 
-        # Carregar dados
+        # Carregar e renomear colunas do CSV
         discente = pd.read_csv(file_path, delimiter=';')
         discente = renomear_colunas(discente)
 
+        # Renomear colunas relevantes para análise de sentimento
         discente.rename({
             'comentario_programa': 'Sentimento_Programa',
             'comentario_PRPPG': 'Sentimento_Pro_Reitoria',
             'preparado_internacionalizacao': 'Sentimento_Internacional'
-         }, axis=1, inplace=True)
+        }, axis=1, inplace=True)
 
-           # Selecionar colunas de sentimento e substituir valores nulos por strings vazias
-        df_comentarios = discente[['Sentimento_Programa', 'Sentimento_Pro_Reitoria', 'Sentimento_Internacional']].fillna('')
+        # Selecionar colunas de sentimento e substituir valores nulos por strings vazias
+        colunas_sentimento = ['Sentimento_Programa', 'Sentimento_Pro_Reitoria', 'Sentimento_Internacional']
+        df_comentarios = discente[colunas_sentimento].fillna('')
 
         # Verificar se há comentários disponíveis
         if df_comentarios.empty:
-            flash('Nenhum comentário suficiente disponível para análise de sentimento.', 'warning')
+            flash('Nenhum comentário disponível para análise de sentimento.', 'warning')
             return redirect(url_for('discente.importar_discente'))
 
-        # Aplicar análise de sentimentos
-        df_comentarios['Sent_Programa_Score'] = df_comentarios['Sentimento_Programa'].apply(lambda x: analisar_sentimento(str(x)) if x else {'compound': 0})
-        df_comentarios['Sent_Pro_Reitoria_Score'] = df_comentarios['Sentimento_Pro_Reitoria'].apply(lambda x: analisar_sentimento(str(x)) if x else {'compound': 0})
-        df_comentarios['Sent_Internacional_Score'] = df_comentarios['Sentimento_Internacional'].apply(lambda x: analisar_sentimento(str(x)) if x else {'compound': 0})
+        # Função para analisar o sentimento usando VADER
+        analyser = SentimentIntensityAnalyzer()
+        def analisar_sentimento(texto):
+            if texto:
+                return analyser.polarity_scores(str(texto))['compound']
+            return 0
 
-        # Expandir os resultados da análise de sentimento em colunas separadas
-        df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_Programa_Score']).add_prefix('Programa_'))
-        df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_Pro_Reitoria_Score']).add_prefix('Pro_Reitoria_'))
-        df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_Internacional_Score']).add_prefix('Internacional_'))
+        # Aplicar análise de sentimentos nas colunas
+        df_comentarios['Programa_Score'] = df_comentarios['Sentimento_Programa'].apply(analisar_sentimento)
+        df_comentarios['Pro_Reitoria_Score'] = df_comentarios['Sentimento_Pro_Reitoria'].apply(analisar_sentimento)
+        df_comentarios['Internacional_Score'] = df_comentarios['Sentimento_Internacional'].apply(analisar_sentimento)
 
         # Calcular a média dos sentimentos (ignorando valores NaN)
-        media_sentimentos_programa = df_comentarios['Programa_compound'].mean(skipna=True)
-        media_sentimentos_prppg = df_comentarios['Pro_Reitoria_compound'].mean(skipna=True)
-        media_sentimentos_internacional = df_comentarios['Internacional_compound'].mean(skipna=True)
+        media_sentimentos_programa = df_comentarios['Programa_Score'].mean()
+        media_sentimentos_prppg = df_comentarios['Pro_Reitoria_Score'].mean()
+        media_sentimentos_internacional = df_comentarios['Internacional_Score'].mean()
 
         # Contagem de sentimentos para o Programa
-        total_negativos_programa = len(df_comentarios[df_comentarios['Programa_compound'] < 0])
-        total_positivos_programa = len(df_comentarios[df_comentarios['Programa_compound'] > 0])
-        total_neutros_programa = len(df_comentarios[df_comentarios['Programa_compound'] == 0])
+        total_negativos = len(df_comentarios[df_comentarios['Programa_Score'] < 0])
+        total_positivos = len(df_comentarios[df_comentarios['Programa_Score'] > 0])
+        total_neutros = len(df_comentarios[df_comentarios['Programa_Score'] == 0])
 
         # Gerar gráfico de distribuição de sentimentos
         fig, ax = plt.subplots(figsize=(8, 6))
-        ax.bar(['Negativos', 'Positivos', 'Neutros'], [total_negativos_programa, total_positivos_programa, total_neutros_programa], color=['red', 'green', 'gray'])
+        ax.bar(['Negativos', 'Positivos', 'Neutros'], [total_negativos, total_positivos, total_neutros], color=['red', 'green', 'gray'])
         ax.set_title('Distribuição de Sentimentos sobre o Programa de Pós-Graduação')
         ax.set_xlabel('Tipo de Sentimento')
         ax.set_ylabel('Número de Comentários')
@@ -778,12 +841,133 @@ def analisar_sentimentosdiscente():
         plt.close(fig)
 
         # Renderizar o template com as médias de sentimentos e o gráfico
-        return render_template('sentimentosdiscente.html', 
+        return render_template('sentimentosdiscente.html',
                                grafico_sentimentos=grafico_sentimentos,
-                               media_programa=round(media_sentimentos_programa, 2) if media_sentimentos_programa is not None else 0, 
-                               media_prppg=round(media_sentimentos_prppg, 2) if media_sentimentos_prppg is not None else 0,
-                               media_internacional=round(media_sentimentos_internacional, 2) if media_sentimentos_internacional is not None else 0)
+                               media_programa=round(media_sentimentos_programa, 2) if not pd.isna(media_sentimentos_programa) else 0,
+                               media_prppg=round(media_sentimentos_prppg, 2) if not pd.isna(media_sentimentos_prppg) else 0,
+                               media_internacional=round(media_sentimentos_internacional, 2) if not pd.isna(media_sentimentos_internacional) else 0)
 
     except Exception as e:
         flash(f"Erro ao processar os sentimentos: {e}", 'danger')
         return redirect(url_for('discente.importar_discente'))
+
+       
+#############3 verficar colunas ###########################
+def verificar_colunas(df, colunas):
+    colunas_faltantes = [col for col in colunas if col not in df.columns]
+    if colunas_faltantes:
+        print(f"Colunas faltantes: {colunas_faltantes}")
+        return False
+    return True
+
+################Dashboard de tendencias"""""""""""""""""""""""""""""
+@discente_route.route('/executar_analise_discente')
+def executar_analise_discente():
+    tipo = request.args.get('tipo')
+    file_path = os.path.join(UPLOAD_FOLDER, 'discente.csv')
+
+    if not os.path.exists(file_path):
+        flash('Arquivo "discente.csv" não encontrado.', 'danger')
+        return redirect(url_for('discente.importar_discente'))
+
+    discentecurso = pd.read_csv(file_path, delimiter=';')
+    discentecurso = renomear_colunas(discentecurso)
+    discentecurso = limpar_dados(discentecurso)
+
+    colunas_requeridas = ['Qualidade_aulas', 'Infraestrutura_geral', 'Relacionamento_orientador']
+    if not verificar_colunas(discentecurso, colunas_requeridas):
+        flash('Colunas necessárias ausentes.', 'danger')
+        return redirect(url_for('discente.importar_discente'))
+
+    if tipo == 'clustering':
+        return analise_clusterizacao_discente()
+    elif tipo == 'regressao':
+        resultado_regressao = aplicar_regressao_discente(discentecurso)
+        if resultado_regressao:
+            return render_template('regressaodiscente.html', resultado=resultado_regressao)
+    
+    flash("Tipo de análise inválido.", 'danger')
+    return redirect(url_for('discente.importar_discente'))
+
+
+@discente_route.route('/dashboard_tendencias')
+def dashboard_tendencias():
+    try:
+        file_path = os.path.join(UPLOAD_FOLDER, 'discente.csv')
+        discentecurso = pd.read_csv(file_path, delimiter=';')
+        discentecurso = renomear_colunas(discentecurso)
+        discentecurso = limpar_dados(discentecurso)
+
+     
+        colunas = ['Qualidade_aulas', 'Material_didatico', 'Infraestrutura_geral']
+        discentecurso[colunas] = discentecurso[colunas].apply(pd.to_numeric, errors='coerce')
+        medias = discentecurso[colunas].mean()
+
+        fig, ax = plt.subplots()
+        medias.plot(kind='bar', ax=ax)
+        ax.set_title('Média de Indicadores')
+        plt.tight_layout()
+
+        img = io.BytesIO()
+        plt.savefig(img, format='png')
+        img.seek(0)
+        grafico_tendencias = base64.b64encode(img.getvalue()).decode('utf-8')
+        plt.close(fig)
+
+
+
+
+        return render_template('dashboardtendedicente.html', grafico_tendencias=grafico_tendencias)
+    except Exception as e:
+        flash(f"Erro ao gerar dashboard: {e}", 'danger')
+        return redirect(url_for('discente.importar_discente'))
+
+
+############################## analise clusterização #####################################
+
+
+##########################3 Analise de pesquisa #################################
+@discente_route.route('/analise_linha_pesquisa')
+def analise_linha_pesquisa():
+    try:
+        file_path = os.path.join(UPLOAD_FOLDER, 'discente.csv')
+        discentecurso = pd.read_csv(file_path, delimiter=';')
+        discentecurso = renomear_colunas(discentecurso)
+        discentecurso = limpar_dados(discentecurso)
+
+        # Agrupar por linha de pesquisa
+        linhas_pesquisa = discentecurso.groupby('programa').mean()
+
+        fig, ax = plt.subplots()
+        linhas_pesquisa.plot(kind='bar', ax=ax)
+        ax.set_title('Satisfação por Linha de Pesquisa')
+        plt.xticks(rotation=45)
+        
+        img = io.BytesIO()
+        plt.savefig(img, format='png')
+        img.seek(0)
+        grafico_linha_pesquisa = base64.b64encode(img.getvalue()).decode('utf-8')
+        plt.close(fig)
+
+        return render_template('linha_pesquisa.html', grafico_linha_pesquisa=grafico_linha_pesquisa)
+    
+    except Exception as e:
+        flash(f"Erro ao analisar por linha de pesquisa: {e}", 'danger')
+        return redirect(url_for('discente.importar_discente'))
+
+################ Analise feedback ###############################
+@discente_route.route('/feedback_nlp')
+def feedback_nlp():
+    file_path = os.path.join(UPLOAD_FOLDER, 'discente.csv')
+    discente = pd.read_csv(file_path, delimiter=';')
+    discente = renomear_colunas(discente)
+    comentarios = discente['comentario_programa'].dropna()
+
+    # Análise de sentimento com VADER
+    analyser = SentimentIntensityAnalyzer()
+    discente['sentimento'] = comentarios.apply(lambda x: analyser.polarity_scores(x)['compound'])
+    
+    temas_positivos = comentarios[discente['sentimento'] > 0.2]
+    temas_negativos = comentarios[discente['sentimento'] < -0.2]
+
+    return render_template('feedback_nlp.html', positivos=temas_positivos, negativos=temas_negativos)

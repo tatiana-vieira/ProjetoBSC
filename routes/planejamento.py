@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session,jsonify,send_file,make_response
-from .models import Users, Programa,CadeiaValor, PlanejamentoEstrategico,AcaoPE,Risco, PDI,Objetivo,ObjetivoPE,MetaPE,IndicadorPlan,Valorindicador,Valormeta # Certifique-se de importar seus modelos corretamente
+from .models import Users, Programa,CadeiaValor, PlanejamentoEstrategico,AcaoPE,Risco,HistoricoIndicador, PDI,Objetivo,ObjetivoPE,MetaPE,IndicadorPlan,Valorindicador,Valormeta # Certifique-se de importar seus modelos corretamente
 from routes.db import db
 from flask_bcrypt import Bcrypt
 import io
@@ -325,7 +325,6 @@ def visualizar_dados_programa():
     
     return render_template('dados_programa.html', planejamento=planejamento, objetivos=objetivospe, metas=metaspe, indicadores=indicadores, acoes=acoes, valores_metas=valores_metas)
 ###################################################################################################################################
-###########################################################################################################################
 @planejamento_route.route('/associar_indicadorespe', methods=['GET', 'POST'])
 @login_required
 def associar_indicadorespe():
@@ -341,6 +340,7 @@ def associar_indicadorespe():
                 metas_pe_associadas.extend(metas_pe)
 
         if request.method == 'POST':
+            # Dados do formulário
             meta_pe_id = request.form['meta_pe_id']
             nome_indicador = request.form['nome']
             descricao = request.form['descricao']
@@ -350,13 +350,17 @@ def associar_indicadorespe():
             data_inicio = request.form['data_inicio']
             data_fim = request.form['data_fim']
 
+            # Verificar se a meta existe
             meta_pe = MetaPE.query.get(meta_pe_id)
-            if meta_pe is None:
+            if not meta_pe:
                 flash('Meta não encontrada!', 'error')
                 return redirect(url_for('planejamento.associar_indicadorespe'))
 
-            indicador_existente = IndicadorPlan.query.filter_by(nome=nome_indicador, meta_pe_id=meta_pe_id).first()
+            # Valor meta para calcular progresso
+            valor_meta = meta_pe.valor_alvo  # Assumindo que `valor_alvo` é o campo de meta na tabela MetaPE
 
+            # Criar ou obter o indicador existente
+            indicador_existente = IndicadorPlan.query.filter_by(nome=nome_indicador, meta_pe_id=meta_pe_id).first()
             if indicador_existente:
                 indicador_id = indicador_existente.id
             else:
@@ -374,24 +378,51 @@ def associar_indicadorespe():
                 db.session.commit()
                 indicador_id = novo_indicador.id
 
-            ano = request.form.getlist('ano[]')
-            valor = request.form.getlist('valor[]')
+                # Registro inicial no histórico
+                progresso_inicial = HistoricoIndicador(
+                    indicador_pe_id=indicador_id,
+                    data=datetime.now().date(),
+                    valor_progresso=0.0  # Progresso inicial
+                )
+                db.session.add(progresso_inicial)
+                db.session.commit()
 
-            for ano, valor in zip(ano, valor):
-                try:
-                    valor_numeric = float(valor)  # Converte o valor para número
-                except ValueError:
-                    flash('Por favor, insira um valor numérico para o indicador.', 'error')
-                    return redirect(url_for('planejamento.associar_indicadorespe'))
-                
-                novo_valor = Valorindicador(indicadorpe_id=indicador_id, ano=ano, valor=valor_numeric)
-                db.session.add(novo_valor)
+            # Processar valores do indicador
+            semestres = request.form.getlist('semestres[]')
+            anos = request.form.getlist('anos[]')
+            valores = request.form.getlist('valor[]')
+
+            for semestre, ano, valor in zip(semestres, anos, valores):
+                if semestre and ano and valor:  # Certificar que os campos estão preenchidos
+                    try:
+                        semestre = int(semestre)
+                        ano = int(ano)
+                        valor_realizado = float(valor)
+
+                        # Cálculo do progresso percentual
+                        progresso_percentual = (valor_realizado / valor_meta) * 100 if valor_meta > 0 else 0
+                        
+                        # Criação do novo valor para o indicador
+                        novo_valor = Valorindicador(
+                            indicadorpe_id=indicador_id,
+                            semestre=semestre,
+                            ano=ano,
+                            valor=valor_realizado,
+                            progresso=progresso_percentual  # Armazenar o progresso
+                        )
+                        db.session.add(novo_valor)
+                    except ValueError:
+                        flash('Por favor, insira valores válidos para semestre, ano e valor.', 'error')
+                        return redirect(url_for('planejamento.associar_indicadorespe'))
 
             db.session.commit()
             flash('Indicador cadastrado com sucesso!', 'success')
             return redirect(url_for('planejamento.associar_indicadorespe'))
 
-        indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas_pe_associadas])).all()
+        # Exibir os indicadores associados
+        indicadores = IndicadorPlan.query.filter(
+            IndicadorPlan.meta_pe_id.in_([meta.id for meta in metas_pe_associadas])
+        ).all()
         return render_template('indicadorpe.html', metas_pe=metas_pe_associadas, indicadores=indicadores)
 
     else:
@@ -399,7 +430,48 @@ def associar_indicadorespe():
         return redirect(url_for('get_coordenador'))
 
 
-#############################################################################################################
+# Rota para visualizar o histórico de um indicador
+@planejamento_route.route('/visualizar_historico/<int:indicador_id>')
+@login_required
+def visualizar_historico(indicador_id):
+    indicador = IndicadorPlan.query.get_or_404(indicador_id)
+    historico = HistoricoIndicador.query.filter_by(indicador_pe_id=indicador_id).order_by(HistoricoIndicador.data).all()
+    return render_template('historico_indicador.html', indicador=indicador, historico=historico)
+
+# Rota para salvar um indicador (dados de ano, semestre, e valor)
+@planejamento_route.route('/salvar_indicador', methods=['POST'])
+def salvar_indicador():
+    anos = request.form.getlist('anos[]')
+    valores = request.form.getlist('valores[]')
+    semestres = request.form.getlist('semestres[]')
+    indicador_id = request.form.get('indicador_id')
+
+    for ano, valor, semestre in zip(anos, valores, semestres):
+        valor = valor.replace(',', '.')
+        try:
+            ano = int(ano)
+            valor = float(valor)
+            semestre = int(semestre)
+            novo_valor = Valorindicador(
+                ano=ano,
+                valor=valor,
+                semestre=semestre,
+                indicadorpe_id=indicador_id
+            )
+            db.session.add(novo_valor)
+        except ValueError:
+            flash("Erro ao converter valores. Verifique se ano, valor e semestre estão corretos.", "danger")
+
+    try:
+        db.session.commit()
+        flash("Indicador salvo com sucesso!", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro ao salvar o indicador: {str(e)}", "danger")
+
+    return redirect(url_for('planejamento.associar_indicadorespe'))
+
+# Rota para alterar um indicador existente
 @planejamento_route.route('/alterar_indicadorpe/<int:indicador_id>', methods=['GET', 'POST'])
 @login_required
 def alterar_indicadorpe(indicador_id):
@@ -412,46 +484,57 @@ def alterar_indicadorpe(indicador_id):
         frequencia_coleta = request.form.get('frequencia_coleta')
         peso = request.form.get('peso')
         responsavel = request.form.get('responsavel')
-        data_inicio = request.form.get('data_inicio')  # Novo campo
-        data_fim = request.form.get('data_fim')  # Novo campo
+        data_inicio = request.form.get('data_inicio')
+        data_fim = request.form.get('data_fim')
         semestres = request.form.getlist('semestres[]')
         anos = request.form.getlist('anos[]')
         valores = request.form.getlist('valores[]')
 
-        # Validar se os campos estão preenchidos
         if nome and descricao and frequencia_coleta and peso and responsavel:
             indicador.nome = nome
             indicador.descricao = descricao
             indicador.frequencia_coleta = frequencia_coleta
             indicador.peso = peso
             indicador.responsavel = responsavel
-            indicador.data_inicio = data_inicio  # Atualiza data de início
-            indicador.data_fim = data_fim  # Atualiza data de fim
+            indicador.data_inicio = data_inicio
+            indicador.data_fim = data_fim
 
-            # Atualizar os valores associados ao indicador
             if len(valores_indicadores) == len(semestres) == len(anos) == len(valores):
                 for i, valorindicador in enumerate(valores_indicadores):
-                    valorindicador.semestre = semestres[i]
-                    valorindicador.ano = anos[i]
-                    valorindicador.valor = valores[i]
+                    try:
+                        valorindicador.semestre = int(semestres[i])
+                        valorindicador.ano = int(anos[i])
+                        valorindicador.valor = float(valores[i])
+                    except ValueError:
+                        flash('Erro: Por favor, insira valores numéricos válidos para semestre, ano e valor.', 'error')
+                        return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
             else:
                 flash('Erro: Quantidade de valores, anos ou semestres está incorreta.', 'error')
                 return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
 
-            # Fazer o commit das mudanças no banco de dados
             try:
                 db.session.commit()
                 flash('Indicador e valores atualizados com sucesso.', 'success')
             except Exception as e:
-                db.session.rollback()  # Reverter em caso de erro
-                print(f"Erro ao salvar no banco: {str(e)}")
+                db.session.rollback()
                 flash(f'Erro ao salvar as alterações: {str(e)}', 'error')
+                return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
+
+            # Adiciona novo progresso ao histórico
+            valor_progresso = indicador.valor_meta if indicador.valor_meta is not None else 0.0
+            novo_progresso = HistoricoIndicador(
+                indicador_pe_id=indicador.id,
+                data=datetime.now().date(),
+                valor_progresso=valor_progresso
+            )
+            db.session.add(novo_progresso)
+            db.session.commit()
 
             return redirect(url_for('planejamento.associar_indicadorespe'))
         else:
             flash('Por favor, preencha todos os campos obrigatórios.', 'error')
 
-    return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)       
+    return render_template('alterar_indicadorpe.html', indicador=indicador, valores_indicadores=valores_indicadores)
 
 ##############################################################################################################################
 @planejamento_route.route('/associar_metaspe', methods=['GET', 'POST'])

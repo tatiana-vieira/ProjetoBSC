@@ -1,0 +1,56 @@
+{% extends 'basepro.html' %}
+
+{% block titulo %}
+    <h1 style="text-align: center; margin-bottom: 20px;">Resultado de Clustering</h1>
+{% endblock %}
+
+{% block conteudo %}
+<div class="card">
+    <div class="card-header" style="background-color: #054b91;">
+        <h2 style="text-align: center; color: #ffffff;">Gráfico de Clustering</h2>
+    </div>
+    <div class="card-body">
+        <div class="container my-4">
+
+            <!-- Exibir o gráfico gerado -->
+            {% if grafico %}
+                <div style="text-align: center;">
+                    <img src="data:image/png;base64,{{ grafico }}" alt="Gráfico de Clustering" class="img-fluid">
+                </div>
+            {% else %}
+                <p>Não foi possível gerar o gráfico de clustering.</p>
+            {% endif %}
+
+            <!-- Explicação do gráfico de clustering -->
+            <div class="explicacao mt-4">
+                <h3>O que significa este gráfico?</h3>
+                <p>
+                    O gráfico acima mostra o resultado de uma análise de clustering (agrupamento) dos dados coletados. 
+                    Cada ponto no gráfico representa a avaliação de um aluno, utilizando dois fatores principais: 
+                    <strong>{{ features[0] }}</strong> e <strong>{{ features[1] }}</strong>.
+                </p>
+                <p>
+                    As cores diferentes indicam os grupos (ou clusters) em que os alunos foram automaticamente agrupados 
+                    com base em suas respostas. Por exemplo:
+                </p>
+                <ul>
+                    <li><strong>Pontos da mesma cor:</strong> Indicam alunos que têm padrões semelhantes de respostas.</li>
+                    <li><strong>Eixo X:</strong> Avaliação da <strong>{{ features[0] }}</strong>.</li>
+                    <li><strong>Eixo Y:</strong> Avaliação da <strong>{{ features[1] }}</strong>.</li>
+                </ul>
+                <p>
+                    Esta análise ajuda a identificar grupos de alunos que compartilham opiniões semelhantes sobre aspectos como 
+                    a qualidade das aulas e a infraestrutura, permitindo que o programa de pós-graduação melhore áreas específicas 
+                    que podem estar insatisfatórias para certos grupos de alunos.
+                </p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Botão para voltar -->
+<div style="text-align: center; margin-top: 20px;">
+    <button type="button" onclick="window.location.href='{{ url_for('login.get_proreitor') }}'" class="btn btn-danger">Voltar</button>
+</div>
+{% endblock %}

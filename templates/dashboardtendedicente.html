@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard de Tendências</title>
+</head>
+<body>
+    <h1>Dashboard de Tendências</h1>
+    {% if grafico_tendencias %}
+        <img src="data:image/png;base64,{{ grafico_tendencias }}" alt="Gráfico de Tendências">
+    {% else %}
+        <p>Não foi possível gerar o gráfico de tendências.</p>
+    {% endif %}
+    <a href="{{ url_for('discente.importar_discente') }}">Voltar</a>
+</body>
+</html>

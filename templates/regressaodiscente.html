@@ -1,0 +1,34 @@
+{% extends 'basepro.html' %}
+
+{% block titulo %}
+<h1 style="text-align: center; margin-bottom: 20px;">Resultado de Regressão</h1>
+{% endblock %}
+
+{% block conteudo %}
+<div class="card">
+    <div class="card-header" style="background-color: #054b91;">
+        <h2 style="text-align: center; color: #ffffff;">Resultado da Análise de Regressão</h2>
+    </div>
+    <div class="card-body">
+        <div class="container my-4">
+            <!-- Exibir o resultado da análise de regressão -->
+            <h3 style="text-align: center; margin-bottom: 20px;">Resultado da Análise</h3>
+            {% if resultado %}
+                <p style="text-align: center; font-size: 18px;">{{ resultado }}</p>
+            {% else %}
+                <p style="text-align: center; color: red;">Não foi possível realizar a análise de regressão.</p>
+            {% endif %}
+
+            <!-- Botão para retornar à página de importação -->
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="{{ url_for('discente.importar_discente') }}" class="btn btn-primary">Importar Outro Arquivo</a>
+            </div>
+
+            <!-- Botão para retornar à página inicial do pró-reitor -->
+            <div style="text-align: center; margin-top: 20px;">
+                <button type="button" onclick="window.location.href='{{ url_for('login.get_proreitor') }}'" class="btn btn-danger">Voltar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

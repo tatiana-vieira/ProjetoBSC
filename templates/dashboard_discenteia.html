@@ -1,65 +1,101 @@
 {% extends 'basepro.html' %}
 
 {% block titulo %}
-    <h1 style="text-align: center; margin-bottom: 20px;">Gráficos de Autoavaliação Discentes</h1>
+    <h1 style="text-align: center; margin-bottom: 20px;">Dashboard de Autoavaliação Discentes</h1>
 {% endblock %}
 
 {% block conteudo %}
 <div class="card">
     <div class="card-header" style="background-color: #054b91;">
-      <h2 style="text-align: center; color: #ffffff;">Gráficos Gerados</h2> <!-- Texto em branco com fundo azul -->
+        <h2 style="text-align: center; color: #ffffff;">Gráficos de Autoavaliação</h2>
     </div>
     <div class="card-body">
+        <div class="container my-4">
 
-    <!-- Container para gráficos -->
-    <div class="container my-4">
-        <div class="row">
-            {% for grafico in graficos %}
-                <div class="col-md-6 mb-4">
-                    <img src="data:image/png;base64,{{ grafico }}" class="img-fluid" alt="Gráfico Gerado">
+            <!-- Gráficos Existentes -->
+            <div class="row">
+                <h3 style="text-align: center;">Gráficos Existentes</h3>
+                {% for grafico in graficos %}
+                    <div class="col-md-6 mb-4">
+                        <img src="data:image/png;base64,{{ grafico }}" class="img-fluid" alt="Gráfico Gerado">
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Gráfico Radar -->
+            {% if grafico_radar %}
+            <div class="row">
+                <h3 style="text-align: center;">Indicadores de Satisfação (Radar)</h3>
+                <div class="col-md-12 mb-4">
+                    <img src="data:image/png;base64,{{ grafico_radar }}" class="img-fluid" alt="Gráfico Radar">
                 </div>
-            {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Gráfico de Clusterização -->
+            {% if grafico_cluster %}
+            <div class="row">
+                <h3 style="text-align: center;">Clusterização de Discentes</h3>
+                <div class="col-md-12 mb-4">
+                    <img src="data:image/png;base64,{{ grafico_cluster }}" class="img-fluid" alt="Gráfico Clusterização">
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Gráfico de Análise por Linha de Pesquisa -->
+            {% if grafico_linha_pesquisa %}
+            <div class="row">
+                <h3 style="text-align: center;">Satisfação por Linha de Pesquisa</h3>
+                <div class="col-md-12 mb-4">
+                    <img src="data:image/png;base64,{{ grafico_linha_pesquisa }}" class="img-fluid" alt="Gráfico Linha de Pesquisa">
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Gráfico de Sentimentos -->
+            {% if grafico_sentimentos %}
+            <div class="row">
+                <h3 style="text-align: center;">Distribuição de Sentimentos sobre o Programa</h3>
+                <div class="col-md-12 mb-4">
+                    <img src="data:image/png;base64,{{ grafico_sentimentos }}" class="img-fluid" alt="Gráfico Sentimentos">
+                </div>
+            </div>
+            {% endif %}
+
         </div>
+
+        <!-- Botões para realizar novas análises -->
+        <div class="buttons text-center mt-5">
+            <a href="{{ url_for('discente.analisar_sentimentosdiscente') }}" class="btn btn-primary">Análise de Sentimentos</a>
+            <a href="{{ url_for('discente.executar_analise_discente', tipo='clustering') }}" class="btn btn-success">Análise Clustering</a>
+            <a href="{{ url_for('discente.exibir_recomendacoes_discente') }}" class="btn btn-danger">Recomendações por Programa</a>
+        </div>
+<!-- Resultado da Análise de Regressão (MSE) -->
+<!-- Resultado da Análise de Regressão (MSE) -->
+      <!-- Resultado da Análise de Regressão (MSE) -->
+        {% if resultado_regressao %}
+        <div class="card my-4">
+            <div class="card-header" style="background-color: #054b91; color: white;">
+                <h3 style="text-align: center;">Resultado da Análise de Regressão</h3>
+            </div>
+            <div class="card-body">
+                <p style="text-align: center; font-size: 18px;">
+                    <strong>{{ resultado_regressao }}</strong>
+                </p>
+            </div>
+        </div>
+        {% endif %}
+        <!-- Estatísticas Descritivas -->
+        <h3 style="text-align: center; margin-top: 30px;">Estatísticas Descritivas</h3>
+        <div class="table-responsive">
+            {{ estatisticas | safe }}
+        </div>
+
     </div>
+</div>
 
-    <!-- Botões para análises -->
-    <div class="buttons text-center mb-4">
-        <a href="{{ url_for('discente.analisar_sentimentosdiscente') }}" class="btn btn-primary">Analisar Sentimentos</a>
-       <!--  <a href="{{ url_for('discente.executar_analise', tipo='clustering') }}" class="btn btn-success">Análise Clustering</a>-->
-       <!-- <a href="{{ url_for('discente.executar_analise', tipo='regressao') }}" class="btn btn-info">Análise de Regressão</a>-->
-        <a href="{{ url_for('discente.exibir_recomendacoes_discente') }}" class="btn btn-danger">Recomendações por Programa</a>
-    </div>
-    
-    <!-- Estatísticas Descritivas -->
-   <!-- Estatísticas Descritivas -->
-    <h3 style="text-align: center;">Estatísticas Descritivas</h3>
-    <div class="table-responsive">
-        {{ estatisticas | safe }}
-    </div>
-
-    <!-- Legenda Explicativa -->
-    <div style="margin-top: 20px; padding: 10px; border: 1px solid #ddd; background-color: #f9f9f9;">
-        <h4>Legenda das Estatísticas Descritivas</h4>
-        <ul style="list-style-type: none; padding-left: 0;">
-            <li><strong>Count:</strong> Número total de respostas válidas para cada pergunta.</li>
-            <li><strong>Mean (Média):</strong> Representa a média das avaliações, indicando a tendência geral. Valores próximos de 4 indicam alta satisfação, enquanto valores próximos de 1 indicam insatisfação.</li>
-            <li><strong>Std (Desvio Padrão):</strong> Mede a variabilidade das respostas. Um desvio padrão alto indica respostas mais dispersas, enquanto um desvio padrão baixo indica respostas mais consistentes.</li>
-            <li><strong>Min e Max:</strong> Representam os valores mínimo e máximo das respostas, mostrando a faixa de variação das opiniões.</li>
-            <li><strong>25%, 50%, 75% (Quartis):</strong> Os quartis indicam a distribuição das respostas. O 25% é o ponto onde 25% das respostas estão abaixo desse valor, o 50% (mediana) representa o valor central, e o 75% indica que 75% das respostas estão abaixo desse valor.</li>
-        </ul>
-    </div>
-
-
-    <!-- Botão para fechar -->
-    <div style="text-align: center; margin-top: 40px;">
-        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
-    </div>   
-
-    <!-- Script para redirecionamento -->
-    <script>
-        function fechar() {
-            window.location.href = "{{ url_for('login.get_proreitor') }}";
-        }
-    </script>
+<!-- Botão para retornar à página inicial -->
+<div style="text-align: center; margin-top: 20px;">
+    <button type="button" onclick="window.location.href='{{ url_for('login.get_proreitor') }}'" class="btn btn-danger">Voltar</button>
 </div>
 {% endblock %}

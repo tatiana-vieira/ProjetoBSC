@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Análise de Feedback</title>
+</head>
+<body>
+    <h1>Análise de Sentimentos dos Comentários</h1>
+    <h2>Temas Positivos</h2>
+    <ul>
+        {% for comentario in positivos %}
+        <li>{{ comentario }}</li>
+        {% endfor %}
+    </ul>
+    
+    <h2>Temas Negativos</h2>
+    <ul>
+        {% for comentario in negativos %}
+        <li>{{ comentario }}</li>
+        {% endfor %}
+    </ul>
+    <a href="{{ url_for('discente.importar_discente') }}">Voltar</a>
+</body>
+</html>

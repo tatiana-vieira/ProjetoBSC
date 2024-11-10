@@ -8,10 +8,9 @@
 <div class="container" style="max-width: 80%; margin-top: 30px;">
   <div class="card">
     <div class="card-header" style="background-color: #054b91;">
-      <h4 style="text-align: center; color: #ffffff;">Alterar Indicador</h4> <!-- Título com fundo azul e texto branco -->
+      <h4 style="text-align: center; color: #ffffff;">Alterar Indicador</h4>
     </div>
 
-    <!-- Exibir mensagens flash -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <div class="alert-container">
@@ -77,25 +76,30 @@
         </div>
 
         <!-- Valores do Indicador -->
-        <div class="card-header" style="background-color: #054b91;">
-          <h4 style="text-align: center; color: #ffffff;">Valores do Indicador</h4> <!-- Título com fundo azul e texto branco -->
+       <!-- Valores do Indicador -->
+       <!-- Valores do Indicador -->
+      <div class="card-header" style="background-color: #054b91;">
+        <h4 style="text-align: center; color: #ffffff;">Valores do Indicador</h4>
+      </div>
+
+      {% for valorindicador in valores_indicadores %}
+      <div class="row">
+        <div class="col-md-4">
+          <label for="semestre{{ loop.index }}">Semestre:</label>
+          <input type="number" id="semestre{{ loop.index }}" name="semestres[]" value="{{ valorindicador.semestre }}" required class="form-control" min="1" max="2" autocomplete="off">
         </div>
-        {% for valorindicador in valores_indicadores %}
-        <div class="row">
-          <div class="col-md-4">
-            <label for="semestre{{ loop.index }}">Semestre:</label>
-            <input type="number" id="semestre{{ loop.index }}" name="semestres[]" value="{{ valorindicador.semestre }}" required class="form-control" autocomplete="off">
-          </div>
-          <div class="col-md-4">
-            <label for="ano{{ loop.index }}">Ano:</label>
-            <input type="number" id="ano{{ loop.index }}" name="anos[]" value="{{ valorindicador.ano }}" required class="form-control" autocomplete="off">
-          </div>
-          <div class="col-md-4">
-            <label for="valor{{ loop.index }}">Valor:</label>
-            <input type="text" id="valor{{ loop.index }}" name="valores[]" value="{{ valorindicador.valor }}" required class="form-control" autocomplete="off">
-          </div>
+        <div class="col-md-4">
+          <label for="ano{{ loop.index }}">Ano:</label>
+          <input type="number" id="ano{{ loop.index }}" name="anos[]" value="{{ valorindicador.ano }}" required class="form-control">
         </div>
-        {% endfor %}
+        <div class="col-md-4">
+          <label for="valor{{ loop.index }}">Valor:</label>
+          <input type="number" id="valor{{ loop.index }}" name="valores[]" value="{{ valorindicador.valor }}" required class="form-control" step="0.01">
+        </div>
+      </div>
+      {% endfor %}
+
+
 
         <!-- Botões -->
         <div class="form-group text-center">

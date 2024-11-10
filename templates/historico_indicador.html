@@ -1,0 +1,36 @@
+{% extends 'basecorden.html' %}
+
+{% block titulo %}
+  Histórico de Indicador - {{ indicador.nome }}
+{% endblock %}
+
+{% block conteudo %}
+<div class="container" style="max-width: 80%; margin-top: 30px;">
+  <div class="card">
+    <div class="card-header" style="background-color: #054b91;">
+      <h4 style="text-align: center; color: #ffffff;">Histórico de Progresso para {{ indicador.nome }}</h4>
+    </div>
+    <div class="card-body">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Progresso (%)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for registro in historico %}
+          <tr>
+            <td>{{ registro.data }}</td>
+            <td>{{ registro.valor_progresso }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="form-group text-center">
+        <a href="{{ url_for('planejamento.associar_indicadorespe') }}" class="btn btn-primary">Voltar</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

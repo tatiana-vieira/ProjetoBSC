@@ -400,7 +400,9 @@ class HistoricoIndicador(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     indicador_pe_id = db.Column(db.Integer, db.ForeignKey('indicador_pe.id'))
     data = db.Column(db.Date, nullable=False)
-    valor = db.Column(db.Float, nullable=False)
+    valor_progresso = db.Column(db.Float, nullable=False)
+
+
 
 class VariavelPE(db.Model):
     __tablename__ = 'variavel_pe'

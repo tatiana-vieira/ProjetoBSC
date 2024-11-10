@@ -53,6 +53,7 @@ def calcular_media_digitos(valor):
     except Exception as e:
         print(f"Erro ao calcular a média dos dígitos: {e}")
         return np.nan
+    
 
 # Função para substituir valores problemáticos e aplicar a média dos dígitos
 def limpar_e_converter_para_numeric(df, colunas):
@@ -60,6 +61,9 @@ def limpar_e_converter_para_numeric(df, colunas):
     df.replace("Sem condições de avaliar", np.nan, inplace=True)
     df.replace("Sem condiÃ§Ãµes de avaliar", np.nan, inplace=True)
     df.replace("Sem condicoes de avaliar", np.nan, inplace=True)
+    df.replace("Não se aplica", np.nan, inplace=True)
+    df.replace("Nao se aplica", np.nan, inplace=True)
+
 
 
     for col in colunas:
@@ -203,11 +207,11 @@ def renomear_colunas(egresso):
     egresso.rename(columns=colunas_existentes, inplace=True)
     return egresso
            
-
+#####################################################################333
 @avaliacaoegresso_route.route('/gerar_graficos_completos_egressos')
 def gerar_graficos_completos_egressos():
     graficos = []
-
+    recomendacoes_por_programa = {}
     # Receber o nome do arquivo da URL
     filename = request.args.get('filename')
     
@@ -361,6 +365,22 @@ def gerar_graficos_completos_egressos():
         graficos.append(base64.b64encode(img5.getvalue()).decode('utf-8'))
         plt.close(fig5)
 
+
+       # Gráfico 5: Gráfico de Sentimentos
+        if 'satisfacao_formacao' in egresso:
+            fig5, ax5 = plt.subplots(figsize=(8, 6))
+            egresso['Sentimento_Programa'] = egresso['satisfacao_formacao'].fillna('').apply(analisar_sentimento)
+            sentimentos = egresso['Sentimento_Programa'].apply(lambda x: x['compound']).dropna()
+            sns.histplot(sentimentos, kde=True, ax=ax5)
+            ax5.set_title('Distribuição de Sentimentos sobre o Programa')
+            ax5.set_xlabel('Score de Sentimento')
+            ax5.set_ylabel('Frequência')
+            img5 = io.BytesIO()
+            plt.savefig(img5, format='png')
+            img5.seek(0)
+            graficos.append(base64.b64encode(img5.getvalue()).decode('utf-8'))
+            plt.close(fig5)
+
         # Gráfico de violino para a Média de Qualidade das Aulas
         fig6, ax6 = plt.subplots(figsize=(10, 6))  # Definir o tamanho do gráfico
         sns.violinplot(y=egresso['Media_Qualidade_Aulas'], ax=ax6, color='lightgreen')
@@ -387,7 +407,16 @@ def gerar_graficos_completos_egressos():
         return redirect(url_for('avaliacaoegresso.importar_planilhaegresso'))
 
     # Retornar o template com os gráficos gerados
-    return render_template('dashboard_egresso.html', graficos=graficos)
+    return render_template(
+        'dashboard_egresso.html',
+        graficos=graficos,
+        recomendacoes_por_programa=recomendacoes_por_programa
+    )
+
+
+#####################################################################
+
+
 
 # Inicializar o analisador de sentimentos
 nltk.download('vader_lexicon')
