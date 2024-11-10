@@ -1,17 +1,27 @@
-{% block content %}
+{% extends 'basepro.html' %}
+{% block titulo %}
+
+<div style="text-align: center;">
+    <h2>Recomendações por Programa - Docentes</h2>
+</div>
+{% endblock %}
+
+
+{% block conteudo %}
 <div class="card">
     <div class="card-header" style="background-color: #054b91;">
       <h4 style="text-align: center; color: #ffffff;">Recomendações por Programa - Docentes</h4> <!-- Texto em branco com fundo azul -->
     </div>
 
-<table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
-    <thead>
-        <tr>
-            <th style="text-align: left; padding: 10px;">Programa</th>
-            <th style="text-align: left; padding: 10px;">Recomendações</th>
-        </tr>
-    </thead>
-    <tbody>
+
+    <table style="width: 80%; margin: 0 auto; border-collapse: collapse; font-family: Arial, sans-serif;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="text-align: left; padding: 10px;">Programa</th>
+                <th style="text-align: left; padding: 10px;">Recomendações</th>
+            </tr>
+        </thead>
+      <tbody>
         {% for programa, recomendacoes in recomendacoes.items() %}
         <tr>
             <td style="padding: 10px; vertical-align: top;">{{ programa }}</td>
@@ -28,18 +38,24 @@
             </td>
         </tr>
         {% endfor %}
-    </tbody>
-</table>
+     </tbody>
+   </table>
+   <!-- Botões de Voltar e Fechar -->
+   <div style="text-align: center; margin-top: 40px;">
 
-    <!-- Botões de Navegação -->
-    <div style="text-align: center; margin-top: 40px;">
-        <button onclick="window.history.back()" class="btn btn-success" style="padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px;">Voltar</button>
-        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px;">Fechar</button>
-    </div>
-    <script>
-        function fechar() {
-            window.location.href = "{{ url_for('login.get_proreitor') }}";
-        }
-       </script>
+    <!-- Botão Voltar -->
+    <a href="{{ url_for('avaliacaodocente.gerar_graficos_completos_docentes', filename='docente.csv') }}" class="btn btn-success" style="margin-right: 10px; padding: 10px 20px;">Voltar</a>
+    
+    <!-- Botão Fechar -->
+    <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px;">Fechar</button>
+
+</div>
+   <!-- Script para fechar a página -->
+<script>
+function fechar() {
+   window.location.href = "{{ url_for('login.get_proreitor') }}";
+}
+</script>
 </div>
 {% endblock %}
+

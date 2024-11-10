@@ -76,8 +76,7 @@ def allowed_file(filename):
 
 
 def renomear_colunas(coordenador):
-     # Renomear as colunas como no seu Colab
-        coordenador.rename({
+    colunas_para_renomear = {
             'Voce e coordenador(a) de qual Programa?':'programa',
             'Ha quanto tempo esta na coordenacao do programa?':'tempo_coordenacao',
             'Como voce avalia a qualidade das aulas e do material utilizado no Programa?  [Qualidade das aulas]':'Qualidade_aulas',
@@ -140,8 +139,11 @@ def renomear_colunas(coordenador):
             'O programa tem dificuldades no processo de avaliacao da Capes? Se afirmativo, gentileza descreve-las.':'dificuldades_avaliacaocapes',
             'Gostaria de adicionar algum comentario referente ao Programa de Pos-Graduacao que coordena?':'comentarios_programa',
             'Gostaria de adicionar algum comentario referente a Pro-Reitoria de Pesquisa e Pos-Graduacao?':'comentarios_PRPPG'
-        }, axis=1, inplace=True)
-        return coordenador
+          }
+     # Renomear apenas colunas existentes no DataFrame
+    colunas_existentes = {col: colunas_para_renomear[col] for col in colunas_para_renomear if col in coordenador.columns}
+    coordenador.rename(columns=colunas_existentes, inplace=True)
+    return coordenador
 
 # Função para substituir valores de 'Sim' e 'Não' por 1 e 0
 def substituir_sim_nao(valor):
@@ -179,14 +181,7 @@ def importar_planilhacoordenador():
 
     return render_template('importar_planilhacoordenador.html')
 
-# Normalizar nomes de colunas, evitando erros com valores None
-def normalize_column_names(df):
-    df.columns = [
-        unicodedata.normalize('NFKD', col).encode('ascii', 'ignore').decode('utf-8').strip().lower()
-        .replace('  ', ' ').replace(' ', '_').replace('[', '').replace(']', '')
-        for col in df.columns if col is not None
-    ]
-    return df
+
 
 # Função para calcular a média dos dígitos de uma string de números
 def calcular_media_digitos(valor):
@@ -201,7 +196,9 @@ def limpar_e_converter_para_numeric(df, colunas):
     # Substituir os valores problemáticos por 0
     df.replace("Sem condições de avaliar", 0, inplace=True)
     df.replace("Sem condiÃ§Ãµes de avaliar", 0, inplace=True)
-    df.replace({'Sim': 1, 'NÃO': 0, 'Não': 0,'Nao':0}, inplace=True)
+    df.replace("Sem condicoes de avaliar", 0, inplace=True)
+
+    df.replace({'Sim': 1,'sim':1, 'NÃO': 0, 'Não': 0,'Nao':0,'nao':0}, inplace=True)
     
     for col in colunas:
         df[col] = df[col].apply(calcular_media_digitos)  # Aplicar a função de média dos dígitos
@@ -211,9 +208,9 @@ def limpar_e_converter_para_numeric(df, colunas):
 def substituir_sim_nao(valor):
     if isinstance(valor, str):  # Verificar se é uma string
         valor = valor.strip().lower()
-        if "sim" in valor:
+        if "sim" or "Sim" in valor:
             return 1
-        elif "não" in valor or "nao" in valor:
+        elif "não" in valor or "nao" or "Nao" in valor:
             return 0
     return valor  # Retornar o valor original caso não seja 'Sim' ou 'Não'
 
@@ -435,56 +432,68 @@ def analisar_sentimento(texto):
 @avaliacaocoordenador_route.route('/analisar_sentimentos_coordenador', methods=['GET'])
 def analisar_sentimentos_coordenador():
     try:
-        # Simulação de leitura do arquivo já carregado
-        file_path = 'uploads/coordenador.csv'  # Altere para o caminho correto do arquivo
+        # Caminho para o arquivo
+        file_path = 'uploads/coordenador.csv'
         if not os.path.exists(file_path):
             flash('Arquivo não encontrado.', 'danger')
             return redirect(url_for('avaliacaocoordenador.importar_planilhacoordenador'))
 
-        coordenador = pd.read_csv(file_path, delimiter=';')        
+        # Carregar o arquivo CSV
+        coordenador = pd.read_csv(file_path, delimiter=';')
+        coordenador = renomear_colunas(coordenador)
+        coordenador = limpar_dados(coordenador)
 
-        # Exibir as colunas do arquivo CSV para depuração
-        print(f"Colunas do CSV carregado: {coordenador.columns}")
+        # Exibir todas as colunas para depuração
+        print(f"Colunas do CSV após normalização: {coordenador.columns}")
 
-        # Verificar se as colunas de comentários estão presentes antes de renomeá-las
-        if 'comentarios_programa' not in coordenador.columns or \
-           'comentarios_PRPPG' not in coordenador.columns:
-            print("Colunas de comentários não encontradas:")
+        # Verificar se as colunas de comentários estão presentes
+        if 'comentarios_programa' not in coordenador.columns or 'comentarios_PRPPG' not in coordenador.columns:
+            print("Colunas de comentários não encontradas:", coordenador.columns)
             flash('Colunas de comentários não encontradas no arquivo.', 'danger')
             return redirect(url_for('avaliacaocoordenador.importar_planilhacoordenador'))
 
-        # Renomear colunas para aplicar a análise de sentimento
+        # Renomear colunas para facilitar o uso
         coordenador.rename({
             'comentarios_programa': 'Sentimento_Programa',
             'comentarios_PRPPG': 'Sentimento_Pro_Reitoria'
         }, axis=1, inplace=True)
 
-        # Remover linhas vazias das colunas de comentários
+        # Remover linhas vazias nas colunas de comentários
         df_comentarios = coordenador[['Sentimento_Programa', 'Sentimento_Pro_Reitoria']].dropna(how='all')
 
-        if df_comentarios.empty or (df_comentarios['Sentimento_Programa'].isnull().all() and df_comentarios['Sentimento_Pro_Reitoria'].isnull().all()):
+        # Verificar se há comentários suficientes para análise
+        if df_comentarios.empty:
             flash('Nenhum comentário suficiente disponível para análise de sentimento.', 'warning')
             return redirect(url_for('avaliacaocoordenador.importar_planilhacoordenador'))
 
-        # Aplicar a função de sentimento para cada comentário
-        df_comentarios['Sent_Programa_Score'] = df_comentarios['Sentimento_Programa'].apply(lambda x: analisar_sentimento(str(x)) if pd.notna(x) else None)
-        df_comentarios['Sent_Pro_Reitoria_Score'] = df_comentarios['Sentimento_Pro_Reitoria'].apply(lambda x: analisar_sentimento(str(x)) if pd.notna(x) else None)
+        # Inicializar o analisador de sentimentos
+        sid = SentimentIntensityAnalyzer()
 
-        # Quebrar os resultados do VADER (dicionário) em colunas separadas
+        # Aplicar a análise de sentimento
+        df_comentarios['Sent_Programa_Score'] = df_comentarios['Sentimento_Programa'].apply(
+            lambda x: sid.polarity_scores(str(x)) if pd.notna(x) else None)
+        df_comentarios['Sent_Pro_Reitoria_Score'] = df_comentarios['Sentimento_Pro_Reitoria'].apply(
+            lambda x: sid.polarity_scores(str(x)) if pd.notna(x) else None)
+
+        # Extrair as pontuações do VADER em colunas separadas
         df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_Programa_Score']).add_prefix('Programa_'))
         df_comentarios = df_comentarios.join(pd.json_normalize(df_comentarios['Sent_Pro_Reitoria_Score']).add_prefix('Pro_Reitoria_'))
 
-        # Exibir a média dos sentimentos para as duas áreas
+        # Cálculo das médias dos sentimentos
         media_sentimentos_programa = df_comentarios['Programa_compound'].mean()
         media_sentimentos_prppg = df_comentarios['Pro_Reitoria_compound'].mean()
 
-        # Filtrar comentários negativos e positivos para o Programa de Pós-Graduação
+        # Contar o número de comentários positivos, negativos e neutros
         total_negativos_programa = len(df_comentarios[df_comentarios['Programa_compound'] < 0])
         total_positivos_programa = len(df_comentarios[df_comentarios['Programa_compound'] > 0])
         total_neutros_programa = len(df_comentarios[df_comentarios['Programa_compound'] == 0])
 
-        # Criar gráficos de barras para a distribuição de sentimentos
-        dados_sentimentos = {'Negativos': total_negativos_programa, 'Positivos': total_positivos_programa, 'Neutros': total_neutros_programa}
+        # Criar gráfico de barras para a distribuição dos sentimentos
+        dados_sentimentos = {
+            'Negativos': total_negativos_programa,
+            'Positivos': total_positivos_programa,
+            'Neutros': total_neutros_programa
+        }
         fig, ax = plt.subplots(figsize=(8, 6))
         ax.bar(dados_sentimentos.keys(), dados_sentimentos.values(), color=['red', 'green', 'gray'])
         ax.set_title('Distribuição de Sentimentos sobre o Programa de Pós-Graduação')
@@ -497,15 +506,18 @@ def analisar_sentimentos_coordenador():
         img.seek(0)
         plt.close(fig)
 
-        # Codificar a imagem em base64 para renderizar no HTML
+        # Codificar o gráfico em base64
         grafico_sentimentos = base64.b64encode(img.getvalue()).decode('utf-8')
 
         return render_template('sentimentocoordenador.html', grafico_sentimentos=grafico_sentimentos,
-                               media_programa=media_sentimentos_programa, media_prppg=media_sentimentos_prppg)
+                               media_programa=media_sentimentos_programa,
+                               media_prppg=media_sentimentos_prppg)
 
     except Exception as e:
+        print(f"Erro ao processar os sentimentos: {e}")
         flash(f"Erro ao processar os sentimentos: {e}", 'danger')
         return redirect(url_for('avaliacaocoordenador.importar_planilhacoordenador'))
+
 
 def normalize_column_names(df):
     df.columns = [
@@ -533,7 +545,10 @@ def visualizar_resultados():
             flash('Arquivo não encontrado.', 'danger')
             return redirect(url_for('avaliacaocoordenador.importar_planilhacoordenador'))
 
+         # Carregar o arquivo CSV
         coordenador = pd.read_csv(file_path, delimiter=';')
+        coordenador = renomear_colunas(coordenador)
+        coordenador = limpar_dados(coordenador)
 
         # Verificar se os dados têm distribuição suficiente para treinamento
         print(coordenador.describe())  # Verificar estatísticas gerais para cada coluna
@@ -582,80 +597,19 @@ def visualizar_resultados():
 @avaliacaocoordenador_route.route('/analisar_dados_ia', methods=['GET'])
 def analisar_dados_ia():
     try:
-        # Simulação de leitura do arquivo já carregado
-        file_path = 'uploads/coordenador.csv'
+        # Caminho para o arquivo
+        file_path = 'uploads/egresso.csv'
         if not os.path.exists(file_path):
             flash('Arquivo não encontrado.', 'danger')
             return redirect(url_for('avaliacaocoordenador.importar_planilhacoordenador'))
 
-        # Carregar os dados do CSV
+        # Carregar o arquivo CSV
         coordenador = pd.read_csv(file_path, delimiter=';')
+        coordenador = renomear_colunas(coordenador)
+        coordenador = limpar_dados(coordenador)
 
-        coordenador.rename({
-       
-            'Voce e coordenador(a) de qual Programa?':'programa',
-            'Ha quanto tempo esta na coordenacao do programa?':'tempo_coordenacao',
-            'Como voce avalia a qualidade das aulas e do material utilizado no Programa?  [Qualidade das aulas]':'Qualidade_aulas',
-            'Como voce avalia a qualidade das aulas e do material utilizado no Programa?  [Material didatico utilizado nas disciplinas]':'Material_didatico',
-            'Como voce avalia a qualidade das aulas e do material utilizado no Programa?  [Acervo disponivel para consulta]':'Acervo_disponivel',
-            'Como voce avalia a  infraestrutura do programa? [Infraestrutura geral]':'Infraestrutura_geral',
-            'Como voce avalia a  infraestrutura do programa? [Laboratarios de pesquisa/Salas de estudo]':'Laboratorios_pesquisa',
-            'Como voce avalia a  infraestrutura do programa? [Insumos para pesquisa]':'Insumos_pesquisa',
-            'Como voce avalia o relacionamento entre voce e: [os discentes]':'Relacionamento_discentes',
-            'Como voce avalia o relacionamento entre voce e: [os docentes]':'Relacionamento_docentes',
-            'Como voce avalia o relacionamento entre voce e: [a secretaria do programa]':'Relacionamento_secretaria',
-            'Como voce avalia a gestao do programa? [Processo de gestao/Administrativo do Programa]':'processo_gestao_administrativa',
-            'Como voce avalia a gestao do programa? [Organizacao do Programa]':'organizaçao_programa',
-            'Como voce avalia seu papel enquanto coordenador(a)':'papel_coordenador',
-            'Como voce avalia o seu conhecimento acerca do/das: [Regimento Interno do Programa]':'regimento_interno',
-            'Como voce avalia o seu conhecimento acerca do/das: [Regimento Geral da Pos-Graduacao]':'regimento_geral',
-            'Como voce avalia o seu conhecimento acerca do/das: [normas Capes]':'normas_capes',
-            'Como voce avalia o seu conhecimento acerca do/das: [processo de avaliacao da Capes]':'avaliacao_capes',
-            'Em relacao a  TEMaTICA dos PROJETOS DE PESQUISA desenvolvidos pelo programa, voce esta:':'tematica_projetos_pesquisa',
-            'Em relacao ao TEMPO DE EXECUcao dos PROJETOS DE PESQUISA desenvolvidos pelo programa, voce esta:':'execucao_projetos_pesquisa',
-            'Em relacao ao RESULTADOS ALCANcADOS pelos PROJETOS DE PESQUISA desenvolvidos pelo programa, voce esta:':'resultado_projeto_pesquisa',
-            'Em relacao a  PRODUcao CIENTiFICA do Programa, voce esta:':'producao_cientifica',
-            'Voce acredita que os projetos de pesquisa em andamento no Programa possuem relevancia e pertinencia social?':'projeto_relevancia_social',
-            'Voce acredita que os projetos de pesquisa em andamento no Programa possuem relevancia e pertinencia economica?':'projeto_relevancia_economica',
-            'Voce acredita que os projetos de pesquisa em andamento no Programa possuem relevancia e pertinencia ambiental?':'projeto_relevancia_ambiental',
-            'Voce acredita que os projetos de pesquisa em andamento no Programa promovem o avanÃ§o cientifico?':'projeto_avanco_cientifico',
-            'O seu Programa possui visao, missao e objetivos claros?':'visao-missao-objetivos',
-            'Voce acredita que os projetos de pesquisa em andamento estao alinhados com a visao, missao e objetivos de seu Programa?':'projetos_visao_missao_objetivos',
-            'O programa discute seu planejamento estrategico entre os docentes, tecnicos, discentes e egressos do programa?':'planejamento_estrategico',
-            'Quais sao os principais atores que podem ser impactados pelas pesquisas em andamento no Programa e pelas producoes cientificas deles decorrentes? (Marque todas que se aplicam).':'atores_impactados',
-            'Voce possui iniciativas de captacao de recurso externo para o Programa (exceto bolsa)?':'captacao de recurso sem ser bolsa',
-            'Na sua opiniao, o que e preciso para que o seu Programa tenha producao de conhecimento cientifico e tecnologico qualificado, reconhecido pela comunidade cientifica internacional da area?':'producao_internacional',
-            'Producao de inovacao tecnologica e uma prioridade em seu programa de pos-graduacao?':'producao_inovacao_tecnologica',
-            'Dentre as linhas de pesquisa do programa, ha alguma que se destaca na producao de inovacao tecnologica? Se sim, gentileza especificar qual ou quais?':'linhaspesquisa_inovacaotecnologica',
-            'Com que frequencia sÃ£o depositadas patentes pelo programa?':'frequencia_patentes',
-            'O programa ja criou outros produtos registrados como desenhos industriais, marca, indicacao geografica ou topografia de circuitos integrados, softwares e aplicativos, cultivar, etc?':'produtos_programas',
-            'Qual a quantidade de patentes depositadas entre 2018, 2019 e 2020?':'quantidade_patentes',
-            'Producao de tecnologias de APLICAcao SOCIAL e uma prioridade em seu programa de pos-graduacao?':'producao_aplicacao_social',
-            'Ha alguma linha de pesquisa com o objetivo de produzir tecnologia de APLICAcao SOCIAL? Se sim, qual ou quais?':'linhaspesquisa_aplicacaosocial',
-            'Alguma tecnologia de APLICAcao SOCIAL foi criada nos ultimos anos pelo programa?':'tecnologia_aplicacaosocial',
-            'Algum discente ou egresso do programa participou da criacao de empresa ou organizacao social inovadora?':'criacao_empresa',
-            'O Programa possui disciplinas que orientam os discentes em relacao a criacao de empresas ou organizacoes sociais de base tecnologica e inovadora?':'disciplinas_criacaoempresa',
-            'O programa possui relacao com empresas, outros centros de pesquisa ou com o Centev?':'relacao_empresas',
-            'O programa organizou eventos voltados para a COMUNIDADE nos ultimos tres anos?':'eventos_comunidade',
-            'O programa organizou eventos CIENTiFICOS nos ultimos tres anos?':'eventos_tresanos',
-            'O programa organizou eventos TECNOLoGICOS nos ultimos tres anos?':'eventos_tecnologicos',
-            'Os projetos de pesquisa desenvolvidos no Programa poderao gerar solucoes para os problemas que a sociedade enfrenta ou vira a enfrentar?':'solucoes_sociedade',
-            'Quais os principais impactos sociais a serem promovidos pelos projetos de pesquisa em andamento no Programa? (Marque todas aplicaveis)':'impactossociais_projeto',
-            'No momento, ha interesse por parte do seu Programa de Pos-Graduacao em iniciar um processo de Internacionalizacao?':'interesse_internacionalizacao',
-            'Seu programa esta preparado para a internacionalizacao?':'preparado_internacionalizacao',
-            'Os DOCENTES do seu Programa de Pos-Graduacao estao preparados para a internacionalizacao?':'docentes_internacionalizacao',
-            'Os DISCENTES do seu Programa de Pos-Graduacao estao preparados para a internacionalizacao?':'discentes_internacionalizacao',
-            'Quantas disciplinas em lingua inglesa sao oferecidas em seu Programa?':'disciplinas_ingles',
-            'O Programa possui projetos de pesquisa em parceria com instituicoes internacionais de pesquisa ou ensino?':'projetos_parceriainternacional',
-            'O programa mantem algum tipo de contato com seus egressos?':'contato_egressos',
-            'Se afirmativo, quais as praticas de acompanhamento de egressos efetuadas pelo Programa e qual o canal de comunicacao utilizado?':'comunicacao_egressos',
-            'Quais informacoes consideram importantes sobre os egressos?':'informacoes_egressos',
-            'O programa acredita ser necessario um sistema institucional de acompanhamento de egressos? Por que?':'necessario acompanhamento_egresso',
-            'Quais indicadores de desempenho considera importante para auxiliar o Programa no processo de avaliacao quadrienal?':'indicadores_importantes',
-            'O programa tem dificuldades no processo de avaliacao da Capes? Se afirmativo, gentileza descreve-las.':'dificuldades_avaliacaocapes',
-            'Gostaria de adicionar algum comentario referente ao Programa de Pos-Graduacao que coordena?':'comentarios_programa',
-            'Gostaria de adicionar algum comentario referente a Pro-Reitoria de Pesquisa e Pos-Graduacao?':'comentario_PRPPG'
-        }, axis=1, inplace=True)
+        # Exibir todas as colunas para depuração
+        print(f"Colunas do CSV após normalização: {coordenador.columns}")
 
         # 1. Garantir que todas as colunas são numéricas
         colunas_qualidade = ['Qualidade_aulas', 'Material_didatico', 'Acervo_disponivel']
@@ -761,13 +715,16 @@ def gerar_grafico_base64(fig):
 # Certifique-se de que o arquivo CSV foi carregado corretamente
 @avaliacaocoordenador_route.route('/avaliacao_coordenador')
 def avaliacao_coordenador():
-    file_path = 'uploads/coordenador.csv'  # Certifique-se de que o caminho está correto
-    
+     # Caminho para o arquivo
+    file_path = 'uploads/egresso.csv'
     if not os.path.exists(file_path):
-        flash('Arquivo não encontrado.', 'danger')
-        return redirect(url_for('index'))  # Redireciona para a rota apropriada
+            flash('Arquivo não encontrado.', 'danger')
+            return redirect(url_for('avaliacaocoordenador.importar_planilhacoordenador'))
 
-    coordenador = pd.read_csv(file_path, delimiter=';')  # Carregar o arquivo CSV
+        # Carregar o arquivo CSV
+    coordenador = pd.read_csv(file_path, delimiter=';')
+    coordenador = renomear_colunas(coordenador)
+    coordenador = limpar_dados(coordenador)
 
     # Processar os dados agora que o CSV está carregado
     coordenador['Qualidade_aulas'] = pd.to_numeric(coordenador['Qualidade_aulas'], errors='coerce')

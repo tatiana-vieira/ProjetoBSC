@@ -137,9 +137,9 @@ def substituir_sim_nao(valor):
     if pd.isna(valor):
         return np.nan
     valor = valor.strip().lower()
-    if "sim" in valor:
+    if "sim" or "Sim" in valor:
         return 1
-    elif "não" in valor or "nao" in valor:
+    elif "não" in valor or "nao" or "Nao" in valor:
         return 0
     return valor
 
@@ -198,7 +198,7 @@ def limpar_e_converter_para_numeric(df, colunas):
     df.replace("Sem condiÃ§Ãµes de avaliar", 0, inplace=True)
     df.replace("Sem condicoes de avaliar", 0, inplace=True)
 
-    df.replace({'Sim': 1, 'NÃO': 0, 'Não': 0, 'nao': 0}, inplace=True)
+    df.replace({'Sim': 1, 'NÃO': 0, 'Não': 0, 'nao': 0, 'Nao':0,'sim':1}, inplace=True)
     
     for col in colunas:
         df[col] = df[col].apply(calcular_media_digitos)  # Aplicar a função de média dos dígitos
@@ -295,7 +295,7 @@ def gerar_graficos_completos_secretaria():
         if 'Media_Programa' in secretaria.columns:
             fig5, ax5 = plt.subplots(figsize=(10, 6))
             sns.violinplot(y=secretaria['Media_Programa'], ax=ax5, color='lightgreen')
-            ax5.set_title('Distribuição da Média de Qualidade do Programa', fontsize=16)
+            ax5.set_title('Distribuição da Média de Infraestrutura Programa', fontsize=16)
             ax5.set_ylabel('Média de Avaliação', fontsize=14)
 
             # Adicionar anotação com a média
@@ -404,8 +404,11 @@ def executar_analise():
         recomendacoes_por_programa=recomendacoes_por_programa,  # Passa o dicionário vazio se não houver dados
         estatisticas=estatisticas_html
     )
-
-
+def converter_para_numerico(df, colunas):
+    for coluna in colunas:
+        if coluna in df.columns:
+            df[coluna] = pd.to_numeric(df[coluna], errors='coerce')
+    return df
 
 @avaliacaosecretaria_route.route('/visualizar_resultados', methods=['GET'])
 def visualizar_resultados():
@@ -414,7 +417,7 @@ def visualizar_resultados():
         file_path = 'uploads/secretaria.csv'
         if not os.path.exists(file_path):
             flash('Arquivo não encontrado.', 'danger')
-            return redirect(url_for('secretaria.importar_iplanilhasecretaria'))
+            return redirect(url_for('secretaria.importar_planilhasecretaria'))
 
         discentecurso = pd.read_csv(file_path, delimiter=';')
 
@@ -530,10 +533,11 @@ def aplicar_analise_sentimentos(secretaria):
     return grafico_sentimentos
 
 ################################################################################################
-@avaliacaosecretaria_route.route('/analisar_dados_ia', methods=['GET'])
-def analisar_dados_ia():
+
+@avaliacaosecretaria_route.route('/analisar_dados_ia_secretaria', methods=['GET'])
+def analisar_dados_ia_secretaria():
     try:
-        # Simulação de leitura do arquivo já carregado
+        # Carregar o arquivo CSV
         file_path = 'uploads/secretaria.csv'
         if not os.path.exists(file_path):
             flash('Arquivo não encontrado.', 'danger')
@@ -541,122 +545,44 @@ def analisar_dados_ia():
 
         # Carregar os dados do CSV
         secretaria = pd.read_csv(file_path, delimiter=';')
+        secretaria = renomear_colunas(secretaria)
 
-        # Renomear as colunas como no seu Colab
-        secretaria.rename({
-            'A qual programa esta vinculado(a)?':'programa',
-            'Ha quanto tempo voce e secretario(a) do programa?':'tempo_programa',
-            'Como voce avalia a infraestrutura da secretaria do programa': 'infraestrutura_programa',
-            'Existem praticas de acompanhamento dos discentes regularmente matriculados no programa?':'acompanhamento_discentes',
-            'Em caso afirmativo, quais sao essas praticas?':'praticas_discentes',
-            'Existem praticas de acompanhamento dos egressos do programa?':'acompanhamento_egresso',
-            'Em caso afirmativo, quais sao essas praticas?':'pratica_egresso',
-            'Como sao armazenadas essas informacoes?':'armazenadas',
-            'O programa faz alguma analise das informacoes coletadas?':'analise_informacoes',
-            'O programa faz levantamento de dados dos egressos apenas para preenchimento da plataforma sucupira?':'levantamento_egresso_apenas_capes',
-            'O programa tem o habito de encaminhar mensagens ou mantem algum contato periodico com os egressos?':'contato_mensagem_egressos',
-            'Em caso afirmativo, com que frequencia?':'frequencia_egresso',
-            'Que tipo de informacoes sao encaminhadas?':'informacaoes_encaminhadas_egresso',
-            'e comum os egressos contactarem o programa para buscar informacoes sobre concursos e/ou empregos?':'egressos_contato_emprego',
-            'Voce acha necessario um sistema de acompanhamento de egressos?':'sistema_acompanhamento_egressos',
-            'Quais questoes considera importantes a serem abordadas sobre o acompanhamento dos egressos?':'consideracoes_egressos',
-            'Fique a vontade para dar sugestoes sobre o que considera importante no acompanhamento de egressos?':'sugestoes'
+        # Certificar-se de que a coluna infraestrutura_programa existe
+        if 'infraestrutura_programa' not in secretaria.columns:
+            flash("A coluna 'infraestrutura_programa' não foi encontrada.", 'danger')
+            return redirect(url_for('avaliacaosecretaria.importar_planilhasecretaria'))
 
-        }, axis=1, inplace=True)
+        # Transformar variáveis categóricas em dummies
+        X = secretaria.drop(['infraestrutura_programa'], axis=1, errors='ignore')
+        y = secretaria['infraestrutura_programa']
+        X = pd.get_dummies(X, drop_first=True)
+        
+        # Dividir os dados em treino e teste
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+        # Treinar modelo GradientBoosting
+        gb_model = GradientBoostingRegressor(random_state=42)
+        gb_model.fit(X_train, y_train)
+        y_pred_gb = gb_model.predict(X_test)
+        mse_gb = mean_squared_error(y_test, y_pred_gb)
 
-        # 1. Garantir que todas as colunas são numéricas
-        colunas_programa = ['tempo_programa', 'infraestrutura_programa']
-        colunas_acompanhamento = ['acompanhamento_discentes', 'praticas_discentes', 'pratica_egresso',
-                                'analise_informacoes']
-        colunas_egressos = ['levantamento_egresso_apenas_capes','contato_mensagem_egressos', 'sistema_acompanhamento_egressos','consideracoes_egressos','sugestoes']
-    
-  
+        # Análise de Sentimentos
+        grafico_sentimentos_ingresso = aplicar_analise_sentimentos(secretaria) if 'sugestoes' in secretaria.columns else None
+        media_programa = y.mean()
 
-       # Converter as colunas para numéricas
-        def converter_para_numerico(df, colunas):
-            for coluna in colunas:
-                df[coluna] = pd.to_numeric(df[coluna], errors='coerce')
-            return df
-
-        secretaria = converter_para_numerico(secretaria, colunas_programa + colunas_acompanhamento + colunas_egressos)
-
-        # Agrupar os dados por programa
-        agrupado_por_programa = secretaria.groupby('programa')
-
-        # Variáveis para armazenar as recomendações por programa
-        recomendacoes_por_programa = {}
-
-        for programa, dados_programa in agrupado_por_programa:
-            if len(dados_programa) < 2:
-                continue  # Pular grupos com poucos dados para evitar erro no treino/teste
-
-            # 2. Criar as médias por grupo de avaliação
-            media_qualidade = dados_programa['tempo_programa_numerics'].mean()
-            media_infraestrutura = dados_programa['Infraestrutura geral'].mean()
-
-            # Verificar sentimentos nos comentários (se disponíveis)
-            df_comentarios = dados_programa[['sugestoes']].dropna()
-            media_sentimentos_programa = None  # valor padrão se não houver comentários
-
-            if not df_comentarios.empty:
-                df_comentarios['Sentimento_Programa_Score'] = df_comentarios['sugestoes'].apply(lambda x: analisar_sentimento(str(x))['compound'])
-                media_sentimentos_programa = df_comentarios['Sentimento_Programa_Score'].mean()
-
-            # 3. RandomForest e XGBoost para prever a qualidade das aulas
-            X = dados_programa.drop(['tempo_programa_numerics'], axis=1)  # Variáveis independentes
-            y = dados_programa['tempo_programa_numerics']  # Variável dependente
-
-            # Transformar variáveis categóricas em dummies
-            X = pd.get_dummies(X, drop_first=True)
-
-            # Substituir caracteres especiais nos nomes das colunas
-            X.columns = X.columns.str.replace(r'[\[\]<]', '', regex=True)
-
-            # Dividir o conjunto de dados em treino e teste, se houver dados suficientes
-            if len(X) < 2:
-                mse_rf = None
-                mse_xgb = None
-            else:
-                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-                # Treinar o modelo RandomForest
-                 # Treinar o modelo RandomForest
-                rf_model = RandomForestRegressor(random_state=42)
-                rf_model.fit(X_train, y_train)
-                y_pred_rf = rf_model.predict(X_test)
-                mse_rf = mean_squared_error(y_test, y_pred_rf)
-
-                # Substituir XGBRegressor por GradientBoostingRegressor
-                gb_model = GradientBoostingRegressor(random_state=42)
-                gb_model.fit(X_train, y_train)
-                y_pred_gb = gb_model.predict(X_test)
-                mse_gb = mean_squared_error(y_test, y_pred_gb)
-
-            # 4. Gerar recomendações com base nos resultados
-            recomendacoes = []
-            if mse_rf is not None and mse_rf > 1.0:
-                recomendacoes.append(f"Aprimorar os métodos de ensino e avaliação para melhorar a qualidade das aulas no programa {programa}.")
-
-            if media_sentimentos_programa is not None and media_sentimentos_programa < 0.0:
-                recomendacoes.append(f"Investir em ações de melhoria na satisfação dos alunos no programa {programa}.")
-            
-            recomendacoes.append(f"Aumentar os esforços de internacionalização no programa {programa} com base nos baixos índices de proficiência em inglês.")
-            
-            # Adicionar as recomendações ao dicionário por programa
-            recomendacoes_por_programa[programa] = {
-                'mse_rf': mse_rf,
-                'mse_xgb': mse_xgb,
-                'media_sentimentos_programa': media_sentimentos_programa,
-                'recomendacoes': recomendacoes
-            }
-
-        # Renderizar o template com as recomendações por programa
-        return render_template('recomendacaosecretaria.html', recomendacoes_por_programa=recomendacoes_por_programa)
-
+        return render_template(
+            'resultadoanalisesecretaria.html',
+            mse_otimizado=mse_gb,
+            grafico_sentimentos_ingresso=grafico_sentimentos_ingresso,
+            media_programa=media_programa,
+            recomendacoes_por_programa={}  # Aqui você pode adicionar recomendações por programa
+        )
     except Exception as e:
         flash(f"Erro ao processar os dados: {e}", 'danger')
         return redirect(url_for('avaliacaosecretaria.importar_planilhasecretaria'))
-    
+
+
+
 ####################################################################################################3333333
 @avaliacaosecretaria_route.route('/exibir_recomendacoes_programasecretaria', methods=['GET'])
 def exibir_recomendacoes_programasecretaria():
@@ -769,16 +695,29 @@ def aplicar_clustering(secretaria, num_clusters=3):
 
 # Função para análise de regressão
 def regressao(secretaria):
-    X = secretaria[['tempo_programa_numeric', 'infraestrutura_programa']].dropna()
-    y = secretaria['tempo_programa_numeric'].dropna()
-    
+   # Treinamento do modelo de regressão (Exemplo usando GradientBoosting)
+    X = secretaria.drop(['infraestrutura_programa'], axis=1, errors='ignore')
+    y = secretaria['infraestrutura_programa']
+
+    # Transformar variáveis categóricas em dummies
+    X = pd.get_dummies(X, drop_first=True)
+
+    # Dividir o conjunto de dados em treino e teste
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    model = RandomForestRegressor(random_state=42)
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-    
-    mse = mean_squared_error(y_test, y_pred)
-    return mse
+
+    # Treinar o modelo GradientBoostingRegressor
+    gb_model = GradientBoostingRegressor(random_state=42)
+    gb_model.fit(X_train, y_train)
+    y_pred_gb = gb_model.predict(X_test)
+    mse_gb = mean_squared_error(y_test, y_pred_gb)
+
+    # Exibir resultados
+    return render_template(
+        'resultadoanalisesecretaria.html',
+        mse_otimizado=mse_gb,
+        media_programa=y.mean()
+    )
+
 
 
 def analisar_sentimento(texto):

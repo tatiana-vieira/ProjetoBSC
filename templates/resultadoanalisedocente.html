@@ -1,0 +1,77 @@
+{% extends 'basepro.html' %}
+
+{% block titulo %}
+<h1 style="text-align: center; margin-bottom: 20px;">Resultados da Análise Docentes</h1>
+{% endblock %}
+
+{% block conteudo %}
+<div class="card">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 style="text-align: center; color: #ffffff;">Resultados da Análise Docentes</h4>
+    </div>
+    <div class="card-body">
+        <!-- Exibir Média de Sentimentos -->
+        <h2 style="text-align: center;""> Resultados da Análise de Sentimentos</h2>
+        <p style="text-align: center;">Média de Sentimentos Programa: {{ media_programa | default('N/A') }}</p>
+        
+        <!-- Verificar se o gráfico está disponível antes de exibi-lo -->
+       <!-- Verificar se o gráfico está disponível antes de exibi-lo -->
+        {% if grafico_sentimentos_ingresso %}
+        <div style="text-align: center; margin: 20px 0;">
+            <img src="data:image/png;base64,{{ grafico_sentimentos_ingresso }}" alt="Gráfico de Sentimentos por Ingresso" style="max-width: 80%; height: auto; display: block; margin: 0 auto;">
+        </div>
+        {% else %}
+        <p style="text-align: center;">Gráfico não disponível</p>
+        {% endif %}
+
+
+        <!-- Resultados do Modelo Otimizado -->
+        <h2 style="text-align: center;"> Resultados do Modelo Otimizado</h2>
+        <p style="text-align: center;">MSE após otimização: {{ mse_otimizado | default('N/A') }}</p>
+
+        <!-- Tabela de Recomendações por Programa -->
+        <h2 style="text-align: center;">Recomendações por Programa</h2>
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Programa</th>
+                    <th>MSE RandomForest</th>
+                    <th>MSE GradientBoosting</th>
+                    <th>Média Sentimentos</th>
+                    <th>Recomendações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for programa, dados in recomendacoes_por_programa.items() %}
+                <tr>
+                    <td>{{ programa }}</td>
+                    <td>{{ dados.get('mse_rf', 'N/A') | round(6) if dados.get('mse_rf') is not none else 'N/A' }}</td>
+                    <td>{{ dados.get('mse_gb', 'N/A') | round(6) if dados.get('mse_gb') is not none else 'N/A' }}</td>
+                    <td>{{ dados.get('media_sentimentos_programa', 'N/A') | round(6) if dados.get('media_sentimentos_programa') is not none else 'N/A' }}</td>
+                    <td>
+                        <ul>
+                            {% if dados.get('recomendacoes') %}
+                                {% for recomendacao in dados.get('recomendacoes', []) %}
+                                <li>{{ recomendacao }}</li>
+                                {% endfor %}
+                            {% else %}
+                                <li>Sem recomendações</li>
+                            {% endif %}
+                        </ul>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div style="text-align: center; margin-top: 40px;">
+        <button onclick="window.history.back()" class="btn btn-success" style="padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px;">Voltar</button>
+        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px;">Fechar</button>
+    </div>
+    <script>
+        function fechar() {
+            window.location.href = "{{ url_for('login.get_proreitor') }}";
+        }
+    </script>
+</div>
+{% endblock %}

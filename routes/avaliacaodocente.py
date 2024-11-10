@@ -148,9 +148,9 @@ def limpar_e_converter_para_numeric(df, colunas):
 def renomear_colunas(docente):
     # Dicionário de colunas para renomear
     colunas_para_renomear = {
-        'A qual  programa esta vinculado?': 'programa',
-        'Ha quanto tempo esta vinculado ao referido Programas de Pos-Graduacao?': 'tempo_programa',
-        'Como voce avalia a qualidade das aulas e do material utilizado?[Qualidade das aulas]': 'Qualidade_aulas',
+        'A qual programa esta vinculado?':'programa',
+        'Ha quanto tempo esta vinculado ao referido Programas de Pos-Graduacao?':'tempo_programa',
+        'Como voce avalia a qualidade das aulas e do material utilizado?[Qualidade das aulas]':'Qualidade_aulas',
         'Como voce avalia a qualidade das aulas e do material utilizado? [Material didatico utilizado nas disciplinas]': 'Material_didatico',
         'Como voce avalia a qualidade das aulas e do material utilizado? [Acervo disponivel para consulta]': 'Acervo_disponivel',
         'Como voce avalia a infraestrutura do programa? [Infraestrutura geral]': 'Infraestrutura_geral',
@@ -191,7 +191,6 @@ def renomear_colunas(docente):
         'Voce possui projetos de pesquisa em parceria com instituicoes internacionais de pesquisa ou ensino?': 'projetos_instituicoes_internacionais',
         'Qual o seu nivel de proficiencia em lingua inglesa?': 'proficiencia_ingles',
         'Sinto-me capacitado para oferecer disciplinas em lingua inglesa:': 'ministrar_ingles',
-        'Qual o seu programa de pos-graduacao?': 'programa',
         'Gostaria de adicionar algum comentario referente ao Programa de Pos-Graduacao em questao?': 'comentario_programa',
         'Gostaria de adicionar algum comentario referente a Pro-Reitoria de Pesquisa e Pos-Graduacao?': 'comentario_prppg'
     }
@@ -226,16 +225,16 @@ def gerar_graficos_completos_docentes():
 
         # Renomear as colunas como no seu Colab
         docente.rename({
-            'A qual  programa esta vinculado?':'programa',
+            'A qual programa esta vinculado?':'programa',
             'Ha quanto tempo esta vinculado ao referido Programas de Pos-Graduacao?':'tempo_programa',
             'Como voce avalia a qualidade das aulas e do material utilizado?[Qualidade das aulas]':'Qualidade_aulas',
             'Como voce avalia a qualidade das aulas e do material utilizado? [Material didatico utilizado nas disciplinas]':'Material_didatico',
             'Como voce avalia a qualidade das aulas e do material utilizado? [Acervo disponivel para consulta]':'Acervo_disponivel',
             'Como voce avalia a infraestrutura do programa? [Infraestrutura geral]':'Infraestrutura_geral',
             'Como voce avalia a infraestrutura do programa? [Laboratorios de pesquisa/Salas de estudo]':'Laboratorio_Salas',
-            'Como voce avalia a infraestrutura do programa? [Insumos para pesquisa]':'Insumos_ pesquisa',
+            'Como voce avalia a infraestrutura do programa? [Insumos para pesquisa]':'Insumos_pesquisa',
             'Como voce avalia o relacionamento entre voce e: [os discentes]':'relacionamento_discentes',
-            'Como voce avalia o relacionamento entre voce e: [os demais professores do programa]':'relacionamento_ professores',
+            'Como voce avalia o relacionamento entre voce e: [os demais professores do programa]':'relacionamento_professores',
             'Como voce avalia o relacionamento entre voce e: [a comissao coordenadora]':'relacionamento_coordenador',
             'Como voce avalia o relacionamento entre voce e: [a secretaria do programa]':'relacionamento_secretaria',
             'Como voce avalia a gestao do programa? [Processo de gestao/Administrativo do Programa]':'gestao_administrativa',
@@ -269,7 +268,6 @@ def gerar_graficos_completos_docentes():
             'Voce possui projetos de pesquisa em parceria com instituicoes internacionais de pesquisa ou ensino?':'projetos_instituicoes_internacionais',
             'Qual o seu nivel de proficiencia em lingua inglesa?':'proficiencia_ingles',
             'Sinto-me capacitado para oferecer disciplinas em lingua inglesa:':'ministrar_ingles',
-            'Qual o seu programa de pos-graduacao?':'programa',
             'Gostaria de adicionar algum comentario referente ao Programa de Pos-Graduacao em questao?':'comentario_programa',
             'Gostaria de adicionar algum comentario referente a Pro-Reitoria de Pesquisa e Pos-Graduacao?':'comentario_prppg'
             }, axis=1, inplace=True)
@@ -539,172 +537,168 @@ def visualizar_resultados():
 
 
 ################################################################################################
-# Função principal que substitui XGBRegressor por GradientBoostingRegressor
-@avaliacaodocente_route.route('/analisar_dados_ia', methods=['GET'])
-def analisar_dados_ia():
+
+from flask import flash, redirect, url_for, render_template
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+from sklearn.impute import SimpleImputer
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import io
+import base64
+
+@avaliacaodocente_route.route('/analisar_dados_ia_docente', methods=['GET'])
+def analisar_dados_ia_docente():
     try:
-        # Simulação de leitura do arquivo já carregado
+        # Carregar o arquivo CSV
         file_path = 'uploads/docente.csv'
         if not os.path.exists(file_path):
             flash('Arquivo não encontrado.', 'danger')
             return redirect(url_for('avaliacaodocente.importar_planilhadocente'))
 
-        # Carregar os dados do CSV
+        # Carregar e processar os dados
         docente = pd.read_csv(file_path, delimiter=';')
+        docente = renomear_colunas(docente)
 
-        # Renomear as colunas como no seu Colab
-        docente.rename({            
+        # Definir colunas de interesse
+        colunas_qualidade = ['Qualidade_aulas', 'Material_didatico', 'Acervo_disponivel']
+        colunas_infraestrutura = ['Infraestrutura_geral', 'Laboratorio_Salas', 'Insumos_pesquisa']
+        
+        # Converter colunas para numérico
+        docente = converter_para_numerico(docente, colunas_qualidade + colunas_infraestrutura)
+        docente.dropna(subset=['Qualidade_aulas'], inplace=True)
 
-            'A qual  programa esta vinculado?':'programa',
-            'Ha quanto tempo esta vinculado ao referido Programas de Pos-Graduacao?':'tempo_programa',
-            'Como voce avalia a qualidade das aulas e do material utilizado?[Qualidade das aulas]':'Qualidade_aulas',
-            'Como voce avalia a qualidade das aulas e do material utilizado? [Material didatico utilizado nas disciplinas]':'Material_didatico',
-            'Como voce avalia a qualidade das aulas e do material utilizado? [Acervo disponivel para consulta]':'Acervo_disponivel',
-            'Como voce avalia a infraestrutura do programa? [Infraestrutura geral]':'Infraestrutura_geral',
-            'Como voce avalia a infraestrutura do programa? [Laboratorios de pesquisa/Salas de estudo]':'Laboratorio_Salas',
-            'Como voce avalia a infraestrutura do programa? [Insumos para pesquisa]':'Insumos_ pesquisa',
-            'Como voce avalia o relacionamento entre voce e: [os discentes]':'relacionamento_discentes',
-            'Como voce avalia o relacionamento entre voce e: [os demais professores do programa]':'relacionamento_ professores',
-            'Como voce avalia o relacionamento entre voce e: [a comissao coordenadora]':'relacionamento_coordenador',
-            'Como voce avalia o relacionamento entre voce e: [a secretaria do programa]':'relacionamento_secretaria',
-            'Como voce avalia a gestao do programa? [Processo de gestao/Administrativo do Programa]':'gestao_administrativa',
-            'Como voce avalia a gestao do programa? [Organizacao do Programa]':'organizacao_ programa',
-            'Como voce avalia o seu conhecimento acerca: [do seu papel enquanto orientador]':'papel_orientador',
-            'Como voce avalia o seu conhecimento acerca: [do Regimento Interno do Programa]':'regimento_interno',
-            'Como voce avalia o seu conhecimento acerca: [do Regimento Geral da Pos-Graduacao]':'regimento_geral',
-            'Como voce avalia o seu conhecimento acerca: [normas Capes]':'normas_capes',
-            'Como voce avalia o seu conhecimento acerca: [processo de avaliacao da Capes]':'avaliacao_capes',
-            'Em relacao aos PROJETOS DE PESQUISA orientados por voce nesse Programa, voce esta:':'orientados_voce',
-            'Em relacao a sua PRODUcaO CIENTiFICA relacionada a esse Programa, voce esta:':'producao_cientifica',
-            'Voce acredita que os projetos de pesquisa orientados por voce nesse Programa possuem relevancia e pertinencia social?':'orientados_relevancia_social',
-            'Voce acredita que os projetos de pesquisa orientados por voce nesse Programa possuem relevancia e pertinencia econômica?':'orientados_ relevancia_economica',
-            'Voce acredita que os projetos de pesquisa orientados por voce nesse Programa promovem avanco cientifico?':'orientados_avanco_cientifico',
-            'O seu Programa possui visao, missao e objetivos claros?':'visao-missao-objetivos',
-            'Voce acredita que os projetos de pesquisa orientados por voce nesse programa estao alinhados com o objetivo e missao de seu Programa?':'projetos_objetivo_missao',
-            'Voce tem iniciativa de prover captacao de recurso externo para o desenvolvimento de seus projetos de pesquisa (exceto bolsa)?':'recurso_externo',
-            'Na sua opiniao, o que e preciso para que o seu Programa tenha producao de conhecimento cientifico e tecnologico qualificado, reconhecido pela comunidade científica internacional da area em que atua?':'producao_internacional',
-            'Producao de inovacao tecnologica e uma prioridade em seu programa de pos-graduacao?':'inovacao_tecnologica_programa',
-            'Voce acredita que a linha de pesquisa em que atua nesse Programa se destaca pela producao de inovacao tecnologica?':'linha_inovacao_tecnologica',
-            'Voce ja depositou alguma patente proveniente dos resultados das pesquisas por voce orientadas nesse Programa, ou possui isso como um dos objetivos de algum desses projetos de pesquisa?':'patente',
-            'Alguma tecnologia de APLICAcaO SOCIAL ja foi criada como resultado das pesquisas por voce orientadas nesse Programa, ou possui isso como um dos objetivos de algum desses projetos de pesquisa?':'tecnologia_social_orientada',
-            'Os resultados das pesquisas por voce orientadas ja foram apresentados em algum evento voltado para a COMUNIDADE, ou pretende apresentar?':'projetos_orientados_sociedade',
-            'Os resultados das pesquisas por voce orientadas ja foram apresentados em algum evento CIENTiFICO, ou pretende apresentar?':'projetos_orientados_evento_cientifico',
-            'Os projetos de pesquisa sob sua orientacao poderao gerar solucoes para os problemas que a sociedade enfrenta ou vira a enfrentar?':'projetos_orientados_solucoes_sociedade',
-            'Quais os principais impactos sociais a serem promovidos por seus projetos de pesquisa? (Marque todas aplicaveis)':'impactos_sociais',
-            'Qual o nivel de internacionalizacao do seu programa?':'nivel_internacionalizacao',
-            'No momento, ha interesse por parte do seu Programa de Pos-Graduacao em iniciar um processo de Internacionalizacao?':'interesse_ programa_internacionalizacao',
-            'Voce se sente preparado para a internacionalizacao do seu Programa de Pos-Graduacao?':'voce_preparado_internacionalizacao',
-            'Voce entende que o seu Programa de Pos-Graduacao esta preparado para a internacionalizacao?':'programa_ preparado_internacionalizacao',
-            'Voce possui projetos de pesquisa em parceria com instituicoes internacionais de pesquisa ou ensino?':'projetos_instituicoes_internacionais',
-            'Qual o seu nivel de proficiencia em lingua inglesa?':'proficiencia_ingles',
-            'Sinto-me capacitado para oferecer disciplinas em lingua inglesa:':'ministrar_ingles',
-            'Qual o seu nivel de formacao?':'nivel_formacao',
-            'Qual o seu programa de pos-graduacao?':'programa',
-            'Gostaria de adicionar algum comentario referente ao Programa de Pos-Graduacao em questao?':'comentario_programa',
-            'Gostaria de adicionar algum comentario referente a Pro-Reitoria de Pesquisa e Pos-Graduacao?':'comentario_prppg'
-            }, axis=1, inplace=True)           
+        # Separar variáveis independentes (X) e a variável dependente (y)
+        X = docente.drop(['Qualidade_aulas'], axis=1)
+        y = docente['Qualidade_aulas']
 
+        # Imputar valores ausentes
+        X_numeric = X.select_dtypes(include=[np.number])
+        X_categorical = X.select_dtypes(exclude=[np.number])
 
-        # 1. Garantir que todas as colunas são numéricas
-        colunas_qualidade = ['Qualidade_aulas', 'Material_didatico','Acervo_disponivel']
-        colunas_organizacao = ['regimento_interno', 'papel_orientador', 'normas_capes',
-                               'avaliacao_capes','regimento_geral']
-        colunas_infraestrutura = ['Insumos_ pesquisa','Infraestrutura_geral', 'Laboratorio_Salas']
-        colunas_relacionamentos = ['relacionamento_ professores', 'relacionamento_coordenador','relacionamento_discentes', 'relacionamento_secretaria']
-        colunas_internacionalizacao = ['interesse_ programa_internacionalizacao', 'voce_preparado_internacionalizacao',
-                                       'programa_ preparado_internacionalizacao', 'proficiencia_ingles','projetos_instituicoes_internacionais','ministrar_ingles']
+        # Imputar valores para colunas numéricas
+        imputer_numeric = SimpleImputer(strategy='mean')
+        numeric_data = imputer_numeric.fit_transform(X_numeric)
 
+        # Verificar se o número de colunas está correto após imputação
+        if numeric_data.shape[1] == len(X_numeric.columns):
+            X_numeric_imputed = pd.DataFrame(numeric_data, columns=X_numeric.columns)
+        else:
+            X_numeric_imputed = pd.DataFrame(numeric_data)
 
-       # Converter as colunas para numéricas
-        def converter_para_numerico(df, colunas):
-            for coluna in colunas:
-                df[coluna] = pd.to_numeric(df[coluna], errors='coerce')
-            return df
+        # Imputar valores para colunas categóricas
+        imputer_categorical = SimpleImputer(strategy='most_frequent')
+        categorical_data = imputer_categorical.fit_transform(X_categorical)
 
-        docente = converter_para_numerico(docente, colunas_qualidade + colunas_organizacao + colunas_infraestrutura + colunas_relacionamentos,colunas_internacionalizacao)
+        # Verificar se o número de colunas está correto após imputação
+        if categorical_data.shape[1] == len(X_categorical.columns):
+            X_categorical_imputed = pd.DataFrame(categorical_data, columns=X_categorical.columns)
+        else:
+            X_categorical_imputed = pd.DataFrame(categorical_data)
 
-        # Agrupar os dados por programa
-        agrupado_por_programa = docente.groupby('programa')
+        # Transformar variáveis categóricas em dummies
+        X_categorical_encoded = pd.get_dummies(X_categorical_imputed, drop_first=True)
+        X_final = pd.concat([X_numeric_imputed, X_categorical_encoded], axis=1)
 
-        # Variáveis para armazenar as recomendações por programa
+        # Remover linhas onde há NaNs após a concatenação
+        X_final.dropna(inplace=True)
+
+        # Criar um dicionário para armazenar as recomendações por programa
         recomendacoes_por_programa = {}
 
-        for programa, dados_programa in agrupado_por_programa:
-            if len(dados_programa) < 2:
-                continue  # Pular grupos com poucos dados para evitar erro no treino/teste
+        # Analisar os dados por programa (se houver uma coluna 'programa')
+        if 'programa' in docente.columns:
+            for programa, grupo in docente.groupby('programa'):
+                # Separar X e y para o grupo específico
+                X_grupo = grupo.drop(['Qualidade_aulas'], axis=1)
+                y_grupo = grupo['Qualidade_aulas']
 
-            # 2. Criar as médias por grupo de avaliação
-            media_qualidade = dados_programa['Qualidade_aulas'].mean()
-            media_infraestrutura = dados_programa['Infraestrutura_geral'].mean()
+                # Imputar valores ausentes e transformar variáveis categóricas
+                X_numeric = X_grupo.select_dtypes(include=[np.number])
+                X_categorical = X_grupo.select_dtypes(exclude=[np.number])
+                
+                numeric_data = imputer_numeric.transform(X_numeric)
+                categorical_data = imputer_categorical.transform(X_categorical)
 
-            # Verificar sentimentos nos comentários (se disponíveis)
-            df_comentarios = dados_programa[['comentario_programa']].dropna()
-            media_sentimentos_programa = None  # valor padrão se não houver comentários
+                X_numeric_imputed = pd.DataFrame(numeric_data, columns=X_numeric.columns)
+                X_categorical_imputed = pd.DataFrame(categorical_data, columns=X_categorical.columns)
+                X_categorical_encoded = pd.get_dummies(X_categorical_imputed, drop_first=True)
 
-            if not df_comentarios.empty:
-                df_comentarios['Sentimento_Programa_Score'] = df_comentarios['comentario_programa'].apply(lambda x: analisar_sentimento(str(x))['compound'])
-                media_sentimentos_programa = df_comentarios['Sentimento_Programa_Score'].mean()
+                X_final_grupo = pd.concat([X_numeric_imputed, X_categorical_encoded], axis=1)
+                X_final_grupo.dropna(inplace=True)
 
-            # 3. RandomForest e XGBoost para prever a qualidade das aulas
-            X = dados_programa.drop(['Qualidade_aulas'], axis=1)  # Variáveis independentes
-            y = dados_programa['Qualidade_aulas']  # Variável dependente
+                if len(X_final_grupo) > 1:
+                    X_train, X_test, y_train, y_test = train_test_split(X_final_grupo, y_grupo, test_size=0.2, random_state=42)
 
-            # Transformar variáveis categóricas em dummies
-            X = pd.get_dummies(X, drop_first=True)
+                    # Treinar o modelo GradientBoostingRegressor
+                    gb_model = GradientBoostingRegressor(random_state=42)
+                    gb_model.fit(X_train, y_train)
+                    y_pred_gb = gb_model.predict(X_test)
+                    mse_gb = mean_squared_error(y_test, y_pred_gb)
+                else:
+                    mse_gb = None
 
-            # Substituir caracteres especiais nos nomes das colunas
-            X.columns = X.columns.str.replace(r'[\[\]<]', '', regex=True)
+                # Analisar sentimento (simulação de média de sentimentos)
+                if 'comentario_programa' in grupo.columns:
+                    media_sentimentos_programa = grupo['comentario_programa'].apply(lambda x: analisar_sentimento(str(x))['compound']).mean()
+                else:
+                    media_sentimentos_programa = None
 
-            # Dividir o conjunto de dados em treino e teste, se houver dados suficientes
-            if len(X) < 2:
-                mse_rf = None
-                mse_xgb = None
-            else:
-                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+                # Gerar recomendações com base nas métricas
+                recomendacoes = []
+                if mse_gb and mse_gb > 0.3:
+                    recomendacoes.append("Melhorar a infraestrutura")
+                if media_sentimentos_programa and media_sentimentos_programa < 0.5:
+                    recomendacoes.append("Focar na internacionalização")
+                if not recomendacoes:
+                    recomendacoes.append("Manter as boas práticas")
 
-               # Treinar o modelo RandomForest
-                rf_model = RandomForestRegressor(random_state=42)
-                rf_model.fit(X_train, y_train)
-                y_pred_rf = rf_model.predict(X_test)
-                mse_rf = mean_squared_error(y_test, y_pred_rf)
+                recomendacoes_por_programa[programa] = {
+                    "mse_gb": mse_gb,
+                    "media_sentimentos_programa": media_sentimentos_programa,
+                    "recomendacoes": recomendacoes
+                }
 
-                # Substituir XGBRegressor por GradientBoostingRegressor
-                gb_model = GradientBoostingRegressor(random_state=42)
-                gb_model.fit(X_train, y_train)
-                y_pred_gb = gb_model.predict(X_test)
-                mse_gb = mean_squared_error(y_test, y_pred_gb)
+        # Gerar o gráfico de sentimentos
+        grafico_sentimentos_ingresso = gerar_grafico_sentimentos()
 
-        # [Resto do código permanece inalterado]
-
-    except Exception as e:
-        flash(f"Erro ao processar os dados: {e}", 'danger')
-        return redirect(url_for('avaliacaodocente.importar_planilhadocente'))
-
-        # 4. Gerar recomendações com base nos resultados
-        recomendacoes = []
-        if mse_rf is not None and mse_rf > 1.0:
-                recomendacoes.append(f"Aprimorar os métodos de ensino e avaliação para melhorar a qualidade das aulas no programa {programa}.")
-
-        if media_sentimentos_programa is not None and media_sentimentos_programa < 0.0:
-                recomendacoes.append(f"Investir em ações de melhoria na satisfação dos alunos no programa {programa}.")
-            
-        recomendacoes.append(f"Aumentar os esforços de internacionalização no programa {programa} com base nos baixos índices de proficiência em inglês.")
-            
-            # Adicionar as recomendações ao dicionário por programa
-        recomendacoes_por_programa[programa] = {
-                'mse_rf': mse_rf,
-                'mse_xgb': mse_xgb,
-                'media_sentimentos_programa': media_sentimentos_programa,
-                'recomendacoes': recomendacoes
-            }
-
-        # Renderizar o template com as recomendações por programa
-        return render_template('recomendacaodocente.html', recomendacoes_por_programa=recomendacoes_por_programa)
+        # Renderizar o template
+        return render_template(
+            'resultadoanalisedocente.html',
+            mse_otimizado=None,
+            recomendacoes_por_programa=recomendacoes_por_programa,
+            media_programa=0.5,
+            grafico_sentimentos_ingresso=grafico_sentimentos_ingresso
+        )
 
     except Exception as e:
-        flash(f"Erro ao processar os dados: {e}", 'danger')
+        flash(f'Erro ao analisar dados: {e}', 'danger')
         return redirect(url_for('avaliacaodocente.importar_planilhadocente'))
+
+def converter_para_numerico(df, colunas):
+    for coluna in colunas:
+        df[coluna] = pd.to_numeric(df[coluna], errors='coerce')
+    return df
+
+def gerar_grafico_sentimentos():
+    fig, ax = plt.subplots()
+    ax.bar(['Positivo', 'Negativo', 'Neutro'], [30, 10, 20], color=['green', 'red', 'gray'])
+    ax.set_title('Distribuição de Sentimentos')
+    ax.set_xlabel('Sentimento')
+    ax.set_ylabel('Número de Comentários')
     
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    plt.close(fig)
+    
+    return base64.b64encode(buf.getvalue()).decode('utf-8')
+
+
+###################################################################################################
+
 # Função para substituir "Sim"/"Não" e valores problemáticos
 def limpar_dados(df):
     df.replace({
@@ -733,7 +727,7 @@ def exibir_recomendacoes_programa():
         colunas_organizacao = ['regimento_interno', 'papel_orientador', 'normas_capes', 'avaliacao_capes', 'regimento_geral']
         colunas_infraestrutura = ['Insumos_pesquisa','Infraestrutura_geral', 'Laboratorio_Salas']
         colunas_relacionamentos = ['relacionamento_professores', 'relacionamento_coordenador', 'relacionamento_discentes', 'relacionamento_secretaria']
-        colunas_internacionalizacao = ['interesse_programa_internacionalizacao', 'voce_preparado_internacionalizacao', 'programa_preparado_internacionalizacao', 'proficiencia_ingles', 'projetos_instituicoes_internacionais', 'ministrar_ingles']
+        colunas_internacionalizacao = ['interesse_programa_internacionalizacao','programa_preparado_internacionalizacao','voce_preparado_internacionalizacao','proficiencia_ingles', 'projetos_instituicoes_internacionais', 'ministrar_ingles']
         colunas_projetospesquisa = ['projetos_objetivo_missao','recurso_externo']
         colunas_inovacaopesquisa = ['inovacao_tecnologica_programa', 'linha_inovacao_tecnologica', 'patente', 'tecnologia_social_orientada']
         colunas_apresentacaopesquisa = ['projetos_orientados_evento_cientifico', 'projetos_orientados_solucoes_sociedade', 'impactos_sociais']

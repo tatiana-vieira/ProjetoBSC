@@ -7,7 +7,7 @@
 {% block conteudo %}
 <div class="card">
     <div class="card-header" style="background-color: #054b91;">
-        <h4 style="text-align: center; color: #ffffff;">Gráficos Gerados</h4> <!-- Texto em branco com fundo azul -->
+        <h4 style="text-align: center; color: #ffffff;">Autoavaliação Docentes</h4> <!-- Texto em branco com fundo azul -->
     </div>
     <div class="card-body">
         <!-- Container para gráficos -->
@@ -32,7 +32,7 @@
             </form>
 
             <!-- Botão para gerar Análise Estratégica com IA -->
-            <a href="{{ url_for('avaliacaodocente.analisar_dados_ia') }}" class="btn btn-primary" style="padding: 10px 20px; border-radius: 4px; margin-left: 20px;">Gerar Análise Estratégica com IA</a>
+            <a href="{{ url_for('avaliacaodocente.analisar_dados_ia_docente') }}" class="btn btn-primary" style="padding: 10px 20px; border-radius: 4px; margin-left: 20px;">Gerar Análise Estratégica com IA</a>
 
             <!-- Botão para Recomendações por Programa -->
             <a href="{{ url_for('avaliacaodocente.exibir_recomendacoes_programa') }}" class="btn btn-danger" style="padding: 10px 20px; border-radius: 4px; margin-left: 20px;">Recomendações por Programa</a>
