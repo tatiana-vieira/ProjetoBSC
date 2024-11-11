@@ -26,7 +26,7 @@
                 <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de Metas" style="max-width: 80%; height: auto;">
             </div>
             <div class="d-flex justify-content-center mt-3">
-                <a href="{{ url_for('relatoriometas.gerar_pdf', planejamento_selecionado=planejamento_selecionado.id) }}" class="btn btn-warning me-2" style="padding: 10px 20px;">Exportar PDF</a>
+                <a href="{{ url_for('relatoriometas.gerar_pdf', planejamento_selecionado=planejamento_selecionado.id) }}" class="btn btn-warning me-2" style="padding: 10px 20px;">Gerar PDF</a>
                 <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px;">Fechar</button>
             </div>
         {% endif %}

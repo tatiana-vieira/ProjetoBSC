@@ -91,11 +91,11 @@
         {% if planejamento_selecionado %}
             <form action="{{ url_for('relatorioindicador.export_xlsx') }}" method="GET" style="display: inline;">
                 <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
-                <button type="submit" class="btn btn-success">Exportar Planilha</button>
+                <button type="submit" class="btn btn-success">Gerar Planilha</button>
             </form>
             <form action="{{ url_for('relatorioindicador.export_pdf') }}" method="GET" style="display: inline;">
                 <input type="hidden" name="planejamento_selecionado" value="{{ planejamento_selecionado.id }}">
-                <button type="submit" class="btn btn-secondary">Exportar PDF</button>
+                <button type="submit" class="btn btn-secondary">Gerar PDF</button>
             </form>
         {% endif %}
         <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>

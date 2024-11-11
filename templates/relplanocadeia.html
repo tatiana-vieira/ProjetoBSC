@@ -71,8 +71,8 @@
 </div>
 
 <div class="text-center mt-4">
-<a id="gerar-pdf" href="{{ url_for('relatorioplanejamento.gerarrel_pdf', planejamento_id=planejamento_selecionado.id) }}" class="btn btn-success">Download PDF</a>
-<a id="gerar-excel" href="{{ url_for('relatorioplanejamento.gerarrel_excel', planejamento_id=planejamento_selecionado.id) }}" class="btn btn-success ms-2">Download Excel</a>
+<a id="gerar-pdf" href="{{ url_for('relatorioplanejamento.gerarrel_pdf', planejamento_id=planejamento_selecionado.id) }}" class="btn btn-primary mt-2">Gerar PDF</a>
+<a id="gerar-excel" href="{{ url_for('relatorioplanejamento.gerarrel_excel', planejamento_id=planejamento_selecionado.id) }}" class="btn btn-success ms-2">Gerar Planilha</a>
 
 </div>
 {% endif %}

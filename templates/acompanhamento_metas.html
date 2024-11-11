@@ -101,11 +101,11 @@
 {% if metas %}
 <!-- Botões de ação -->
 <div class="text-center mt-4">
-    <a href="{{ url_for('planejamento.gerar_pdf_metas', planejamento_id=request.form.planejamento_id) }}" class="btn btn-success" style="padding: 10px 20px;">
-        Exportar PDF
+    <a href="{{ url_for('planejamento.gerar_pdf_metas', planejamento_id=request.form.planejamento_id) }}" class="btn btn-primary ms-2" style="padding: 10px 20px;">
+        Gerar PDF
     </a>
     <a href="{{ url_for('relatoriometas.export_csv_metas', planejamento_selecionado=request.form.planejamento_id) }}" class="btn btn-success ms-2" style="padding: 10px 20px;">
-        Exportar Planilha
+        Gerar Planilha
     </a>
     <button type="button" onclick="fechar()" class="btn btn-danger ms-2" style="padding: 10px 20px;">
         Fechar

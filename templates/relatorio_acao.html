@@ -24,7 +24,7 @@
 
                 {% if planejamento_selecionado %}
                     <button type="button" onclick="window.location.href='{{ url_for('relatoriocompleto.export_pdf_acao', planejamento_selecionado=planejamento_selecionado.id) }}'" class="btn btn-primary ml-2">Gerar PDF</button>
-                    <button type="button" onclick="window.location.href='{{ url_for('relatorioacao.export_csv_acoes', planejamento_selecionado=planejamento_selecionado.id) }}'" class="btn btn-success ml-2">Exportar Planilha</button>
+                    <button type="button" onclick="window.location.href='{{ url_for('relatorioacao.export_csv_acoes', planejamento_selecionado=planejamento_selecionado.id) }}'" class="btn btn-success ml-2">Gerar Planilha</button>
                 {% endif %}
             </form>
 
