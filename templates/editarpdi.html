@@ -1,22 +1,25 @@
 {% extends 'base.html' %}
 
 {% block titulo %}
-    Lista de PDIs - PRPPG
+    <div class="container text-center mt-4">
+        <h1>Lista de PDIs - PRPPG</h1>
+    </div>
 {% endblock %}
 
 {% block conteudo %}
 <div class="container" style="max-width: 80%; margin-top: 30px;">
-    <div class="card">
+    <div class="card shadow-sm mb-4">
         <div class="card-header" style="background-color: #054b91;">
-            <h4 style="text-align: center; color: #ffffff;">PLANO DE DESENVOLVIMENTO INSTITUCIONAL</h4> <!-- Título com fundo azul e texto branco -->
+            <h4 class="text-center text-white">Plano de Desenvolvimento Institucional</h4>
         </div>
     </div>
 
+    <!-- Estilos personalizados -->
     <style>
         table {
             width: 90%;
             border-collapse: collapse;
-            margin: auto; /* Centraliza a tabela */
+            margin: auto;
         }
         th, td {
             padding: 10px;
@@ -28,7 +31,7 @@
             color: #003366;
         }
         tr:nth-child(even) {
-            background-color: #f2f2f2;
+            background-color: #f9f9f9;
         }
         tr:nth-child(odd) {
             background-color: #ffffff;
@@ -50,8 +53,20 @@
         .button-container button.cancel {
             background-color: #f44336;
         }
+        .btn-green {
+            background-color: #0a531b;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .btn-green:hover {
+            background-color: #218838;
+        }
     </style>
    
+    <!-- Tabela de PDIs -->
     <table>
         <thead>
             <tr>
@@ -68,18 +83,21 @@
                 <td>{{ pdi.datainicio }}</td>
                 <td>{{ pdi.datafim }}</td>
                 <td>
-                    <a href="{{ url_for('editar_pdi', pdi_id=pdi.id) }}" style="color: blue; text-decoration: none;">Editar</a>
+                    <!-- Botão de Editar em verde -->
+                    <a href="{{ url_for('editar_pdi', pdi_id=pdi.id) }}" class="btn-green">Editar</a>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     
+    <!-- Botões de Ação -->
     <div class="button-container">
-        <a href="{{ url_for('cadastro_pdi') }}">Cadastrar Novo PDI</a>
-        <button type="button" onclick="cancelar()" class="cancel">Cancelar</button>
+        <a href="{{ url_for('cadastro_pdi') }}" class="btn btn-primary">Cadastrar Novo</a>
+        <button type="button" onclick="cancelar()" class="btn btn-danger cancel">Cancelar</button>
     </div>
     
+    <!-- Script para cancelar -->
     <script>
         function cancelar() {
             window.location.href = "{{ url_for('login.get_proreitor') }}";

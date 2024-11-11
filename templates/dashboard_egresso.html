@@ -1,46 +1,57 @@
 {% extends 'basepro.html' %}
 
 {% block titulo %}
-    <h1 style="text-align: center; margin-bottom: 20px;">Gráficos de Autoavaliação Egressos</h1>
+<div class="container mt-4 text-center">
+    <h1 class="display-4">Gráficos de Autoavaliação Egressos</h1>
+</div>
 {% endblock %}
 
 {% block conteudo %}
-<div class="card">
-    <div class="card-header" style="background-color: #054b91;">
-        <h4 style="text-align: center; color: #ffffff;">Gráficos Gerados</h4> <!-- Texto em branco com fundo azul -->
-    </div>
-    <div class="card-body">
-    
-    <!-- Exibir mensagens de flash -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="alert alert-info">
-                <ul>
-                    {% for category, message in messages %}
-                        <li class="{{ category }}">{{ message }}</li>
-                    {% endfor %}
-                </ul>
+<div class="container mt-5">
+    <div class="card shadow-sm mb-5">
+        <div class="card-header bg-primary text-white text-center">
+            <h4>Gráficos Gerados</h4>
+        </div>
+        <div class="card-body">
+            
+            <!-- Exibir mensagens de flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="alert alert-info">
+                        <ul>
+                            {% for category, message in messages %}
+                                <li class="{{ category }}">{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Container para os gráficos em duas colunas -->
+            <div class="row">
+                {% for grafico in graficos %}
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm">
+                        <img src="data:image/png;base64,{{ grafico }}" class="card-img-top img-fluid" alt="Gráfico" />
+                    </div>
+                </div>
+                {% endfor %}
             </div>
-        {% endif %}
-    {% endwith %}
 
-    <!-- Container para gráficos -->
-    {% for grafico in graficos %}
-        <img src="data:image/png;base64,{{ grafico }}" class="img-fluid" />
-    {% endfor %}
+            <!-- Botões de Ação -->
+            <div class="text-center mt-5">
+                <!-- Botão Fechar -->
+                <button type="button" onclick="fechar()" class="btn btn-danger mx-3" style="padding: 10px 20px;">Fechar</button>
 
-    <!-- Botões de Ação -->
-    <div style="text-align: center; margin-top: 40px;">
-        <!-- Botão Fechar -->
-        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
-        
-        <!-- Formulário para Análise de Sentimentos -->
-        <form action="{{ url_for('avaliacaoegresso.analisar_sentimentos_egresso') }}" method="get" style="display: inline-block; margin-left: 20px;">
-            <button type="submit" class="btn btn-primary" style="padding: 10px 20px; border-radius: 4px;">Analisar Sentimentos</button>
-        </form>
+                <!-- Formulário para Análise de Sentimentos -->
+                <form action="{{ url_for('avaliacaoegresso.analisar_sentimentos_egresso') }}" method="get" style="display: inline-block; margin-left: 20px;">
+                    <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Analisar Sentimentos</button>
+                </form>
 
-        <!-- Botão para Recomendações por Programa -->
-        <a href="{{ url_for('avaliacaoegresso.exibir_recomendacoes_egresso') }}" class="btn btn-primary" style="padding: 10px 20px; border-radius: 4px; margin-left: 20px;">Recomendações por Programa</a>
+                <!-- Botão para Recomendações por Programa -->
+                <a href="{{ url_for('avaliacaoegresso.exibir_recomendacoes_egresso') }}" class="btn btn-primary mx-3" style="padding: 10px 20px;">Recomendações por Programa</a>
+            </div>
+        </div>
     </div>
 </div>
 

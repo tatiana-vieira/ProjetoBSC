@@ -1,18 +1,22 @@
 {% extends 'base.html' %}
 
 {% block titulo %}
-    Relatório de Progresso do PDI
+<div class="container text-center mt-4">
+    <h2>Relatório de Progresso do PDI</h2>
+</div>
 {% endblock %}
 
 {% block conteudo %}
 <div class="container" style="max-width: 80%; margin-top: 30px;">
     <div class="card">
         <div class="card-header" style="background-color: #054b91;">
-            <h4 style="text-align: center; color: #ffffff;">Relatório de Progresso do PDI</h4> <!-- Título com fundo azul e texto branco -->
+            <h4 style="text-align: center; color: #ffffff;">Relatório de Progresso do PDI</h4>
         </div>
         <div class="card-body">
+            
+            <!-- Tabela com cabeçalho em azul -->
             <table class="table table-striped table-bordered table-hover" style="margin-top: 20px;">
-                <thead class="table-dark">
+                <thead style="background-color: #054b91; color: white;">
                     <tr>
                         <th>Objetivo</th>
                         <th>Meta</th>
@@ -35,6 +39,8 @@
                     {% endfor %}
                 </tbody>
             </table>
+
+            <!-- Botões de Ação -->
             <div class="text-center mt-4">
                 <a href="{{ url_for('gerar_relatorio_pdi_pdf') }}" class="btn btn-primary">Gerar PDF</a>
                 <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
@@ -43,6 +49,7 @@
     </div>
 </div>
 
+<!-- Script para fechar a página -->
 <script>
     function fechar() {
         window.location.href = "{{ url_for('login.get_proreitor') }}";

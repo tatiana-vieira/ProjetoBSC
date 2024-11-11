@@ -1,35 +1,60 @@
 {% extends 'basecorden.html' %}
 
 {% block titulo %}
-    <div style="text-align: center;">
-        <h1>Análise de Sentimentos</h1>
-    </div>
+<div class="container mt-4 text-center">
+    <h1 class="display-4">Análise de Sentimentos</h1>
+</div>
 {% endblock %}
 
 {% block conteudo %}
-
-<body style="text-align: center;">
-    <h2>Média dos Sentimentos sobre o Programa: {{ media_programa }}</h2>
-    <h2>Média dos Sentimentos sobre a Pró-Reitoria: {{ media_prppg }}</h2>
-
-    <h3>Gráfico de Sentimentos</h3>
-    <img src="data:image/png;base64,{{ grafico_sentimentos }}" alt="Gráfico de Sentimentos" style="display: block; margin-left: auto; margin-right: auto;"/>
-
-    <!-- Botão de Voltar -->
-    <div style="text-align: center; margin-top: 40px;">
-        <!-- Botão Voltar -->
-        <a href="{{ url_for('avaliacaocoordenador.gerar_graficos_completos_coordenador', filename='coordenador.csv') }}" class="btn btn-primary" style="margin-right: 10px; padding: 10px 20px;">Voltar</a>
-        
-        <!-- Botão Fechar -->
-        <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
-
+<div class="container text-center mt-5">
+    <!-- Exibição das Médias -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card p-3 shadow-sm">
+                <h3>Média dos Sentimentos sobre o Programa</h3>
+                <p class="lead font-weight-bold">{{ media_programa | round(2) }}</p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card p-3 shadow-sm">
+                <h3>Média dos Sentimentos sobre a Pró-Reitoria</h3>
+                <p class="lead font-weight-bold">{{ media_prppg | round(2) }}</p>
+            </div>
+        </div>
     </div>
-       <!-- Script para fechar a página -->
-   <script>
-    function fechar() {
-       window.location.href = "{{ url_for('login.get_proreitor') }}";
-    }
-  </script>
-</body>
 
+    <!-- Gráfico de Sentimentos -->
+    <div class="card p-4 shadow-sm mb-5">
+        <h3>Gráfico de Sentimentos</h3>
+        <img src="data:image/png;base64,{{ grafico_sentimentos }}" 
+             alt="Gráfico de Sentimentos" 
+             class="img-fluid mx-auto d-block" 
+             style="max-width: 600px;"/>
+    </div>
+
+    <!-- Botões -->
+    <div class="d-flex justify-content-center mt-4">
+        <!-- Botão Voltar -->
+        <a href="{{ url_for('avaliacaocoordenador.gerar_graficos_completos_coordenador', filename='coordenador.csv') }}" 
+           class="btn btn-primary mx-3" 
+           style="padding: 10px 20px;">
+            Voltar
+        </a>
+
+        <!-- Botão Fechar -->
+        <button type="button" onclick="fechar()" 
+                class="btn btn-danger mx-3" 
+                style="padding: 10px 20px;">
+            Fechar
+        </button>
+    </div>
+</div>
+
+<!-- Script para fechar a página -->
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_proreitor') }}";
+    }
+</script>
 {% endblock %}

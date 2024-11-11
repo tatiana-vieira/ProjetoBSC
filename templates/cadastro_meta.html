@@ -38,8 +38,10 @@
             </div>
 
             <div style="text-align: center;">
-                <button type="submit" class="btn btn-primary">Salvar Meta</button>
-                <button type="button" onclick="cancelar()" class="btn btn-danger">Cancelar</button>
+                <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
+                <button type="button" onclick="window.history.back()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button>
+                <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>
+
             </div>
         </form>
     </div>
@@ -69,7 +71,8 @@
                         <td>{{ meta.porcentagem_execucao }}%</td>
                         <td>{{ meta.data_ultima_atualizacao.strftime('%d/%m/%Y') if meta.data_ultima_atualizacao else 'N/A' }}</td>
                         <td>
-                            <a href="{{ url_for('editar_meta', meta_id='{:.2f}'.format(meta.id)) }}" class="btn btn-success btn-sm">Alterar</a>
+                            <!-- Botão "Alterar" em verde -->
+                            <a href="{{ url_for('editar_meta', meta_id=meta.id) }}" class="btn btn-success btn-sm">Alterar</a>
                         </td>
                     </tr>
                 {% endfor %}
@@ -104,25 +107,25 @@
     });
 
     function atualizarMetas(pdiId) {
-        fetch(`/metas_relacionadas_pdi/${pdiId}`)
-            .then(response => response.json())
-            .then(data => {
-                const metaList = document.getElementById('meta-list');
-                metaList.innerHTML = ''; // Limpa as metas atuais na tabela
+    fetch(`/metas_relacionadas_pdi/${pdiId}`)
+        .then(response => response.json())
+        .then(data => {
+            const metaList = document.getElementById('meta-list');
+            metaList.innerHTML = ''; // Limpa as metas atuais na tabela
 
-                data.forEach(meta => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${meta.nome}</td>
-                        <td>${meta.objetivo_nome}</td>
-                        <td>${meta.porcentagem_execucao}%</td>
-                        <td>${meta.data_ultima_atualizacao ? meta.data_ultima_atualizacao : 'N/A'}</td>
-                        <td><a href="/editar_meta/${meta.id}" class="btn btn-warning btn-sm">Alterar</a></td>
-                    `;
-                    metaList.appendChild(row);
-                });
+            data.forEach(meta => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${meta.nome}</td>
+                    <td>${meta.objetivo_nome}</td>
+                    <td>${meta.porcentagem_execucao}%</td>
+                    <td>${meta.data_ultima_atualizacao ? meta.data_ultima_atualizacao : 'N/A'}</td>
+                    <td><a href="/editar_meta/${meta.id}" class="btn btn-success btn-sm">Alterar</a></td>
+                `;
+                metaList.appendChild(row);
             });
-    }
+        });
+}
 
     window.onload = function() {
         const pdiId = document.getElementById('pdi_id').value;

@@ -1,49 +1,68 @@
 {% extends 'basepro.html' %}
 
 {% block titulo %}
-   Lista de Indicadores - PRPPG
+<div class="container text-center mt-4">
+    <h2>Lista de Indicadores - PRPPG</h2>
+</div>
 {% endblock %}
 
 {% block conteudo %}
-<div class="container" style="max-width: 80%; margin-top: 30px;">
+<div class="container" style="max-width: 95%; margin-top: 30px;">
     <div class="card">
-      <div class="card-header" style="background-color: #054b91;">
-        <h4 style="text-align: center; color: #ffffff;">Lista de Indicadores</h4> <!-- Título com fundo azul e texto branco -->
-      </div>
-      <div class="card-body">
-
-        <!-- Tabela de Indicadores -->
-        <table class="table table-bordered table-striped" style="width: 100%; margin-top: 20px;">
-            <thead class="table-light">
-                <tr>
-                    <th>Nome</th>
-                    <th>Meta</th>
-                    <th>Objetivo</th>
-                    <th>PDI</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for indicador in indicadores %}
-                    <tr>
-                        <td>{{ indicador.nome }}</td>
-                        <td>{{ indicador.meta.nome }}</td>
-                        <td>{{ indicador.meta.objetivo.nome }}</td>
-                        <td>{{ indicador.meta.objetivo.pdi.nome }}</td>
-                        <td>
-                            <a href="{{ url_for('indicador.editar_indicador', indicador_id=indicador.id) }}" style="color: blue; text-decoration: none;">Alterar</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <!-- Botão de Cadastro de Novo Indicador -->
-        <div class="text-center" style="margin-top: 20px;">
-            <a href="{{ url_for('indicador.cadastro_indicador') }}" class="btn btn-primary" style="background-color: darkblue; color: white;">Cadastrar Novo Indicador</a>
+        <div class="card-header" style="background-color: #054b91;">
+            <h4 style="text-align: center; color: #ffffff;">Lista de Indicadores</h4>
         </div>
+        <div class="card-body">
 
-      </div>
+            <!-- Tabela de Indicadores -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped align-middle" style="width: 100%; margin-top: 20px;">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 30%;">Nome</th>
+                            <th style="width: 30%;">Meta</th>
+                            <th style="width: 25%;">Objetivo</th>
+                            <th style="width: 10%;">PDI</th>
+                            <th style="width: 5%;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for indicador in indicadores %}
+                        <tr>
+                            <td>{{ indicador.nome }}</td>
+                            <td>{{ indicador.meta.nome }}</td>
+                            <td>{{ indicador.meta.objetivo.nome }}</td>
+                            <td>{{ indicador.meta.objetivo.pdi.nome }}</td>
+                            <td>
+                                <a href="{{ url_for('indicador.editar_indicador', indicador_id=indicador.id) }}" 
+                                   class="btn btn-success btn-sm" 
+                                   style="width: 100%;">
+                                    Alterar
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Botão de Cadastro de Novo Indicador -->
+            <div class="text-center" style="margin-top: 20px;">
+                <a href="{{ url_for('indicador.cadastro_indicador') }}" class="btn btn-primary" style="background-color: darkblue; color: white;">
+                    Cadastrar Novo Indicador
+                </a>
+                <button type="button" onclick="fechar()" class="btn btn-danger" style="margin-left: 10px;">Fechar</button>
+                <button type="button" onclick="window.history.back()" class="btn btn-danger" style="margin-left: 10px;">Cancelar</button>
+            </div>
+
+        </div>
     </div>
 </div>
+
+<!-- Script para fechar a página -->
+<script>
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_proreitor') }}";
+    }
+</script>
 {% endblock %}

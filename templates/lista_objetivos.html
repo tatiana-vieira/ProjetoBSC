@@ -1,21 +1,25 @@
 {% extends 'base.html' %}
 
 {% block titulo %}
-    Lista de Objetivos - PRPPG
+<div class="container text-center mt-4">
+    <h1>Lista de Objetivos - PRPPG</h1>
+</div>
 {% endblock %}
 
 {% block conteudo %}
 <div class="container" style="max-width: 80%; margin-top: 30px;">
-    <div class="card">
+    <div class="card shadow-sm mb-4">
         <div class="card-header" style="background-color: #054b91;">
-            <h4 style="text-align: center; color: #ffffff;">PDI - Lista de Objetivos</h4> <!-- Título com fundo azul e texto branco -->
+            <h4 class="text-center text-white">PDI - Lista de Objetivos</h4>
         </div>
         <div class="card-body">
+            
+            <!-- Estilos personalizados -->
             <style>
                 table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin: auto; /* Centraliza a tabela */
+                    margin: auto;
                 }
                 th, td {
                     padding: 10px;
@@ -27,7 +31,7 @@
                     color: #003366;
                 }
                 tr:nth-child(even) {
-                    background-color: #f2f2f2;
+                    background-color: #f9f9f9;
                 }
                 tr:nth-child(odd) {
                     background-color: #ffffff;
@@ -45,12 +49,24 @@
                     cursor: pointer;
                     text-decoration: none;
                     margin-left: 10px;
-                    display: inline-block;
                 }
                 .button-container button.cancel {
                     background-color: #f44336;
                 }
+                .btn-green {
+                    background-color: #28a745;
+                    color: white;
+                    padding: 8px 15px;
+                    border-radius: 4px;
+                    text-decoration: none;
+                    cursor: pointer;
+                }
+                .btn-green:hover {
+                    background-color: #218838;
+                }
             </style>
+            
+            <!-- Tabela de Objetivos -->
             <table>
                 <thead>
                     <tr>
@@ -65,21 +81,27 @@
                     <tr>
                         <td>{{ objetivo.nome }}</td>
                         <td>{{ objetivo.bsc }}</td>
-                        <td>{{ objetivo.pdi.nome }}</td> <!-- Acessa o nome do PDI associado -->
+                        <td>{{ objetivo.pdi.nome }}</td>
                         <td>
-                            <a href="{{ url_for('editar_objetivo', objetivo_id=objetivo.id) }}" style="color: #003366; text-decoration: none;">Editar</a>
+                            <!-- Botão verde para editar -->
+                            <a href="{{ url_for('editar_objetivo', objetivo_id=objetivo.id) }}" class="btn-green">Editar</a>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            
+            <!-- Botões de ação -->
             <div class="button-container">
-                <a href="{{ url_for('cadastro_objetivo') }}" class="btn">Cadastrar Novo Objetivo</a>
+                <a href="{{ url_for('cadastro_objetivo') }}" class="btn btn-primary">Cadastrar Novo</a>
+                <button type="button" onclick="window.history.back()" class="btn btn-secondary">Voltar</button>
                 <button type="button" onclick="fechar()" class="btn cancel">Fechar</button>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Script para fechar a página -->
 <script>
     function fechar() {
         window.location.href = "{{ url_for('login.get_proreitor') }}";
