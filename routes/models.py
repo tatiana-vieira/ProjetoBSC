@@ -210,24 +210,25 @@ class Producaointelectual(db.Model):
     projetopesquisa= db.Column(db.String(850))
     prodvinculadaconclusao= db.Column(db.String(35))
 ############################################################################33
-class Users(db.Model):
+class Users(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    email = db.Column(db.String(255), unique=True, nullable=False)
+    email = db.Column(db.String(150), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(50), nullable=False)
-    programa_id = db.Column(db.Integer, nullable=True)
-    password_hash = db.Column(db.String(1500), nullable=False)
+    programa_id = db.Column(db.Integer, db.ForeignKey('programas.id'))
+
+    programa = db.relationship('Programa', backref='users')
+
+    def check_password(self, password):
+        return bcrypt.check_password_hash(self.password_hash, password)
 
 
     def set_password(self, password):
         # Gere o hash da senha usando Flask-Bcrypt
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
 
-    def check_password(self, password):
-        # Verifique se a senha fornecida corresponde à senha armazenada usando Flask-Bcrypt
-        return bcrypt.check_password_hash(self.password_hash, password)
-    
+     
     # Adicione esses métodos para Flask-Login
     def is_active(self):
         return True
@@ -241,26 +242,54 @@ class Users(db.Model):
     def get_id(self):
         return str(self.id)
 ########################################################################
-class Token(Base):
-  __tablename__ = 'token'
+class Token(db.Model):
+    __tablename__ = 'token'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    token = db.Column(db.String(255), nullable=False)
+    expired_at = db.Column(db.DateTime, nullable=False)
 
-  id = Column(Integer, primary_key=True)
-  user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-  token = Column(String(255), nullable=False)
-  expired_at = Column(DateTime, nullable=False)
+    # Relacionamento com a tabela Users
+    user = db.relationship("Users", backref="tokens")
 
-  user = relationship("Users", backref="tokens")  # Optional relationship for user access
-
-  def __repr__(self):
-    return f"<Token(id={self.id}, user_id={self.user_id}, token='{self.token[:10]}...', expired_at={self.expired_at})>"
+    def __repr__(self):
+        return f"<Token(id={self.id}, user_id={self.user_id}, token='{self.token[:10]}...', expired_at={self.expired_at})>"
 
 ##############################################################################33
+
 class Programa(db.Model):
     __tablename__ = 'programas'
     id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(100), nullable=False)
-    codigo = db.Column(db.String(50), nullable=False)
-    planejamentos = relationship("PlanejamentoEstrategico", back_populates="programa")  # Relacionamento com PlanejamentoEstrategico
+    codigo = db.Column(db.String(50), unique=True, nullable=False)
+    nome = db.Column(db.String(255), nullable=False)
+
+    # Relacionamento com ResultadosAutoavaliacao
+    resultados = db.relationship(
+        "ResultadosAutoavaliacao",
+        back_populates="programa",
+        cascade="all, delete-orphan"
+    )
+
+    # Relacionamento com PlanejamentoEstrategico
+    planejamentos = db.relationship(
+        "PlanejamentoEstrategico",
+        back_populates="programa",
+        cascade="all, delete-orphan"
+    )
+
+class ResultadosAutoavaliacao(db.Model):
+    __tablename__ = 'resultados_autoavaliacao'
+    id = db.Column(db.Integer, primary_key=True)
+    tipo_analise = db.Column(db.String(50), nullable=False)
+    graficos = db.Column(db.Text)
+    recomendacoes = db.Column(db.Text)
+    data_geracao = db.Column(db.TIMESTAMP, default=db.func.now())
+    usuario_gerador = db.Column(db.Integer)
+    id_programa = db.Column(db.Integer, db.ForeignKey('programas.id'))
+
+    programa = db.relationship("Programa", back_populates="resultados")
+
 
 class PlanejamentoEstrategico(db.Model):
     __tablename__ = 'planejamento_estrategico'
@@ -268,7 +297,7 @@ class PlanejamentoEstrategico(db.Model):
     nome = db.Column(db.String(250), nullable=False)
     pdi_id = db.Column(db.Integer, db.ForeignKey('pdi.id'))
     id_programa = db.Column(db.Integer, db.ForeignKey('programas.id'))
-    
+
     programa = db.relationship("Programa", back_populates="planejamentos")
     pdi = db.relationship('PDI', back_populates='planejamentos')
     objetivos_pe = db.relationship('ObjetivoPE', back_populates='planejamento_estrategico')

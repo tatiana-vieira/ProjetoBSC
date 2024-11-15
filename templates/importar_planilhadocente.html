@@ -1,4 +1,4 @@
-{% extends 'basepro.html' %}
+{% extends 'basecorden.html' %}
 
 {% block titulo %}
     <h2 style="text-align: center; margin-bottom: 20px;">Importar Planilha de Docente</h2>
@@ -44,7 +44,7 @@
 <!-- Scripts -->
 <script>
     function fechar() {
-        window.location.href = "{{ url_for('login.get_proreitor') }}";
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
     }
 
     function displayFileName() {

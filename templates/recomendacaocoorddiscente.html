@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Resultados para o Programa: {{ programa }}</h2>
+
+<ul>
+    {% if recomendacoes %}
+        {% for recomendacao in recomendacoes %}
+            <li>{{ recomendacao }}</li>
+        {% endfor %}
+    {% else %}
+        <p>Não há recomendações disponíveis para o seu programa.</p>
+    {% endif %}
+</ul>
+
+{% if graficos %}
+    <h3>Gráficos</h3>
+    {% for grafico in graficos %}
+        <img src="data:image/png;base64,{{ grafico }}" alt="Gráfico">
+    {% endfor %}
+{% else %}
+    <p>Nenhum gráfico disponível.</p>
+{% endif %}
+{% endblock %}

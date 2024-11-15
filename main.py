@@ -34,6 +34,7 @@ from routes.avaliacaosecretaria import avaliacaosecretaria_route
 from routes.avaliacaocoordenador import avaliacaocoordenador_route
 from routes.discente import discente_route
 from routes.altpdipro import altpdipro_route
+from routes.coordenador import coordenador_route
 from routes.db import db, init_db
 from flask_bcrypt import Bcrypt
 from flask_wtf import FlaskForm
@@ -153,6 +154,7 @@ app.register_blueprint(avaliacaosecretaria_route)
 app.register_blueprint(avaliacaocoordenador_route)
 app.register_blueprint(discente_route)
 app.register_blueprint(altpdipro_route)
+app.register_blueprint(coordenador_route)
 
 
 

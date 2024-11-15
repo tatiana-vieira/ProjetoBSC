@@ -13,6 +13,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from flask_login import login_required, current_user, UserMixin, LoginManager
+from .models import ResultadosAutoavaliacao,db
 
 
 # Blueprint setup
@@ -971,3 +973,6 @@ def feedback_nlp():
     temas_negativos = comentarios[discente['sentimento'] < -0.2]
 
     return render_template('feedback_nlp.html', positivos=temas_positivos, negativos=temas_negativos)
+
+############################Coorde###############################################@discente_route.route('/exibir_recomendacoes_discente', methods=['GET'])
+

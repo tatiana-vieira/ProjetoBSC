@@ -1,4 +1,4 @@
-{% extends 'basepro.html' %}
+{% extends 'basecorden.html' %}
 
 {% block titulo %}
 <div class="container mt-4 text-center">
@@ -58,7 +58,7 @@
 <!-- Script para fechar a página -->
 <script>
     function fechar() {
-        window.location.href = "{{ url_for('login.get_proreitor') }}";
+        window.location.href = "{{ url_for('login.get_coordenador') }}";
     }
 </script>
 {% endblock %}

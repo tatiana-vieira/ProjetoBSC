@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Dashboard do Coordenador - Programa: {{ current_user.programa_id }}</h2>
+
+<!-- Seção para visualização de autoavaliação de Discentes -->
+<h3>Autoavaliação Discentes</h3>
+{% if not discentes.empty %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                {% for col in discentes.columns %}
+                    <th>{{ col }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in discentes.itertuples() %}
+            <tr>
+                {% for col in discentes.columns %}
+                    <td>{{ getattr(row, col) }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>Sem dados de autoavaliação de discentes.</p>
+{% endif %}
+
+<!-- Seção para visualização de autoavaliação de Docentes -->
+<h3>Autoavaliação Docentes</h3>
+{% if not docentes.empty %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                {% for col in docentes.columns %}
+                    <th>{{ col }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in docentes.itertuples() %}
+            <tr>
+                {% for col in docentes.columns %}
+                    <td>{{ getattr(row, col) }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>Sem dados de autoavaliação de docentes.</p>
+{% endif %}
+
+<!-- Seção para visualização de autoavaliação de Egressos -->
+<h3>Autoavaliação Egressos</h3>
+{% if not egressos.empty %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                {% for col in egressos.columns %}
+                    <th>{{ col }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in egressos.itertuples() %}
+            <tr>
+                {% for col in egressos.columns %}
+                    <td>{{ getattr(row, col) }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>Sem dados de autoavaliação de egressos.</p>
+{% endif %}
+
+<!-- Botão para voltar ao perfil do coordenador -->
+<a href="{{ url_for('coordenador.dashboard_coordenador') }}" class="btn btn-primary">Voltar ao Dashboard</a>
+{% endblock %}

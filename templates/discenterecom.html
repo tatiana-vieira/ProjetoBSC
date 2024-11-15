@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Dashboard do Coordenador</h2>
+<ul>
+    <li><a href="{{ url_for('discente.exibir_recomendacoes_para_discente') }}">Ver Recomendações</a></li>
+    <li><a href="{{ url_for('discente.exibir_graficos_para_discente') }}">Ver Gráficos</a></li>
+</ul>
+{% endblock %}

@@ -1,4 +1,4 @@
-{% extends 'basepro.html' %}
+{% extends 'basecorden.html' %}
 
 {% block titulo %}
     <h1 style="text-align: center; margin-bottom: 20px;">Dashboard de Autoavaliação Discentes</h1>
@@ -96,6 +96,6 @@
 
 <!-- Botão para retornar à página inicial -->
 <div style="text-align: center; margin-top: 20px;">
-    <button type="button" onclick="window.location.href='{{ url_for('login.get_proreitor') }}'" class="btn btn-danger">Voltar</button>
+    <button type="button" onclick="window.location.href='{{ url_for('login.get_coordenador') }}'" class="btn btn-danger">Voltar</button>
 </div>
 {% endblock %}
