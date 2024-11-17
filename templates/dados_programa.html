@@ -1,12 +1,10 @@
 {% extends 'basepro.html' %}
 
 {% block titulo %}
-  Planejamento Estratégico 
+  <h4 style="text-align: center; color: #003366;">PLANEJAMENTO ESTRATÉGICO</h4>
 {% endblock %}
 
 {% block conteudo %}
-<h4 style="text-align: center; color: #003366;">PLANEJAMENTO ESTRATÉGICO</h4>
-
 <style>
     table {
         width: 100%;
@@ -14,7 +12,7 @@
     }
     th, td {
         padding: 10px;
-        text-align: left; /* Alinha os dados à esquerda */
+        text-align: left;
         border: 1px solid #dddddd;
     }
     th {
@@ -22,7 +20,7 @@
         color: #003366;
     }
     tr:nth-child(even) {
-        background-color: #f2f2f2;
+        background-color: #f9f9f9;
     }
     tr:nth-child(odd) {
         background-color: #ffffff;
@@ -43,42 +41,22 @@
     <tbody>
         {% if not objetivos %}
             <tr>
-                <td colspan="6">Nenhum dado disponível</td>
+                <td colspan="6" style="text-align: center;">Nenhum dado disponível</td>
             </tr>
         {% else %}
             {% for objetivo in objetivos %}
-                <tr>
-                    <td>{{ objetivo.nome }}</td>
-                    <td colspan="5"></td>
-                </tr>
                 {% for meta in metas if meta.objetivo_pe_id == objetivo.id %}
-                    <tr>
-                        <td></td>
-                        <td>{{ meta.nome }}</td>
-                        <td colspan="4"></td>
-                    </tr>
-                    {% for valor_meta in valores_metas if valor_meta.metape_id == meta.id %}
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td>{{ valor_meta.valor | round(3) }}%</td>
-                            <td colspan="3"></td>
-                        </tr>
-                    {% endfor %}
-                    {% for indicador in indicadores if indicador.meta_pe_id == meta.id %}
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td>{{ indicador.nome }}</td>
-                            <td colspan="2"></td>
-                        </tr>
-                        {% for acao in acoes if acao.meta_pe_id == meta.id %}
+                    {% set valor_meta = valores_metas | selectattr('metape_id', 'equalto', meta.id) | list %}
+                    {% set indicadores_meta = indicadores | selectattr('meta_pe_id', 'equalto', meta.id) | list %}
+                    {% set acoes_meta = acoes | selectattr('meta_pe_id', 'equalto', meta.id) | list %}
+                    
+                    {% for indicador in indicadores_meta %}
+                        {% for acao in acoes_meta %}
                             <tr>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
+                                <td>{{ objetivo.nome }}</td>
+                                <td>{{ meta.nome }}</td>
+                                <td>{{ valor_meta[0].valor | round(3) if valor_meta else '' }}%</td>
+                                <td>{{ indicador.nome }}</td>
                                 <td>{{ acao.nome }}</td>
                                 <td>{{ acao.status }}</td>
                             </tr>
@@ -91,9 +69,9 @@
 </table>
 
 <div style="text-align: center; margin-top: 20px;">
-    <a href="{{ url_for('planejamento.export_programa_excel', planejamento_id=planejamento.id, programa_id=planejamento.id_programa) }}" class="btn" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">Gerar Planilha</a>
-    <a href="{{ url_for('planejamento.export_programa_pdf', planejamento_id=planejamento.id, programa_id=planejamento.id_programa) }}" class="btn" style="background-color: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;">Gerar PDF</a>
-    <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
+    <a href="{{ url_for('planejamento.export_programa_excel', planejamento_id=planejamento.id, programa_id=planejamento.id_programa) }}" class="btn" style="background-color: #4CAF50; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none;">Gerar Planilha</a>
+    <a href="{{ url_for('planejamento.export_programa_pdf', planejamento_id=planejamento.id, programa_id=planejamento.id_programa) }}" class="btn" style="background-color: #2196F3; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none;">Gerar PDF</a>
+    <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border-radius: 4px;">Fechar</button>
 </div>
 
 <script>

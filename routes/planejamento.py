@@ -314,16 +314,22 @@ def visualizar_dados_programa():
     planejamento = PlanejamentoEstrategico.query.get(planejamento_id)
     
     objetivospe = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento_id).all()
-    
     metaspe = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([objetivo.id for objetivo in objetivospe])).all()
-    
     indicadores = IndicadorPlan.query.filter(IndicadorPlan.meta_pe_id.in_([meta.id for meta in metaspe])).all()
-    
     valores_metas = Valormeta.query.filter(Valormeta.metape_id.in_([meta.id for meta in metaspe])).all()
-    
     acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metaspe])).all()
     
-    return render_template('dados_programa.html', planejamento=planejamento, objetivos=objetivospe, metas=metaspe, indicadores=indicadores, acoes=acoes, valores_metas=valores_metas)
+    return render_template(
+        'dados_programa.html',
+        planejamento=planejamento,
+        objetivos=objetivospe,
+        metas=metaspe,
+        indicadores=indicadores,
+        acoes=acoes,
+        valores_metas=valores_metas
+    )
+
+
 ###################################################################################################################################
 @planejamento_route.route('/associar_indicadorespe', methods=['GET', 'POST'])
 @login_required

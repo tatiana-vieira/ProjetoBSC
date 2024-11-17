@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'basepro.html' %}
 
 {% block titulo %}
     Cadastro de Meta - PRPPG
@@ -44,6 +44,11 @@
 
             </div>
         </form>
+        <script>
+            function fechar() {
+                window.location.href = "{{ url_for('login.get_proreitor') }}";
+            }
+        </script>
     </div>
 </div>
 

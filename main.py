@@ -388,32 +388,40 @@ def processar_formulario_pdi(pdi_id=None):
             pdi.datainicio = datainicio
             pdi.datafim = datafim
             db.session.commit()
-            return 'PDI alterado com sucesso!'
+            return redirect(url_for('lista_pdis'))  # Redireciona após edição
         else:
             return 'PDI não encontrado'
     else:
         novo_pdi = PDI(nome=nome, datainicio=datainicio, datafim=datafim)
         db.session.add(novo_pdi)
         db.session.commit()
-        return 'PDI cadastrado com sucesso!'
+        return redirect(url_for('lista_pdis'))  # Redireciona após cadastro
+
 
 @app.route('/cadastro_pdi', methods=['GET', 'POST'])
 def cadastro_pdi():
     if request.method == 'POST':
         return processar_formulario_pdi()
-    
     return render_template('cadastropdi.html')
+
+from datetime import datetime
+
+from datetime import datetime
 
 @app.route('/editar_pdi/<int:pdi_id>', methods=['GET', 'POST'])
 def editar_pdi(pdi_id):
-    success_message = None
-    if request.method == 'POST':
-        success_message = processar_formulario_pdi(pdi_id)
-        pdi = PDI.query.get(pdi_id)
-        return render_template('cadastropdi.html', pdi=pdi, success_message=success_message)
-    
     pdi = PDI.query.get(pdi_id)
+    if not pdi:
+        return 'PDI não encontrado', 404
+
+    if request.method == 'POST':
+        processar_formulario_pdi(pdi_id)
+        flash('PDI atualizado com sucesso!', 'success')
+        return redirect(url_for('lista_pdis'))
+    
     return render_template('cadastropdi.html', pdi=pdi)
+
+
 
 @app.route('/lista_pdis')
 def lista_pdis():

@@ -1,48 +1,72 @@
 {% extends 'basepro.html' %}
 
 {% block titulo %}
-    <div class="container" style="max-width: 80%; margin-top: 30px;">
-        <div class="card">
-            <div class="card-header" style="background-color: #054b91;">
-                <h2 style="text-align: center; color: #ffffff;">{{ 'Editar' if pdi else 'Cadastrar' }} PDI - PRPPG</h2> <!-- Título com fundo azul e texto branco -->
-            </div>
+<!-- Título da página -->
+<div class="container" style="max-width: 80%; margin-top: 30px;">
+    <div class="card">
+        <div class="card-header" style="background-color: #054b91;">
+            <h2 style="text-align: center; color: #ffffff;">
+                {{ 'Editar' if pdi else 'Cadastrar' }} PDI - PRPPG
+            </h2>
         </div>
     </div>
+</div>
 {% endblock %}
 
 {% block conteudo %}
-    <div style="margin: auto; width: 50%; text-align: center;">
-        <div class="form-block"><br>
-            <h2 style="color: #003366;">{{ 'EDITAR' if pdi else 'CADASTRO DE' }} PDI</h2><br>
+<div class="container" style="max-width: 80%; margin-top: 30px;">
+    <div class="card">
+        <div class="card-header" style="background-color: #054b91;">
+            <h3 style="text-align: center; color: #ffffff;">
+                {{ 'Editar' if pdi else 'Cadastrar' }} PDI
+            </h3>
+        </div>
+        <div class="card-body" style="text-align: center;">
             
+            <!-- Exibir mensagem de sucesso, se houver -->
             {% if success_message %}
-                <div style="color: green; margin-bottom: 20px;">{{ success_message }}</div>
+                <div class="alert alert-success" style="margin-bottom: 20px;">
+                    {{ success_message }}
+                </div>
             {% endif %}
             
-            <form method="POST">
-                <label for="nome">Nome do PDI:</label><br>
-                <input type="text" id="nome" name="nome" value="{{ pdi.nome if pdi else '' }}" required style="width: 100%; margin-bottom: 10px;"><br>
+            <!-- Formulário para cadastro ou edição -->
+            <form method="POST" action="{{ url_for('editar_pdi', pdi_id=pdi.id) if pdi else url_for('cadastro_pdi') }}">
+                <div class="form-group">
+                    <label for="nome">Nome do PDI:</label>
+                    <input type="text" class="form-control" id="nome" name="nome" value="{{ pdi.nome if pdi else '' }}" required>
+                </div>
+                <br>
+                <div class="form-group">
+                    <label for="datainicio">Data de Início:</label>
+                    <input type="date" class="form-control" id="datainicio" name="datainicio" value="{{ pdi.datainicio if pdi else '' }}" required>
+                </div>
+                <br>
+                <div class="form-group">
+                    <label for="datafim">Data de Fim:</label>
+                    <input type="date" class="form-control" id="datafim" name="datafim" value="{{ pdi.datafim if pdi else '' }}" required>
+                </div>
+                <br>
                 
-                <label for="datainicio">Data de Início (ano):</label><br>
-                <input type="number" id="datainicio" name="datainicio" value="{{ pdi.datainicio if pdi else '' }}" required style="width: 100%; margin-bottom: 10px;"><br>
-                
-                <label for="datafim">Data de Fim (ano):</label><br>
-                <input type="number" id="datafim" name="datafim" value="{{ pdi.datafim if pdi else '' }}" required style="width: 100%; margin-bottom: 10px;"><br>
-                
-                <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
-                <button type="button" onclick="alterar()" style="background-color: #085132; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Alterar</button>
-                <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>
+                <!-- Botões de ação -->
+                <div class="button-container" style="text-align: center; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success">Salvar</button>
+                    <button type="button" class="btn btn-danger" onclick="fechar()">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="alterar()">Lista de PDIs</button>
+                </div>
             </form>
         </div>
     </div>
+</div>
 
-    <script>
-        function alterar() {
-            window.location.href = "{{ url_for('lista_pdis') }}";
-        }
-        
-        function fechar() {
-            window.location.href = "{{ url_for('login.get_proreitor') }}";
-        }
-    </script>
+<!-- Scripts para redirecionamento -->
+<script>
+    function alterar() {
+        window.location.href = "{{ url_for('lista_pdis') }}";
+    }
+    
+    function fechar() {
+        window.location.href = "{{ url_for('login.get_proreitor') }}";
+    }
+</script>
 {% endblock %}
