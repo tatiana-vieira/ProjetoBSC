@@ -216,63 +216,83 @@ def calcular_previsao(meta, porcentagem_execucao, data_inicio, data_termino):
 @coordenador_required
 def associar_acaope():
     programa_id = current_user.programa_id
-    if programa_id:
-        planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
-        metas_pe_associadas = []
-        acoes = []
+    if not programa_id:
+        flash('Programa não encontrado!', 'error')
+        return redirect(url_for('login.get_coordenador'))
 
-        for planejamento in planejamentos:
-            objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
-            for objetivo in objetivos:
-                metas_pe = MetaPE.query.filter_by(objetivo_pe_id=objetivo.id).all()
-                metas_pe_associadas.extend(metas_pe)
-                for meta in metas_pe:
-                    acoes.extend(AcaoPE.query.filter_by(meta_pe_id=meta.id).all())
+    planejamentos = PlanejamentoEstrategico.query.filter_by(id_programa=programa_id).all()
+    metas_pe_associadas = []
+    acoes = []
 
-        if request.method == 'POST':
-            # Capturar os dados do formulário
-            meta_pe_id = request.form['meta_pe_id']
-            nome = request.form['nome']
-            porcentagem_execucao = request.form['porcentagem_execucao']
-            data_inicio = request.form['data_inicio']
-            data_termino = request.form['data_termino']
-            responsavel = request.form['responsavel']
-            status = request.form['status']
-            observacao = request.form['observacao']
+    # Carregar todas as metas e ações associadas ao planejamento
+    for planejamento in planejamentos:
+        objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+        for objetivo in objetivos:
+            metas_pe = MetaPE.query.filter_by(objetivo_pe_id=objetivo.id).all()
+            metas_pe_associadas.extend(metas_pe)
+            for meta in metas_pe:
+                acoes.extend(AcaoPE.query.filter_by(meta_pe_id=meta.id).all())
 
-            # Obter a meta relacionada
-            meta_pe = MetaPE.query.get(meta_pe_id)
-            if meta_pe is None:
-                flash('Meta não encontrada!', 'error')
-                return redirect(url_for('planejamento.associar_acaope'))
+    if request.method == 'POST':
+        # Debug: Exibir todos os dados recebidos do formulário
+        print("Dados do formulário recebidos:", request.form)
 
+        # Capturar os dados do formulário
+        meta_pe_id = int(request.form.get('meta_pe_id')) if request.form.get('meta_pe_id') else None
+        nome = request.form.get('nome')
+        porcentagem_execucao = request.form.get('porcentagem_execucao')
+        data_inicio = request.form.get('data_inicio')
+        data_termino = request.form.get('data_termino')
+        responsavel = request.form.get('responsavel')
+        status = request.form.get('status')
+        observacao = request.form.get('observacao')
+
+        # Debug: Exibir os valores capturados
+        print("Dados capturados:", meta_pe_id, nome, porcentagem_execucao, data_inicio, data_termino, responsavel, status, observacao)
+
+        # Verificar se a meta foi encontrada
+        meta_pe = MetaPE.query.get(meta_pe_id)
+        if not meta_pe:
+            flash('Meta não encontrada!', 'error')
+            return redirect(url_for('planejamento.associar_acaope'))
+
+        try:
             # Criar uma nova ação
             nova_acao = AcaoPE(
                 nome=nome,
                 meta_pe_id=meta_pe_id,
-                porcentagem_execucao=porcentagem_execucao,
-                data_inicio=data_inicio,
-                data_termino=data_termino,
+                porcentagem_execucao=int(porcentagem_execucao),
+                data_inicio=datetime.strptime(data_inicio, '%Y-%m-%d'),
+                data_termino=datetime.strptime(data_termino, '%Y-%m-%d'),
                 responsavel=responsavel,
                 status=status,
                 observacao=observacao
             )
+
+            # Adicionar a nova ação ao banco de dados
             db.session.add(nova_acao)
             db.session.commit()
 
-            # Função para calcular a previsão de impacto
-            previsao = calcular_previsao(meta_pe, int(porcentagem_execucao), 
-                                         datetime.strptime(data_inicio, '%Y-%m-%d'), 
-                                         datetime.strptime(data_termino, '%Y-%m-%d'))
+            # Função para calcular a previsão de impacto (se aplicável)
+            previsao = calcular_previsao(
+                meta_pe,
+                int(porcentagem_execucao),
+                datetime.strptime(data_inicio, '%Y-%m-%d'),
+                datetime.strptime(data_termino, '%Y-%m-%d')
+            )
 
             # Exibir uma mensagem de sucesso com a previsão de impacto
             flash(f'Ação cadastrada com sucesso! {previsao}', 'success')
-            return redirect(url_for('planejamento.associar_acaope'))
 
-        return render_template('acaope.html', metas_pe=metas_pe_associadas, acoes=acoes)
-    else:
-        flash('Programa não encontrado!', 'error')
-        return redirect(url_for('login.get_coordenador'))
+        except Exception as e:
+            db.session.rollback()
+            print("Erro ao cadastrar a ação:", str(e))
+            flash('Erro ao cadastrar a ação!', 'error')
+
+        return redirect(url_for('planejamento.associar_acaope'))
+
+    # Renderizar o template com os dados necessários
+    return render_template('acaope.html', metas_pe=metas_pe_associadas, acoes=acoes)
 
 
 ########################################## Alterar ação #####################################################

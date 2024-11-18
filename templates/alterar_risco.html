@@ -1,7 +1,7 @@
 {% extends 'basecorden.html' %}
 
 {% block titulo %}
-    Alterar Risco - PRPPG
+    Editar Risco - PRPPG
 {% endblock %}
 
 {% block conteudo %}
@@ -11,19 +11,15 @@
             <h4 class="text-center text-white">Alterar Risco</h4>
         </div>
         <div class="card-body">
-            <!-- Mensagens Flash -->
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                    <div>
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} text-center">{{ message }}</div>
-                        {% endfor %}
-                    </div>
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} text-center">{{ message }}</div>
+                    {% endfor %}
                 {% endif %}
             {% endwith %}
-            <!-- Fim das Mensagens Flash -->
 
-            <form id="RiscoForm" method="POST" action="{{ url_for('relatoriometas.editar_risco', risco_id=risco.id) }}">
+            <form method="POST" action="{{ url_for('relatoriometas.editar_risco', risco_id=risco.id) }}">
                 <div class="form-group mb-3">
                     <label for="objetivo_pe_id">Objetivo:</label>
                     <select id="objetivo_pe_id" name="objetivo_pe_id" required class="form-control">
@@ -43,7 +39,7 @@
                 </div>
 
                 <div class="form-group mb-3">
-                    <label for="descricao">Descrição do Risco:</label>
+                    <label for="descricao">Descrição:</label>
                     <textarea id="descricao" name="descricao" required class="form-control">{{ risco.descricao }}</textarea>
                 </div>
 
@@ -65,7 +61,6 @@
                     </select>
                 </div>
 
-                <!-- Campo para Ação Preventiva -->
                 <div class="form-group mb-3">
                     <label for="acao_preventiva">Ação Preventiva:</label>
                     <textarea id="acao_preventiva" name="acao_preventiva" class="form-control">{{ risco.acao_preventiva }}</textarea>
@@ -76,15 +71,15 @@
                     <button type="button" onclick="fechar()" class="btn btn-danger ms-2">Fechar</button>
                 </div>
             </form>
-        </div> <!-- card-body -->
-    </div> <!-- card -->
+        </div>
+    </div>
 </div>
-
 <script>
     function fechar() {
         window.location.href = "{{ url_for('relatoriometas.cadastrar_risco') }}";
     }
-
+</script>
+<script>
     document.getElementById('objetivo_pe_id').addEventListener('change', function() {
         var objetivoId = this.value;
         fetch(`/metas_por_objetivo/${objetivoId}`)

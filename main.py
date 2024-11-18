@@ -345,20 +345,26 @@ def get_acaope():
 @app.route('/login/register', methods=['GET', 'POST'])
 def register_page():
     if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
-        role = request.form['role']
-        programa_id = request.form['programa_id']
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        role = request.form.get('role')
+        programa_id = request.form.get('programa_id')
 
-        new_user = Users(username=username, email=email, role=role, programa_id=programa_id)
+        # Verificar se programa_id está vazio e atribuir None se necessário
+        programa_id = int(programa_id) if programa_id else None
 
+        # Hash da senha
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
-        new_user.password_hash = hashed_password
-
-        if role != 'Coordenador':
-            new_user.programa_id = 0  
+        # Criação do novo usuário
+        new_user = Users(
+            username=username,
+            email=email,
+            password_hash=hashed_password,
+            role=role,
+            programa_id=programa_id
+        )
 
         try:
             db.session.add(new_user)
@@ -372,6 +378,8 @@ def register_page():
 
     programas = Programa.query.all()
     return render_template('register.html', programas=programas)
+
+
 #############Cadastro de PDI ##################################
 def processar_formulario_pdi(pdi_id=None):
     nome = request.form.get('nome')

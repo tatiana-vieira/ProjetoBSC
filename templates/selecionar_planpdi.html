@@ -7,12 +7,12 @@ Selecionar Planejamento
 {% block conteudo %}
 <div class="card mt-4">
     <div class="card-header" style="background-color: #054b91;">
-        <h4 class="text-center text-white">Selecionar Planejamento</h4>
+        <h4 class="text-center text-white">Selecionar PDI</h4>
     </div>
     <div class="card-body">
         <form method="POST" action="{{ url_for('pdiprppg.selecionar_planejamento') }}" style="max-width: 500px; margin: auto; text-align: center;">
             <div class="form-group">
-                <label for="pdi_id">Planejamento:</label>
+                <label for="pdi_id">PDI:</label>
                 <select id="pdi_id" name="pdi_id" required class="form-control mb-3">
                     <option value="" disabled selected>-- Selecione um Planejamento --</option>
                     {% for pdi in pdis %}

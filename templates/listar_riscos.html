@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block conteudo %}
+<!-- Mensagens Flash -->
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         {% for category, message in messages %}
@@ -19,19 +20,21 @@
   <div class="form-block">
     <h3>Lista de Riscos</h3><br>
     <form method="POST" action="{{ url_for('relatoriometas.listar_riscos') }}">
-      <label for="planejamento_id">Selecione o Planejamento:</label><br>
-      <select name="planejamento_id" id="planejamento_id" required style="width: 90%; margin-bottom: 10px;">
+      <label for="planejamento_id">Selecione o Planejamento:</label>
+      <select name="planejamento_id" id="planejamento_id" required>
           <option value="" disabled selected>Selecione um planejamento</option>
           {% for planejamento in planejamentos %}
-              <option value="{{ planejamento.id }}" {% if selected_planejamento == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+              <option value="{{ planejamento.id }}" {% if selected_planejamento == planejamento.id %}selected{% endif %}>
+                  {{ planejamento.nome }}
+              </option>
           {% endfor %}
       </select>
-      <br>
-      <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Filtrar</button>
-    </form>
+      <button type="submit">Filtrar</button>
+  </form>
+  
   </div>
 
-  <div class="riscos-list">
+  <div class="riscos-list" style="margin-top: 20px;">
     <h3>Riscos Cadastrados</h3>
     <table style="width: 100%; border-collapse: collapse;">
       <thead>
@@ -68,8 +71,7 @@
       </tbody>
     </table>
   </div>
-  
-  
+
   <div style="margin-top: 20px;">
     <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Fechar</button>
   </div>
@@ -80,5 +82,4 @@
     }
   </script>
 </div>
-
 {% endblock %}

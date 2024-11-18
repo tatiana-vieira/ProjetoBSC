@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'basecorden.html' %}
 
 {% block titulo %}
   Planejamento - {{ pdi.nome }}
@@ -93,7 +93,7 @@
 
     <script>
         function fechar() {
-            window.location.href = "{{ url_for('login.get_proreitor') }}";
+            window.location.href = "{{ url_for('login.get_coordenador') }}";
         }
     </script>
 </body>

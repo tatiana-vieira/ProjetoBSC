@@ -13,7 +13,7 @@ import io
 #pdi_route = Flask(__name__)
 altpdi_route = Blueprint('altpdi', __name__)
 
-@altpdi_route.route('/selecionar_programa', methods=['GET', 'POST'])
+@altpdi_route.route('/selecionar_planejamento', methods=['GET', 'POST'])
 def selecionar_programa():
     if request.method == 'POST':
         pdi_id = request.form['pdi_id']
@@ -74,6 +74,7 @@ def exibir_planejamento():
 
     print(f"PDI Data: {pdi_data}")  # Adicionado para depuração
     return render_template('exibir_planejamento.html', pdi=pdi_data, objetivos=objetivos, metas=metas, indicadores=indicadores)
+
 
 ###################################################################################################################################3
 @altpdi_route.route('/export_pdi/excel')
