@@ -15,6 +15,7 @@
                     <h3 style="text-align: center; color: #ffffff;">Dados do Planejamento</h3>
                 </div>
                 <div class="card-body">
+                    <!-- Formulário de seleção -->
                     <section>
                         <div class="form-container" style="text-align: center;">
                             <h5>Selecione um Planejamento Estratégico</h5>
@@ -32,8 +33,10 @@
                     </section>
 
                     {% if planejamento_selecionado %}
+                    <!-- Exibição de dados -->
                     <section class="dados-planejamento">
-                        <h3 class="monitoramento-titulo">Objetivos</h3>
+                        <h3 class="monitoramento-titulo" style="text-align: center;">Objetivos</h3>
+                        {% if objetivos %}
                         <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
                             <thead>
                                 <tr>
@@ -48,8 +51,13 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                        {% else %}
+                        <p class="text-center">Nenhum objetivo cadastrado.</p>
+                        {% endif %}
 
-                        <h3 class="monitoramento-titulo">Metas</h3>
+                        <!-- Metas -->
+                        <h3 class="monitoramento-titulo" style="text-align: center;">Metas</h3>
+                        {% if metas %}
                         <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
                             <thead>
                                 <tr>
@@ -68,8 +76,13 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                        {% else %}
+                        <p class="text-center">Nenhuma meta cadastrada.</p>
+                        {% endif %}
 
-                        <h3 class="monitoramento-titulo">Indicadores</h3>
+                        <!-- Indicadores -->
+                        <h3 class="monitoramento-titulo" style="text-align: center;">Indicadores</h3>
+                        {% if indicadores %}
                         <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
                             <thead>
                                 <tr>
@@ -88,8 +101,13 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                        {% else %}
+                        <p class="text-center">Nenhum indicador cadastrado.</p>
+                        {% endif %}
 
-                        <h3 class="monitoramento-titulo">Ações</h3>
+                        <!-- Ações -->
+                        <h3 class="monitoramento-titulo" style="text-align: center;">Ações</h3>
+                        {% if acoes %}
                         <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
                             <thead>
                                 <tr>
@@ -103,15 +121,26 @@
                                 {% for acao in acoes %}
                                 <tr>
                                     <td>{{ acao.nome }}</td>
-                                    <td>{{ acao.porcentagem_execucao }}</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar" role="progressbar" style="width: {{ acao.porcentagem_execucao }}%;" aria-valuenow="{{ acao.porcentagem_execucao }}" aria-valuemin="0" aria-valuemax="100">
+                                                {{ acao.porcentagem_execucao }}%
+                                            </div>
+                                        </div>
+                                    </td>
                                     <td>{{ acao.status }}</td>
                                     <td>{{ acao.tempo_restante }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
+                        {% else %}
+                        <p class="text-center">Nenhuma ação cadastrada.</p>
+                        {% endif %}
 
-                        <h3 class="monitoramento-titulo">Riscos</h3>
+                        <!-- Riscos -->
+                        <h3 class="monitoramento-titulo" style="text-align: center;">Riscos</h3>
+                        {% if riscos %}
                         <table class="monitoramento-tabela table table-bordered" style="margin: auto; width: 90%;">
                             <thead>
                                 <tr>
@@ -130,11 +159,14 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                        {% else %}
+                        <p class="text-center">Nenhum risco cadastrado.</p>
+                        {% endif %}
                     </section>
 
                     <!-- Botões de Ação -->
                     <div style="text-align: center; margin-top: 20px;">
-                        <a href="{{ url_for('gerar_pdf', planejamento_id=planejamento_selecionado.id) }}" target="_blank" class="btn btn-primary" style="background-color: #215ace; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Gerar PDF</a>
+                        <a href="{{ url_for('gerar_pdf', planejamento_id=planejamento_selecionado.id) }}" target="_blank" class="btn btn-primary" style="background-color: #097836; color: white; padding: 10px 20px; border: none; border-radius: 4px;">Gerar PDF</a>
                         <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; margin-left: 10px; border: none; border-radius: 4px;">Fechar</button>
                     </div>
                     {% endif %}
@@ -144,7 +176,9 @@
 
         <script>
             function fechar() {
-                window.location.href = "{{ url_for('login.get_coordenador') }}";
+                if (confirm("Tem certeza que deseja sair desta página?")) {
+                    window.location.href = "{{ url_for('login.get_coordenador') }}";
+                }
             }
         </script>
     </div>

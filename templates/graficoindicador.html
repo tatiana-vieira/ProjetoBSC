@@ -1,7 +1,7 @@
 {% extends 'basecorden.html' %}
 
 {% block titulo %}
-  Planejamento Estratégico (Gráficos dos Indicadores)
+Planejamento Estratégico - Gráficos dos Indicadores
 {% endblock %}
 
 {% block conteudo %}
@@ -11,26 +11,31 @@
     </div>
 
     <div class="card-body">
+        <!-- Seleção do Planejamento Estratégico -->
         <div class="text-center mb-4">
             <h4>Selecione um Planejamento Estratégico</h4>
             <form method="GET" action="{{ url_for('graficoindicador.exibir_graficoindicador') }}">
                 <select id="planejamento_estrategico" name="planejamento_selecionado" required class="form-select d-inline-block" style="width: 600px;">
                     <option value="">-- Selecione --</option>
                     {% for planejamento in planejamentos %}
-                        <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento_selecionado.id == planejamento.id %}selected{% endif %}>{{ planejamento.nome }}</option>
+                        <option value="{{ planejamento.id }}" {% if planejamento_selecionado and planejamento_selecionado.id == planejamento.id %}selected{% endif %}>
+                            {{ planejamento.nome }}
+                        </option>
                     {% endfor %}
                 </select>
                 <button type="submit" class="btn btn-primary ms-2">Buscar</button>
             </form>
         </div>
 
+        <!-- Exibição dos Gráficos -->
         {% if graphs %}
             <div id="graficos-indicadores" class="mt-4">
                 <h2 class="text-center" style="color: #003366;">Gráficos dos Indicadores</h2>
                 {% for graph_base64, titulo in graphs %}
                     <div class="text-center my-4">
                         <h3 style="font-size: 16px; color: #333;">{{ titulo }}</h3>
-                        <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de {{ titulo }}" style="max-width: 90%; height: auto; border: 1px solid #ddd; padding: 10px;">
+                        <img src="data:image/png;base64,{{ graph_base64 }}" alt="Gráfico de {{ titulo }}" 
+                             style="max-width: 90%; height: auto; border: 1px solid #ddd; padding: 10px;">
                     </div>
                 {% endfor %}
             </div>
@@ -38,6 +43,7 @@
             <p class="text-center mt-4" style="color: #888;">Nenhum gráfico de indicador disponível.</p>
         {% endif %}
 
+        <!-- Botão Fechar -->
         <div class="text-center mt-4">
             <button type="button" onclick="fechar()" class="btn btn-danger" style="padding: 10px 20px; border-radius: 4px;">Fechar</button>
         </div>

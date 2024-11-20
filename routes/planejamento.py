@@ -1576,3 +1576,83 @@ def gerar_pdf_metas():
 
     # Envia o PDF para download
     return send_file(buffer, as_attachment=True, download_name="acompanhamento_metas.pdf", mimetype="application/pdf")
+
+
+####################33 gerar pdf resumo planejmaneto ################################
+from flask import make_response
+from fpdf import FPDF
+
+@planejamento_route.route('/gerar_pdf')
+@login_required
+def gerar_pdf():
+    planejamento_id = request.args.get('planejamento_id', type=int)
+    programa_id = current_user.programa_id
+    
+    planejamento = PlanejamentoEstrategico.query.filter_by(id=planejamento_id, id_programa=programa_id).first()
+    if not planejamento:
+        flash("Planejamento estratégico não encontrado ou não pertence ao seu programa.")
+        return redirect(url_for('novo_selecionar_planejamento'))
+
+    objetivos = ObjetivoPE.query.filter_by(planejamento_estrategico_id=planejamento.id).all()
+    metas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos])).all()
+    total_metas = len(metas)
+    metas_atingidas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Concluída').count()
+    percentual_metas_atingidas = (metas_atingidas / total_metas) * 100 if total_metas > 0 else 0
+    metas_em_andamento = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Em Andamento').count()
+    metas_atrasadas = MetaPE.query.filter(MetaPE.objetivo_pe_id.in_([obj.id for obj in objetivos]), MetaPE.status == 'Atrasada').count()
+
+    acoes = AcaoPE.query.filter(AcaoPE.meta_pe_id.in_([meta.id for meta in metas])).all()
+    total_acoes = len(acoes)
+    acoes_concluidas = len([acao for acao in acoes if acao.status == 'Concluída'])
+    percentual_acoes_concluidas = (acoes_concluidas / total_acoes) * 100 if total_acoes > 0 else 0
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    # Cabeçalho
+    pdf.set_font("Arial", style="B", size=12)
+    pdf.cell(200, 10, txt="Resumo do Planejamento Estratégico", ln=True, align="C")
+    pdf.ln(10)
+
+    # Planejamento
+    pdf.set_font("Arial", style="B", size=12)
+    pdf.cell(200, 10, txt=f"Planejamento: {planejamento.nome}", ln=True)
+    pdf.ln(10)
+
+    # Resumo das Metas
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt="Resumo das Metas:", ln=True)
+    pdf.cell(200, 10, txt=f"- Total de Metas: {total_metas}", ln=True)
+    pdf.cell(200, 10, txt=f"- Metas Atingidas: {percentual_metas_atingidas:.2f}%", ln=True)
+    pdf.cell(200, 10, txt=f"- Metas em Andamento: {metas_em_andamento}", ln=True)
+    pdf.cell(200, 10, txt=f"- Metas Atrasadas: {metas_atrasadas}", ln=True)
+    pdf.ln(10)
+
+    # Resumo das Ações
+    pdf.cell(200, 10, txt="Resumo das Ações:", ln=True)
+    pdf.cell(200, 10, txt=f"- Total de Ações: {total_acoes}", ln=True)
+    pdf.cell(200, 10, txt=f"- Ações Concluídas: {percentual_acoes_concluidas:.2f}%", ln=True)
+    pdf.cell(200, 10, txt=f"- Ações Atrasadas: {acoes_concluidas}", ln=True)
+    pdf.ln(10)
+
+    # Objetivos
+    pdf.cell(200, 10, txt="Objetivos:", ln=True)
+    for objetivo in objetivos:
+        pdf.cell(200, 10, txt=f"- {objetivo.nome}", ln=True)
+    pdf.ln(10)
+
+    # Detalhamento das Metas e Indicadores
+    pdf.cell(200, 10, txt="Metas e Indicadores:", ln=True)
+    for meta in metas:
+        pdf.cell(200, 10, txt=f"- Meta: {meta.nome}", ln=True)
+        indicadores = IndicadorPlan.query.filter_by(meta_pe_id=meta.id).all()
+        for indicador in indicadores:
+            pdf.cell(200, 10, txt=f"  - Indicador: {indicador.nome} (Meta: {indicador.valor_meta})", ln=True)
+        pdf.ln(5)
+
+    # Geração do PDF
+    response = make_response(pdf.output(dest='S').encode('latin1'))
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=resumo_planejamento_{planejamento.id}.pdf'
+    return response
