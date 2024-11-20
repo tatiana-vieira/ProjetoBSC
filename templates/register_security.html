@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block titulo %}
+  Cadastrar Pergunta de Segurança
+{% endblock %}
+
+{% block conteudo %}
+<div style="margin: auto; width: 50%; text-align: center;">
+    <h1>Cadastrar Pergunta de Segurança</h1>
+    <form method="POST" action="{{ url_for('login.register_security') }}" style="margin-top: 20px;">
+        <div style="margin-bottom: 15px;">
+            <label for="email" style="display: block; font-weight: bold;">E-mail:</label>
+            <input type="email" id="email" name="email" placeholder="Digite seu e-mail" required 
+                   style="width: 100%; padding: 10px; font-size: 16px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="security_question" style="display: block; font-weight: bold;">Pergunta de Segurança:</label>
+            <input type="text" id="security_question" name="security_question" 
+                   placeholder="Ex: Nome do seu primeiro animal?" required 
+                   style="width: 100%; padding: 10px; font-size: 16px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="security_answer" style="display: block; font-weight: bold;">Resposta:</label>
+            <input type="text" id="security_answer" name="security_answer" placeholder="Resposta da pergunta" required 
+                   style="width: 100%; padding: 10px; font-size: 16px;">
+        </div>
+
+        <button type="submit" style="padding: 10px 20px; font-size: 16px; background-color: #05226f; color: white; border: none; cursor: pointer;">
+            Cadastrar
+        </button>
+    </form>
+</div>
+{% endblock %}

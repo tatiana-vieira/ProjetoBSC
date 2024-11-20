@@ -37,3 +37,5 @@ class PDF(FPDF):
             self.cell(30, 10, str(acao['execucao']), 1)
             self.cell(30, 10, acao['status'], 1)
             self.cell(40, 10, acao['tempo_restante'], 1, 1)
+
+

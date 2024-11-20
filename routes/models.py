@@ -210,23 +210,21 @@ class Producaointelectual(db.Model):
     projetopesquisa= db.Column(db.String(850))
     prodvinculadaconclusao= db.Column(db.String(35))
 ############################################################################33
-class Users(db.Model, UserMixin):
+class Users(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(50), nullable=False)
     programa_id = db.Column(db.Integer, db.ForeignKey('programas.id'))
+    security_question = db.Column(db.String(200), nullable=True)  # Pergunta de segurança
+    security_answer = db.Column(db.String(200), nullable=True)    # Resposta de segurança (armazenada com hash)
 
-    programa = db.relationship('Programa', backref='users')
+    def check_security_answer(self, answer):
+        return bcrypt.check_password_hash(self.security_answer, answer)
 
-    def check_password(self, password):
-        return bcrypt.check_password_hash(self.password_hash, password)
-
-
-    def set_password(self, password):
-        # Gere o hash da senha usando Flask-Bcrypt
-        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+    def set_security_answer(self, answer):
+        self.security_answer = bcrypt.generate_password_hash(answer).decode('utf-8')
 
      
     # Adicione esses métodos para Flask-Login

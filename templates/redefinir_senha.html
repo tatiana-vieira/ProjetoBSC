@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block titulo %}
+  Redefinir Senha
+{% endblock %}
+
+{% block conteudo %}
+<div style="margin: auto; width: 40%; margin-top: 50px;">
+    <div class="card">
+        <!-- Cabeçalho do formulário -->
+        <div class="card-header" style="background-color: #054b91; text-align: center; padding: 15px;">
+            <h4 style="color: #ffffff; margin: 0;">Redefinir Senha</h4>
+        </div>
+
+        <!-- Formulário -->
+        <form method="POST" action="{{ url_for('login.redefinir_senha', email=request.args.get('email')) }}" style="padding: 20px;">
+            <!-- Campo da resposta de segurança -->
+            <div style="margin-bottom: 20px;">
+                <label for="security_answer" style="display: block; font-weight: bold; margin-bottom: 5px;">Resposta de Segurança:</label>
+                <input 
+                    type="text" 
+                    name="security_answer" 
+                    id="security_answer" 
+                    placeholder="Digite sua resposta de segurança" 
+                    required 
+                    style="width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px;">
+            </div>
+
+            <!-- Campo para a nova senha -->
+            <div style="margin-bottom: 20px;">
+                <label for="new_password" style="display: block; font-weight: bold; margin-bottom: 5px;">Nova Senha:</label>
+                <input 
+                    type="password" 
+                    name="new_password" 
+                    id="new_password" 
+                    placeholder="Digite sua nova senha" 
+                    required 
+                    style="width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px;">
+            </div>
+
+            <!-- Botão de redefinir senha -->
+            <div style="text-align: center;">
+                <button 
+                    type="submit" 
+                    style="padding: 12px 25px; font-size: 16px; background-color: #05226f; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    Redefinir Senha
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

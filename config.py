@@ -21,3 +21,4 @@ login_manager.init_app(app)
 # Configurações do LoginManager
 login_manager.session_protection = 'strong'  # Pode ser 'basic', 'strong', 'None'
 login_manager.login_view = 'auth.login'  # Endpoint da rota de login
+
