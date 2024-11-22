@@ -1,4 +1,4 @@
-{% extends 'basepro.html' %}
+{% extends 'basecorden.html' %}
 
 {% block titulo %}
 <h1 style="text-align: center; margin-bottom: 20px;">Resultado de Regressão</h1>
@@ -25,10 +25,15 @@
             </div>
 
             <!-- Botão para retornar à página inicial do pró-reitor -->
-            <div style="text-align: center; margin-top: 20px;">
-                <button type="button" onclick="window.location.href='{{ url_for('login.get_coordenador') }}'" class="btn btn-danger">Voltar</button>
+            <div style="text-align: center; margin-top: 40px;">
+                <button onclick="window.history.back()" class="btn btn-success" style="padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px;">Voltar</button>
             </div>
         </div>
+        <script>
+            function voltar() {
+                window.location.href = "{{ url_for('login.get_coordenador') }}";
+            }
+        </script>
     </div>
 
 {% endblock %}

@@ -154,10 +154,7 @@ def renomear_colunas(discentecurso):
             'Gostaria de adicionar algum comentario referente seu Programa de Pos-Graduacao?':'comentario_programa',
             'Gostaria de adicionar algum comentario referente a Pro-Reitoria de Pesquisa e Pos-Graduacao?':'comentario_PRPPG'
         }, axis=1, inplace=True)
-        colunas_requeridas = ['Infraestrutura_geral', 'acompanhamento_discentes', 'tempo_programa']
-        colunas_faltantes = [col for col in colunas_requeridas if col not in discentecurso.columns]
-        if colunas_faltantes:
-                print(f"Colunas faltantes após renomeação: {colunas_faltantes}")
+    
 
         return discentecurso # Ensure the modified DataFrame is returned
 
@@ -808,15 +805,27 @@ def analisar_sentimentosdiscente():
 
         # Função para analisar o sentimento usando VADER
         analyser = SentimentIntensityAnalyzer()
+        # Aplicar o analisador apenas se o texto não for vazio
         def analisar_sentimento(texto):
-            if texto:
-                return analyser.polarity_scores(str(texto))['compound']
+            if texto.strip():
+                return analyser.polarity_scores(texto)['compound']
             return 0
 
         # Aplicar análise de sentimentos nas colunas
-        df_comentarios['Programa_Score'] = df_comentarios['Sentimento_Programa'].apply(analisar_sentimento)
-        df_comentarios['Pro_Reitoria_Score'] = df_comentarios['Sentimento_Pro_Reitoria'].apply(analisar_sentimento)
-        df_comentarios['Internacional_Score'] = df_comentarios['Sentimento_Internacional'].apply(analisar_sentimento)
+       # Função para analisar o sentimento usando VADER
+        analyser = SentimentIntensityAnalyzer()
+
+        # Aplicar análise de sentimentos nas colunas
+        df_comentarios['Programa_Score'] = df_comentarios['Sentimento_Programa'].apply(
+            lambda x: analyser.polarity_scores(str(x))['compound'] if x else 0
+        )
+        df_comentarios['Pro_Reitoria_Score'] = df_comentarios['Sentimento_Pro_Reitoria'].apply(
+            lambda x: analyser.polarity_scores(str(x))['compound'] if x else 0
+        )
+        df_comentarios['Internacional_Score'] = df_comentarios['Sentimento_Internacional'].apply(
+            lambda x: analyser.polarity_scores(str(x))['compound'] if x else 0
+        )
+
 
         # Calcular a média dos sentimentos (ignorando valores NaN)
         media_sentimentos_programa = df_comentarios['Programa_Score'].mean()
