@@ -41,21 +41,32 @@
             </div>
         {% endif %}
 
-        <!-- Gráfico de Distribuição do Status das Ações -->
-        {% if plot_urls['status'] %}
-            <div class="text-center mt-4">
-                <h5>Distribuição do Status das Ações</h5>
-                <img src="data:image/png;base64,{{ plot_urls['status'] }}" class="img-fluid" alt="Distribuição do Status" style="max-width: 80%; height: auto;">
+        <div class="row mt-5">
+            <!-- Coluna do Gráfico de Distribuição do Status -->
+            <div class="col-md-6">
+                {% if plot_urls['status'] %}
+                    <div class="text-center">
+                        <h5>Distribuição do Status das Ações</h5>
+                        <img src="data:image/png;base64,{{ plot_urls['status'] }}" class="img-fluid" alt="Distribuição do Status" style="max-width: 100%; height: auto;">
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted">Gráfico de status não disponível.</p>
+                {% endif %}
             </div>
-        {% endif %}
-
-        <!-- Gráfico de Duração Média por Ação -->
-        {% if plot_urls['duration'] %}
-            <div class="text-center mt-4">
-                <h5>Duração Média de Execução por Ação</h5>
-                <img src="data:image/png;base64,{{ plot_urls['duration'] }}" class="img-fluid" alt="Duração Média por Ação" style="max-width: 80%; height: auto;">
+        
+            <!-- Coluna do Gráfico de Duração Média -->
+            <div class="col-md-6">
+                {% if plot_urls['duration'] %}
+                    <div class="text-center">
+                        <h5>Duração Média de Execução por Ação</h5>
+                        <img src="data:image/png;base64,{{ plot_urls['duration'] }}" class="img-fluid" alt="Duração Média por Ação" style="max-width: 100%; height: auto;">
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted">Gráfico de duração média não disponível.</p>
+                {% endif %}
             </div>
-        {% endif %}
+        </div>
+        
     </div>
 
     <div class="text-center mt-4 mb-4">

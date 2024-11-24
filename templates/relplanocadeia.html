@@ -34,23 +34,31 @@
                 <th>Objetivo</th>
                 <th>Meta</th>
                 <th>Indicador</th>
+                <th>Valor Meta</th>
+                <th>Ação</th>
                 <th>Risco</th>
                 <th>Ação Preventiva</th>
             </tr>
         </thead>
         <tbody>
             {% for objetivo in dados_objetivos %}
-                <tr>
-                    <td>{{ objetivo.nome }}</td>
-                    <td colspan="4"></td>
-                </tr>
                 {% for meta in objetivo.metas %}
                     <tr>
-                        <td></td>
+                        <td>{{ objetivo.nome }}</td>
                         <td>{{ meta.nome }}</td>
                         <td>
                             {% for indicador in meta.indicadores %}
                                 {{ indicador.nome }}<br>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for valor in meta.valores %}
+                                {{ valor.valor }}<br>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for acao in meta.acoes %}
+                                {{ acao.nome }} - {{ acao.porcentagem_execucao }}%<br>
                             {% endfor %}
                         </td>
                         <td>
@@ -71,9 +79,8 @@
 </div>
 
 <div class="text-center mt-4">
-<a id="gerar-pdf" href="{{ url_for('relatorioplanejamento.gerarrel_pdf', planejamento_id=planejamento_selecionado.id) }}" class="btn btn-primary mt-2">Gerar PDF</a>
-<a id="gerar-excel" href="{{ url_for('relatorioplanejamento.gerarrel_excel', planejamento_id=planejamento_selecionado.id) }}" class="btn btn-success ms-2">Gerar Planilha</a>
-
+    <a id="gerar-pdf" href="{{ url_for('relatorioplanejamento.gerar_pdf', planejamento_id=planejamento.id) }}" class="btn btn-primary mt-2">Gerar PDF</a>
+    <a id="gerar-excel" href="{{ url_for('relatorioplanejamento.gerar_excel', planejamento_id=planejamento.id) }}" class="btn btn-success ms-2">Gerar Planilha</a>
 </div>
 {% endif %}
 
