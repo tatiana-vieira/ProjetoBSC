@@ -10,6 +10,20 @@
         <h4 style="text-align: center; color: #ffffff;">Cadastro de Meta</h4>
     </div>
     <div class="card-body">
+
+        <!-- Exibição de mensagens de sucesso ou erro -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div>
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}" role="alert" style="margin-bottom: 20px; text-align: center;">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <form id="MetaForm" method="POST" action="{{ url_for('cadastro_meta') }}">
             <div class="form-group">
                 <label for="pdi_id">PDI:</label>
@@ -33,6 +47,21 @@
             </div>
 
             <div class="form-group">
+                <label for="descricao">Descrição:</label>
+                <textarea id="descricao" name="descricao" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="prazo_final">Prazo Final:</label>
+                <input type="date" id="prazo_final" name="prazo_final" required class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="responsavel">Responsável:</label>
+                <input type="text" id="responsavel" name="responsavel" class="form-control" placeholder="Digite o nome do responsável">
+            </div>
+
+            <div class="form-group">
                 <label for="porcentagem_execucao">Porcentagem de Execução:</label>
                 <input type="number" id="porcentagem_execucao" name="porcentagem_execucao" required class="form-control">
             </div>
@@ -40,16 +69,16 @@
             <div style="text-align: center;">
                 <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cadastrar</button>
                 <button type="button" onclick="window.history.back()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button>
-                <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button><br>
-
             </div>
         </form>
-        <script>
-            function fechar() {
-                window.location.href = "{{ url_for('login.get_proreitor') }}";
-            }
-        </script>
     </div>
+</div>
+
+<!-- Filtro de metas -->
+<div class="form-group" style="margin: 20px auto; text-align: center;">
+    <button class="btn btn-primary" onclick="filtrarMetas('em_andamento')">Em Andamento</button>
+    <button class="btn btn-success" onclick="filtrarMetas('concluida')">Concluídas</button>
+    <button class="btn btn-danger" onclick="filtrarMetas('atrasada')">Atrasadas</button>
 </div>
 
 <!-- Tabela para listar as metas cadastradas -->
@@ -58,14 +87,15 @@
         <h4 style="text-align: center; color: #ffffff;">Metas Cadastradas</h4>
     </div>
     <div class="card-body">
-        <table class="table table-bordered" style="width: 100%;">
+        <table class="table table-bordered" style="width: 100%; text-align: center;">
             <thead>
                 <tr>
-                    <th style="width: 30%;">Nome da Meta</th>
-                    <th style="width: 25%;">Objetivo</th>
-                    <th style="width: 15%;">Porcentagem de Execução</th>
-                    <th style="width: 20%;">Última Atualização</th>
-                    <th style="width: 10%;">Ações</th>
+                    <th>Nome da Meta</th>
+                    <th>Objetivo</th>
+                    <th>Porcentagem de Execução</th>
+                    <th>Prazo Final</th>
+                    <th>Responsável</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody id="meta-list">
@@ -73,10 +103,16 @@
                     <tr>
                         <td>{{ meta.nome }}</td>
                         <td>{{ meta.objetivo.nome }}</td>
-                        <td>{{ meta.porcentagem_execucao }}%</td>
-                        <td>{{ meta.data_ultima_atualizacao.strftime('%d/%m/%Y') if meta.data_ultima_atualizacao else 'N/A' }}</td>
                         <td>
-                            <!-- Botão "Alterar" em verde -->
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: {{ meta.porcentagem_execucao }}%;" aria-valuenow="{{ meta.porcentagem_execucao }}" aria-valuemin="0" aria-valuemax="100">
+                                    {{ meta.porcentagem_execucao }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ meta.prazo_final.strftime('%d/%m/%Y') if meta.prazo_final else 'N/A' }}</td>
+                        <td>{{ meta.responsavel }}</td>
+                        <td>
                             <a href="{{ url_for('editar_meta', meta_id=meta.id) }}" class="btn btn-success btn-sm">Alterar</a>
                         </td>
                     </tr>
@@ -87,8 +123,33 @@
 </div>
 
 <script>
-    function cancelar() {
-        window.location.href = "{{ url_for('cadastro_meta') }}";
+    function filtrarMetas(status) {
+        fetch(`/filtrar_metas?status=${status}`)
+            .then(response => response.json())
+            .then(data => {
+                const metaList = document.getElementById('meta-list');
+                metaList.innerHTML = ''; // Limpa as metas atuais na tabela
+
+                data.forEach(meta => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${meta.nome}</td>
+                        <td>${meta.objetivo_nome}</td>
+                        <td>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: ${meta.porcentagem_execucao}%;"
+                                     aria-valuenow="${meta.porcentagem_execucao}" aria-valuemin="0" aria-valuemax="100">
+                                    ${meta.porcentagem_execucao}%
+                                </div>
+                            </div>
+                        </td>
+                        <td>${meta.prazo_final ? meta.prazo_final : 'N/A'}</td>
+                        <td>${meta.responsavel ? meta.responsavel : 'Não atribuído'}</td>
+                        <td><a href="/editar_meta/${meta.id}" class="btn btn-success btn-sm">Alterar</a></td>
+                    `;
+                    metaList.appendChild(row);
+                });
+            });
     }
 
     document.getElementById('pdi_id').addEventListener('change', function() {
@@ -107,58 +168,15 @@
                 });
 
                 // Atualiza a lista de metas para o PDI selecionado
-                atualizarMetas(pdiId);
+                filtrarMetas('em_andamento');
             });
     });
-
-    function atualizarMetas(pdiId) {
-    fetch(`/metas_relacionadas_pdi/${pdiId}`)
-        .then(response => response.json())
-        .then(data => {
-            const metaList = document.getElementById('meta-list');
-            metaList.innerHTML = ''; // Limpa as metas atuais na tabela
-
-            data.forEach(meta => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${meta.nome}</td>
-                    <td>${meta.objetivo_nome}</td>
-                    <td>${meta.porcentagem_execucao}%</td>
-                    <td>${meta.data_ultima_atualizacao ? meta.data_ultima_atualizacao : 'N/A'}</td>
-                    <td><a href="/editar_meta/${meta.id}" class="btn btn-success btn-sm">Alterar</a></td>
-                `;
-                metaList.appendChild(row);
-            });
-        });
-}
 
     window.onload = function() {
         const pdiId = document.getElementById('pdi_id').value;
         if (pdiId) {
-            fetch(`/objetivos_relacionados_pdi/${pdiId}`)
-                .then(response => response.json())
-                .then(data => {
-                    const objetivoSelect = document.getElementById('objetivo_id');
-                    objetivoSelect.innerHTML = '';
-
-                    data.forEach(objetivo => {
-                        const option = document.createElement('option');
-                        option.value = objetivo.id;
-                        option.text = objetivo.nome;
-                        objetivoSelect.appendChild(option);
-                    });
-
-                    // Carrega as metas do PDI selecionado ao carregar a página
-                    atualizarMetas(pdiId);
-                });
+            filtrarMetas('em_andamento');
         }
-    }
-    row.innerHTML = `
-    <td>${meta.nome}</td>
-    <td>${meta.objetivo_nome}</td>
-    <td>${meta.porcentagem_execucao}%</td>
-    <td>${meta.data_ultima_atualizacao ? meta.data_ultima_atualizacao : 'N/A'}</td>
-    <td><a href="/editar_meta/${meta.id}" class="btn btn-success btn-sm">Alterar</a></td>
-`;
+    };
 </script>
 {% endblock %}

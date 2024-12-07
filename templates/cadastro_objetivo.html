@@ -8,37 +8,80 @@
 <div class="container" style="max-width: 80%; margin-top: 30px;">
     <div class="card">
         <div class="card-header" style="background-color: #054b91;">
-            <h4 style="text-align: center; color: #ffffff;">{{ 'Editar Objetivo' if objetivo else 'Cadastro de Objetivo' }}</h4> <!-- Título com fundo azul e texto branco -->
+            <h4 style="text-align: center; color: #ffffff;">{{ 'Editar Objetivo' if objetivo else 'Cadastro de Objetivo' }}</h4>
         </div>
         <div class="card-body">
             {% if success_message %}
                 <div style="color: green; margin-bottom: 20px; text-align: center;">{{ success_message }}</div>
             {% endif %}
-            <form id="Objetivo" method="POST">
-                <label for="nome">Nome do Objetivo:</label>
-                <input type="text" id="nome" name="nome" value="{{ objetivo.nome if objetivo else '' }}" required style="width: 100%; margin-bottom: 10px;">
-                
-                <label for="bsc">BSC:</label>
-                <select id="bsc" name="bsc" required style="width: 100%; margin-bottom: 10px;">
+
+            <form method="POST" style="margin-bottom: 20px;">
+                <!-- Campo Nome -->
+                <label for="nome" style="font-weight: bold;">Nome do Objetivo:</label>
+                <input type="text" id="nome" name="nome" value="{{ objetivo.nome if objetivo else '' }}" class="form-control" style="width: 100%; margin-bottom: 15px;" placeholder="Digite o nome do objetivo">
+
+                <!-- Campo BSC -->
+                <label for="bsc" style="font-weight: bold;">BSC:</label>
+                <select id="bsc" name="bsc" required class="form-control" style="width: 100%; margin-bottom: 15px;">
                     <option value="Recursos" {% if objetivo and objetivo.bsc == 'Recursos' %}selected{% endif %}>Recursos</option>
                     <option value="Usuário e Comunidade" {% if objetivo and objetivo.bsc == 'Usuário e Comunidade' %}selected{% endif %}>Usuário e Comunidade</option>
                     <option value="Processos Internos" {% if objetivo and objetivo.bsc == 'Processos Internos' %}selected{% endif %}>Processos Internos</option>
                     <option value="Resultado" {% if objetivo and objetivo.bsc == 'Resultado' %}selected{% endif %}>Resultado</option>
                 </select>
-                
-                <label for="pdi">Selecione o PDI:</label>
-                <select id="pdi" name="pdi_id" required style="width: 100%; margin-bottom: 10px;">
+
+                <!-- Campo PDI -->
+                <label for="pdi" style="font-weight: bold;">Selecione o PDI:</label>
+                <select id="pdi" name="pdi_id" required class="form-control" style="width: 100%; margin-bottom: 15px;">
                     {% for pdi in lista_pdis %}
                         <option value="{{ pdi.id }}" {% if objetivo and objetivo.pdi_id == pdi.id %}selected{% endif %}>{{ pdi.nome }}</option>
                     {% endfor %}
                 </select>
-                
+
+                <!-- Barra de Progresso -->
+                <label style="font-weight: bold;">Progresso do Objetivo:</label>
+                <div class="progress" style="height: 25px; margin-bottom: 15px;">
+                    <div class="progress-bar" role="progressbar" style="width: {{ objetivo.progresso if objetivo else 0 }}%;" aria-valuenow="{{ objetivo.progresso if objetivo else 0 }}" aria-valuemin="0" aria-valuemax="100">
+                        {{ objetivo.progresso if objetivo else 0 }}%
+                    </div>
+                </div>
+
+                <!-- Botões -->
                 <div style="text-align: center; margin-top: 20px;">
                     <button type="submit" style="background-color: darkblue; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">{{ 'Atualizar' if objetivo else 'Cadastrar' }}</button>
                     <button type="button" onclick="alterar()" style="background-color: #065110; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Alterar</button>
                     <button type="button" onclick="fechar()" style="background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Fechar</button>
                 </div>
             </form>
+
+            <!-- Indicadores Vinculados -->
+            <h5 style="font-weight: bold; margin-top: 30px;">Indicadores Vinculados:</h5>
+            <table class="table table-bordered" style="margin-top: 15px;">
+                <thead>
+                    <tr style="background-color: #f0f0f0;">
+                        <th>Nome</th>
+                        <th>Valor Atual</th>
+                        <th>Valor Esperado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if objetivo and objetivo.indicadores %}
+                        {% for indicador in objetivo.indicadores %}
+                            <tr>
+                                <td>{{ indicador.nome }}</td>
+                                <td>{{ indicador.valor_atual }}</td>
+                                <td>{{ indicador.valor_esperado }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="3" style="text-align: center;">Nenhum indicador vinculado.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            {% if not objetivo %}
+                <p style="color: gray; text-align: center;">Vincular Indicador (indisponível)</p>
+            {% endif %}
         </div>
     </div>
 </div>

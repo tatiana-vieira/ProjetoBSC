@@ -18,15 +18,21 @@ def sucesso_cadastro():
 
 @indicador_route.route('/get_objetivos/<int:pdi_id>', methods=['GET'])
 def get_objetivos(pdi_id):
+    print(f"Buscando objetivos para PDI ID: {pdi_id}")  # Log para depuração
     objetivos = Objetivo.query.filter_by(pdi_id=pdi_id).all()
+    print(f"Objetivos encontrados: {objetivos}")  # Confirma se os dados foram encontrados
     objetivos_data = [{'id': obj.id, 'nome': obj.nome} for obj in objetivos]
     return jsonify({'objetivos': objetivos_data})
 
+
 @indicador_route.route('/get_metas/<int:objetivo_id>', methods=['GET'])
 def get_metas(objetivo_id):
+    print(f"Buscando metas para Objetivo ID: {objetivo_id}")  # Log para depuração
     metas = Meta.query.filter_by(objetivo_id=objetivo_id).all()
+    print(f"Metas encontradas: {metas}")  # Confirma se os dados foram encontrados
     metas_data = [{'id': meta.id, 'nome': meta.nome} for meta in metas]
     return jsonify({'metas': metas_data})
+
 
 
 ########################################################33
@@ -44,25 +50,27 @@ def processar_formulario_indicador(indicador_id=None):
     valor_esperado = request.form.get('valor_esperado')
 
     if not nome or not meta_id:
-        return 'Dados incompletos'
+        flash('Nome e Meta são obrigatórios!', 'danger')
+        return redirect(url_for('indicador.cadastro_indicador'))
 
     if indicador_id:
         indicador = Indicador.query.get(indicador_id)
         if indicador:
             indicador.nome = nome
             indicador.meta_id = meta_id
-            indicador.valor_atual = valor_atual
-            indicador.valor_esperado = valor_esperado
+            indicador.valor_atual = valor_atual or None
+            indicador.valor_esperado = valor_esperado or None
             db.session.commit()
-            return 'Indicador alterado com sucesso!'
+            flash('Indicador alterado com sucesso!', 'success')
         else:
-            return 'Indicador não encontrado'
+            flash('Indicador não encontrado!', 'danger')
     else:
-        novo_indicador = Indicador(nome=nome, meta_pdi_id=meta_id, valor_atual=valor_atual, valor_esperado=valor_esperado)
+        novo_indicador = Indicador(nome=nome, meta_id=meta_id, valor_atual=valor_atual, valor_esperado=valor_esperado)
         db.session.add(novo_indicador)
         db.session.commit()
-        return 'Indicador cadastrado com sucesso!'
+        flash('Indicador cadastrado com sucesso!', 'success')
 
+    return redirect(url_for('indicador.cadastro_indicador'))
 
 
 #####################################################################################################
@@ -88,3 +96,16 @@ def editar_indicador(indicador_id):
 def lista_indicadores():
     indicadores = Indicador.query.all()
     return render_template('listaindicadorpdi.html', indicadores=indicadores)
+
+########################################################33
+@indicador_route.route('/deletar_indicador/<int:indicador_id>', methods=['POST'])
+def deletar_indicador(indicador_id):
+    indicador = Indicador.query.get_or_404(indicador_id)
+    try:
+        db.session.delete(indicador)
+        db.session.commit()
+        flash('Indicador deletado com sucesso!', 'success')
+    except Exception as e:
+        flash(f'Erro ao deletar indicador: {str(e)}', 'danger')
+    return redirect(url_for('indicador.cadastro_indicador'))
+

@@ -55,7 +55,50 @@
             </form>
         </div>
     </div>
-      
+      <!-- Lista de Indicadores -->
+<div class="card mt-4">
+    <div class="card-header" style="background-color: #054b91;">
+        <h4 style="text-align: center; color: #ffffff;">Indicadores Cadastrados</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered text-center">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Meta</th>
+                    <th>Objetivo</th>
+                    <th>PDI</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for indicador in indicadores %}
+                    <tr>
+                        <td>{{ indicador.nome }}</td>
+                        <td>{{ indicador.meta.nome if indicador.meta else 'N/A' }}</td>
+                        <td>{{ indicador.meta.objetivo.nome if indicador.meta and indicador.meta.objetivo else 'N/A' }}</td>
+                        <td>{{ indicador.meta.objetivo.pdi.nome if indicador.meta and indicador.meta.objetivo else 'N/A' }}</td>
+                        <td>
+                            <!-- Botão para Alterar -->
+                            <button class="btn btn-success btn-sm" 
+                                    onclick="preencherFormulario({{ indicador.id }}, '{{ indicador.nome }}', '{{ indicador.valor_atual }}', '{{ indicador.valor_esperado }}', '{{ indicador.meta_id }}')">
+                                Alterar
+                            </button>
+                            
+                            <!-- Botão para Excluir -->
+                            <form action="{{ url_for('indicador.deletar_indicador', indicador_id=indicador.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir este indicador?');">
+                                    Excluir
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {

@@ -30,9 +30,13 @@
                         {% for indicador in indicadores %}
                         <tr>
                             <td>{{ indicador.nome }}</td>
-                            <td>{{ indicador.meta.nome }}</td>
-                            <td>{{ indicador.meta.objetivo.nome }}</td>
-                            <td>{{ indicador.meta.objetivo.pdi.nome }}</td>
+                            <td>{{ indicador.meta.nome if indicador.meta else 'N/A' }}</td>
+                            <td>
+                                {{ indicador.meta.objetivo.nome if indicador.meta and indicador.meta.objetivo else 'N/A' }}
+                            </td>
+                            <td>
+                                {{ indicador.meta.objetivo.pdi.nome if indicador.meta and indicador.meta.objetivo and indicador.meta.objetivo.pdi else 'N/A' }}
+                            </td>
                             <td>
                                 <a href="{{ url_for('indicador.editar_indicador', indicador_id=indicador.id) }}" 
                                    class="btn btn-success btn-sm" 
@@ -41,8 +45,14 @@
                                 </a>
                             </td>
                         </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5">Nenhum indicador encontrado.</td>
+                        </tr>
                         {% endfor %}
                     </tbody>
+                    
+                    
                 </table>
             </div>
 

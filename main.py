@@ -441,19 +441,86 @@ def sucesso_cadastro():
     return 'Cadastro realizado com sucesso!'
 
 ######################Cadastro Objetivo ######################################
-@app.route('/lista_objetivos')
+@app.route('/lista_objetivos', methods=['GET', 'POST'])
 def lista_objetivos():
-    objetivos = Objetivo.query.options(joinedload(Objetivo.pdi)).all()
-    return render_template('lista_objetivos.html', objetivos=objetivos)
+    filtros = {}
+    if request.method == 'POST':
+        bsc_filtro = request.form.get('bsc')
+        pdi_filtro = request.form.get('pdi_id')
+        nome_filtro = request.form.get('nome')
 
+        if bsc_filtro:
+            filtros['bsc'] = bsc_filtro
+        if pdi_filtro:
+            filtros['pdi_id'] = pdi_filtro
+        if nome_filtro:
+            filtros['nome'] = nome_filtro
+
+    objetivos = Objetivo.query.filter_by(**filtros).options(joinedload(Objetivo.pdi)).distinct().all()
+    lista_pdis = PDI.query.all()
+    return render_template('lista_objetivos.html', objetivos=objetivos, lista_pdis=lista_pdis)
+
+
+
+
+def atualizar_progresso_objetivo(objetivo_id):
+    objetivo = Objetivo.query.get(objetivo_id)
+    if objetivo.indicadores:
+        progresso_total = sum(
+            indicador.valor_atual / indicador.valor_esperado
+            for indicador in objetivo.indicadores
+            if indicador.valor_esperado > 0
+        )
+        objetivo.progresso = round((progresso_total / len(objetivo.indicadores)) * 100, 2)
+    else:
+        objetivo.progresso = 0
+    db.session.commit()
+
+
+@app.route('/vincular_indicador/<int:objetivo_id>', methods=['GET', 'POST'])
+def vincular_indicador(objetivo_id):
+    objetivo = Objetivo.query.get_or_404(objetivo_id)
+    error_message = None
+
+    if request.method == 'POST':
+        indicador_id = request.form['indicador_id']
+        indicador = Indicador.query.get_or_404(indicador_id)
+        if indicador.objetivo_id:
+            error_message = f"Indicador '{indicador.nome}' já está vinculado a outro objetivo."
+        else:
+            indicador.objetivo_id = objetivo.id
+            db.session.commit()
+            return redirect(url_for('editar_objetivo', objetivo_id=objetivo.id))
+
+    indicadores_disponiveis = Indicador.query.filter_by(objetivo_id=None).all()  # Apenas indicadores não vinculados
+    return render_template('vincular_indicador.html', objetivo=objetivo, indicadores=indicadores_disponiveis, error_message=error_message)
+
+
+ 
 @app.route('/cadastro_objetivo', methods=['GET', 'POST'])
 def cadastro_objetivo():
-    success_message = None
-    if request.method == 'POST':
-        success_message = processar_formulario_objetivo()
-    
+    objetivo_id = request.args.get('id')  # Tenta recuperar o ID do objetivo
+    objetivo = None
+    error_message = None
+
+    if objetivo_id:
+        try:
+            objetivo = Objetivo.query.get(int(objetivo_id))  # Busca o objetivo pelo ID
+            if not objetivo:
+                error_message = f"Objetivo com ID {objetivo_id} não encontrado."
+        except ValueError:
+            error_message = f"ID inválido fornecido: {objetivo_id}"
+
     lista_pdis = PDI.query.all()
-    return render_template('cadastro_objetivo.html', lista_pdis=lista_pdis, objetivo=None, success_message=success_message)
+    return render_template(
+        'cadastro_objetivo.html',
+        lista_pdis=lista_pdis,
+        objetivo=objetivo,
+        success_message=None,
+        error_message=error_message  # Envia mensagens de erro ao template
+    )
+
+
 
 
 @app.route('/editar_objetivo/<int:objetivo_id>', methods=['GET', 'POST'])
@@ -471,79 +538,112 @@ def editar_objetivo(objetivo_id):
 def processar_formulario_objetivo(objetivo_id=None):
     if 'email' not in session:
         return 'Acesso não autorizado'
-    
+
     user = Users.query.filter_by(email=session['email']).first()
     if user.role != 'Pro-reitor':
         return 'Acesso não autorizado'
 
-    pdi_id = request.form['pdi_id']
-    nome = request.form['nome']
-    bsc = request.form['bsc']
+    pdi_id = request.form.get('pdi_id')
+    nome = request.form.get('nome')
+    bsc = request.form.get('bsc')
+    descricao = request.form.get('descricao')
+
+    if not all([pdi_id, nome, bsc, descricao]):
+        return "Todos os campos são obrigatórios."
 
     if objetivo_id:
+        # Editar objetivo existente
         objetivo = Objetivo.query.get(objetivo_id)
         objetivo.pdi_id = pdi_id
         objetivo.nome = nome
         objetivo.bsc = bsc
+        objetivo.descricao = descricao
         db.session.commit()
         return "Objetivo alterado com sucesso"
     else:
-        novo_objetivo = Objetivo(pdi_id=pdi_id, nome=nome, bsc=bsc)
+        # Verificar duplicidade de objetivo
+        objetivo_existente = Objetivo.query.filter_by(nome=nome, pdi_id=pdi_id).first()
+        if objetivo_existente:
+            return "Um objetivo com este nome já existe neste PDI."
+
+        # Criar novo objetivo
+        novo_objetivo = Objetivo(pdi_id=pdi_id, nome=nome, bsc=bsc, descricao=descricao)
         db.session.add(novo_objetivo)
         db.session.commit()
         return "Objetivo cadastrado com sucesso"
+
+
+@app.route('/excluir_objetivo/<int:objetivo_id>', methods=['POST'])
+def excluir_objetivo(objetivo_id):
+    objetivo = Objetivo.query.get_or_404(objetivo_id)
+    db.session.delete(objetivo)
+    db.session.commit()
+    return redirect(url_for('lista_objetivos'))
+
 ##############################################################################################################################
 ###########################################################################################################################
+
 @app.route('/cadastro_meta', methods=['GET', 'POST'])
 def cadastro_meta():
     if request.method == 'POST':
         return processar_formulario_meta()
 
-    lista_pdis = PDI.query.all()
+    lista_pdis = PDI.query.all()  # Lista todos os PDIs cadastrados
     pdi_id = request.args.get('pdi_id')
     if pdi_id:
-        objetivos = buscar_objetivos_relacionados_pdi(int(pdi_id))
+        objetivos = buscar_objetivos_relacionados_pdi(int(pdi_id))  # Obtém objetivos relacionados ao PDI selecionado
     else:
         objetivos = []
 
-    # Passe `datetime` para o contexto
+    # Renderiza o template com os dados disponíveis
     return render_template('cadastro_meta.html', lista_pdis=lista_pdis, objetivos=objetivos, datetime=datetime)
-#########################################################################################333
+
+
+
 def processar_formulario_meta():
     if 'email' not in session:
-        return 'Acesso não autorizado'
+        flash('Acesso não autorizado', 'error')
+        return redirect(url_for('login_page'))
 
     user = Users.query.filter_by(email=session['email']).first()
     if user.role != 'Pro-reitor':
-        return 'Acesso não autorizado'
+        flash('Acesso não autorizado', 'error')
+        return redirect(url_for('login_page'))
 
     objetivo_id = request.form['objetivo_id']
     nome = request.form['nome']
-    porcentagem_execucao = request.form['porcentagem_execucao']
+    descricao = request.form.get('descricao', '')  # Campo opcional
+    prazo_final = request.form['prazo_final']
+    responsavel = request.form.get('responsavel', '')  # Campo opcional
+    porcentagem_execucao = request.form.get('porcentagem_execucao', 0)  # Padrão: 0%
 
-    # Insere os dados no banco de dados, `data_ultima_atualizacao` será automaticamente preenchido
     novo_meta = Meta(
         objetivo_id=objetivo_id,
         nome=nome,
+        descricao=descricao,
+        prazo_final=datetime.strptime(prazo_final, '%Y-%m-%d'),
+        responsavel=responsavel,
         porcentagem_execucao=porcentagem_execucao
     )
     db.session.add(novo_meta)
     db.session.commit()
 
-    return redirect(url_for('sucesso_cadastro'))
+    flash('Meta cadastrada com sucesso!', 'success')
+    return redirect(url_for('cadastro_meta'))
 
 
 
 def buscar_objetivos_relacionados_pdi(pdi_id):
-    # Busca os objetivos relacionados ao PDI
-    objetivos = Objetivo.query.filter_by(pdi_id=pdi_id).all()
-    return objetivos
+    # Retorna os objetivos relacionados ao PDI específico
+    return Objetivo.query.filter_by(pdi_id=pdi_id).all()
 
 
 @app.route('/metas_relacionadas_pdi/<int:pdi_id>')
 def metas_relacionadas_pdi(pdi_id):
     objetivos = buscar_objetivos_relacionados_pdi(pdi_id)
     metas = Meta.query.filter(Meta.objetivo_id.in_([objetivo.id for objetivo in objetivos])).all()
+
+    # Serializa os dados para JSON
     data = [
         {
             'id': meta.id,
@@ -555,6 +655,46 @@ def metas_relacionadas_pdi(pdi_id):
         for meta in metas
     ]
     return jsonify(data)
+
+
+@app.route('/filtrar_metas', methods=['GET'])
+def filtrar_metas():
+    status = request.args.get('status')
+    now = datetime.utcnow()
+
+    if status == 'atrasada':
+        metas = Meta.query.filter(Meta.prazo_final < now, Meta.porcentagem_execucao < 100).all()
+    elif status == 'concluida':
+        metas = Meta.query.filter(Meta.porcentagem_execucao == 100).all()
+    else:  # Em andamento
+        metas = Meta.query.filter(Meta.prazo_final >= now, Meta.porcentagem_execucao < 100).all()
+
+    # Serializa os dados para JSON
+    data = [
+        {
+            'id': meta.id,
+            'nome': meta.nome,
+            'descricao': meta.descricao,
+            'responsavel': meta.responsavel or 'Não atribuído',
+            'prazo_final': meta.prazo_final.strftime('%d/%m/%Y') if meta.prazo_final else None,
+            'porcentagem_execucao': meta.porcentagem_execucao
+        }
+        for meta in metas
+    ]
+    return jsonify(data)
+
+
+def verificar_alertas_metas():
+    now = datetime.utcnow()
+
+    metas_atrasadas = Meta.query.filter(Meta.prazo_final < now, Meta.porcentagem_execucao < 100).all()
+    metas_concluidas = Meta.query.filter(Meta.porcentagem_execucao == 100).all()
+
+    return {
+        "atrasadas": len(metas_atrasadas),
+        "concluidas": len(metas_concluidas),
+        "total": Meta.query.count()
+    }
 
 #####################################################################3
 @app.route('/selecionar_pdi_para_alteracao', methods=['GET'])

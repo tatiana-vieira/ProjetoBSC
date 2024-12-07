@@ -326,12 +326,15 @@ class CadeiaValor(db.Model):
 ################################################## PDI###################################################################################3
 class Indicador(db.Model):
     __tablename__ = 'indicador'
+
     id = db.Column(db.Integer, primary_key=True)
-    meta_pdi_id = db.Column(db.Numeric(4, 2), db.ForeignKey('meta_pdi.id'), nullable=False)
+    meta_id = db.Column(db.Numeric(4, 2), db.ForeignKey('meta_pdi.id'), nullable=False)  # Relacionamento com Meta
     nome = db.Column(db.String(2500), nullable=False)
-    valor_atual = db.Column(db.Float, nullable=True)
-    valor_esperado = db.Column(db.Float, nullable=True)
-    meta = db.relationship('Meta', back_populates='indicadores')
+    valor_atual = db.Column(db.Float, nullable=True)  # Progresso atual do indicador
+    valor_esperado = db.Column(db.Float, nullable=True)  # Valor esperado do indicador
+
+    meta = db.relationship('Meta', back_populates='indicadores')  # Relacionamento reverso com Meta
+
 
 class PDI(db.Model):
     __tablename__ = 'pdi'
@@ -345,21 +348,30 @@ class PDI(db.Model):
 
 class Meta(db.Model):
     __tablename__ = 'meta_pdi'
+
     id = db.Column(db.Numeric(4, 2), primary_key=True)
     objetivo_id = db.Column(db.Integer, db.ForeignKey('objetivo_pdi.id'), nullable=False)
     nome = db.Column(db.String(2500), nullable=False)
-    porcentagem_execucao = db.Column(db.Numeric(4, 2), nullable=False)
+    descricao = db.Column(db.Text, nullable=True)
+    porcentagem_execucao = db.Column(db.Numeric(4, 2), nullable=False, default=0.00)
+    prazo_final = db.Column(db.Date, nullable=True)
+    responsavel = db.Column(db.String(250), nullable=True)
     data_ultima_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     objetivo = db.relationship('Objetivo', back_populates='metas')
-    indicadores = db.relationship('Indicador', back_populates='meta')
+    indicadores = db.relationship('Indicador', back_populates='meta', lazy='dynamic')  # Relacionamento com Indicadores
+
+
+
 #####################################################################################3
 class Objetivo(db.Model):
     __tablename__ = 'objetivo_pdi'
     id = db.Column(db.Integer, primary_key=True)
-    pdi_id = db.Column(db.Integer, db.ForeignKey('pdi.id'), nullable=False)
-    nome = db.Column(db.String(2500), nullable=False)
-    bsc = db.Column(db.String(100), nullable=False)
+    pdi_id = db.Column(db.Integer, db.ForeignKey('pdi.id'))
+    nome = db.Column(db.String(2500))
+    bsc = db.Column(db.String(100))
+    descricao = db.Column(db.Text)
+    progresso = db.Column(db.Float, default=0.0)
     
     pdi = db.relationship('PDI', back_populates='objetivos')
     metas = db.relationship('Meta', back_populates='objetivo')

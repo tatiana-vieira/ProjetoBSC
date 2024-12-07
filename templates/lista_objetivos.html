@@ -64,6 +64,25 @@
                 .btn-green:hover {
                     background-color: #218838;
                 }
+                
+                .modal .btn-primary {
+                    background-color: #054b91;
+                    border: none;
+                    color: white;
+                }
+
+                .modal .btn-danger {
+                    background-color: #f44336;
+                    border: none;
+                    color: white;
+                }
+
+                .modal .btn {
+                    margin: 5px;
+                    padding: 10px 20px;
+                }
+
+
             </style>
             
             <!-- Tabela de Objetivos -->
@@ -72,24 +91,29 @@
                     <tr>
                         <th>Nome</th>
                         <th>BSC</th>
-                        <th>PDI</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for objetivo in objetivos %}
+                    {% for objetivo in objetivos|unique %}
                     <tr>
                         <td>{{ objetivo.nome }}</td>
                         <td>{{ objetivo.bsc }}</td>
-                        <td>{{ objetivo.pdi.nome }}</td>
                         <td>
-                            <!-- Botão verde para editar -->
                             <a href="{{ url_for('editar_objetivo', objetivo_id=objetivo.id) }}" class="btn-green">Editar</a>
+                            <button type="button" class="btn btn-danger" onclick="confirmDelete('{{ url_for('excluir_objetivo', objetivo_id=objetivo.id) }}', '{{ objetivo.nome }}')">Excluir</button>
                         </td>
                     </tr>
                     {% endfor %}
+                    {% if objetivos|length == 0 %}
+                    <tr>
+                        <td colspan="3" style="text-align: center;">Nenhum objetivo encontrado.</td>
+                    </tr>
+                    {% endif %}
                 </tbody>
+                
             </table>
+            
             
             <!-- Botões de ação -->
             <div class="button-container">
@@ -98,6 +122,44 @@
                 <button type="button" onclick="fechar()" class="btn cancel">Fechar</button>
             </div>
         </div>
+        <!-- Modal de confirmação -->
+        <div id="confirmDeleteModal" class="modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1050; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);">
+            <h4>Confirmar Exclusão</h4>
+            <p id="deleteMessage">Tem certeza de que deseja excluir este objetivo?</p>
+            <div class="button-container" style="text-align: center; margin-top: 20px;">
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-primary" style="margin-right: 10px;">Confirmar</button>
+                </form>
+                <button type="button" class="btn btn-danger" onclick="closeModal()">Cancelar</button>
+            </div>
+        </div>
+        
+        
+        
+
+<!-- Script para abrir o modal -->
+<script>
+    function confirmDelete(actionUrl, objetivoNome) {
+        const modal = document.getElementById('confirmDeleteModal');
+        const message = document.getElementById('deleteMessage');
+        
+        // Define o texto do objetivo que será excluído
+        message.innerText = `Tem certeza de que deseja excluir o objetivo "${objetivoNome}"?`;
+
+        // Configura a ação do formulário
+        document.getElementById('deleteForm').action = actionUrl;
+
+        // Mostra o modal
+        modal.style.display = 'block';
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('confirmDeleteModal');
+        modal.style.display = 'none';
+    }
+</script>
+
+
     </div>
 </div>
 
